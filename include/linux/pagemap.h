@@ -536,7 +536,7 @@ static inline int wait_on_page_locked_killable(struct page *page)
 	return wait_on_page_bit_killable(compound_head(page), PG_locked);
 }
 
- /*
+/* 
  * Wait for a page to complete writeback
  */
 static inline void wait_on_page_writeback(struct page *page)
