@@ -3624,6 +3624,23 @@ static void cgroup_file_release(struct kernfs_open_file *of)
 		cft->release(of);
 }
 
+static int cgroup_file_open(struct kernfs_open_file *of)
+{
+	struct cftype *cft = of->kn->priv;
+
+	if (cft->open)
+		return cft->open(of);
+	return 0;
+}
+
+static void cgroup_file_release(struct kernfs_open_file *of)
+{
+	struct cftype *cft = of->kn->priv;
+
+	if (cft->release)
+		cft->release(of);
+}
+
 static ssize_t cgroup_file_write(struct kernfs_open_file *of, char *buf,
 				 size_t nbytes, loff_t off)
 {
