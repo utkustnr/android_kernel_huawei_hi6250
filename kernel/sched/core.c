@@ -78,6 +78,8 @@
 
 #include <linux/sched/loadavg.h>
 #include <linux/cgroup-defs.h>
+#include <linux/cpufreq_times.h>
+
 
 #include <asm/switch_to.h>
 #include <asm/tlb.h>
