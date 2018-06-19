@@ -159,7 +159,9 @@ static int __dead_end_function(struct objtool_file *file, struct symbol *func,
 		"complete_and_exit",
 		"kvm_spurious_fault",
 		"__reiserfs_panic",
-		"lbug_with_loc"
+		"lbug_with_loc",
+		"fortify_panic",
+		"machine_real_restart",
 	};
 
 	if (func->bind == STB_WEAK)
