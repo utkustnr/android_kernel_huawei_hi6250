@@ -36,7 +36,6 @@ calc_load(unsigned long load, unsigned long exp, unsigned long active)
 	return newload / FIXED_1;
 }
 
-
 extern unsigned long calc_load_n(unsigned long load, unsigned long exp,
 				 unsigned long active, unsigned int n);
 
