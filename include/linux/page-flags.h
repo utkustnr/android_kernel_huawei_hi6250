@@ -77,7 +77,6 @@ enum pageflags {
 #endif
 	PG_locked,		/* Page is locked. Don't touch. */
 	PG_waiters,		/* Page has waiters, check its waitqueue */
-	PG_error,
 	PG_referenced,
 	PG_uptodate,
 	PG_dirty,
