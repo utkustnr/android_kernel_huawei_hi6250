@@ -40,7 +40,6 @@
 #include <linux/hisi/page_tracker.h>
 #include <linux/delayacct.h>
 #include <linux/psi.h>
-#include <linux/delayacct.h>
 #include "internal.h"
 #include <linux/iolimit_cgroup.h>
 #ifdef CONFIG_TASK_PROTECT_LRU
