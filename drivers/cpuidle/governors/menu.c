@@ -227,6 +227,7 @@ static enum hrtimer_restart menu_hrtimer_notify(struct hrtimer *phrtimer)
 }
 /*lint +e64 +e507 +e530 */
 
+
 static inline int get_loadavg(unsigned long load)
 {
 	return LOAD_INT(load) * 10 + LOAD_FRAC(load) / 10;
