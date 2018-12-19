@@ -5014,6 +5014,13 @@ static bool svm_cpu_has_accelerated_tpr(void)
 
 static bool svm_has_high_real_mode_segbase(void)
 {
+	switch (index) {
+	case MSR_IA32_MCG_EXT_CTL:
+		return false;
+	default:
+		break;
+	}
+
 	return true;
 }
 
