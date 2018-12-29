@@ -29,6 +29,7 @@ extern unsigned int sysctl_sched_child_runs_first;
 extern unsigned int sysctl_sched_sync_hint_enable;
 extern unsigned int sysctl_sched_cstate_aware;
 extern unsigned int sysctl_sched_is_big_little;
+
 #ifdef CONFIG_SCHED_WALT
 extern unsigned int sysctl_sched_use_walt_cpu_util;
 extern unsigned int sysctl_sched_use_walt_task_util;
@@ -43,7 +44,6 @@ extern unsigned int sysctl_sched_enable_rt_cas;
 #endif
 #ifdef CONFIG_HISI_RT_ACTIVE_LB
 extern unsigned int sysctl_sched_enable_rt_active_lb;
-#endif
 
 enum sched_tunable_scaling {
 	SCHED_TUNABLESCALING_NONE,

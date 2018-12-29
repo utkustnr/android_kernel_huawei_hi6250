@@ -91,6 +91,7 @@ __read_mostly unsigned int sysctl_sched_walt_cpu_high_irqload =
     (10 * NSEC_PER_MSEC);
 #endif /* CONFIG_HISI_EAS_SCHED */
 #endif /* CONFIG_SCHED_WALT */
+
 /*
  * The initial- and re-scaling of tunables is configurable
  * (default SCHED_TUNABLESCALING_LOG = *(1+ilog(ncpus))
@@ -5343,11 +5344,6 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	 * selection of the OPP.
 	 */
 	schedtune_dequeue_task(p, cpu_of(rq));
-
-#ifdef CONFIG_HISI_CORE_CTRL
-	if (!se)
-		dec_cfs_nr_heavy_running(rq, p);
-#endif
 
 	if (!se)
 		walt_dec_cumulative_runnable_avg(rq, p);
