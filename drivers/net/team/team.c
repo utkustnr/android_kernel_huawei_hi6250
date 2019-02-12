@@ -2448,7 +2448,6 @@ static int team_nl_cmd_options_set(struct sk_buff *skb, struct genl_info *info)
 	int err = 0;
 	int i;
 	struct nlattr *nl_option;
-	LIST_HEAD(opt_inst_list);
 
 	rtnl_lock();
 
@@ -2468,6 +2467,7 @@ static int team_nl_cmd_options_set(struct sk_buff *skb, struct genl_info *info)
 		struct nlattr *opt_attrs[TEAM_ATTR_OPTION_MAX + 1];
 		struct nlattr *attr;
 		struct nlattr *attr_data;
+		LIST_HEAD(opt_inst_list);
 		enum team_option_type opt_type;
 		int opt_port_ifindex = 0; /* != 0 for per-port options */
 		u32 opt_array_index = 0;
@@ -2577,9 +2577,11 @@ static int team_nl_cmd_options_set(struct sk_buff *skb, struct genl_info *info)
 			err = -ENOENT;
 			goto team_put;
 		}
-	}
 
-	err = team_nl_send_event_options_get(team, &opt_inst_list);
+		err = team_nl_send_event_options_get(team, &opt_inst_list);
+		if (err)
+			break;
+	}
 
 team_put:
 	team_nl_team_put(team);
