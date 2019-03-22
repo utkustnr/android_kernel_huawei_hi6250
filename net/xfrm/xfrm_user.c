@@ -1453,7 +1453,7 @@ static int validate_tmpl(int nr, struct xfrm_user_tmpl *ut, u16 family)
 
 		if (!xfrm_id_proto_valid(ut[i].id.proto))
 			return -EINVAL;
-		}
+	}
 
 	return 0;
 }
