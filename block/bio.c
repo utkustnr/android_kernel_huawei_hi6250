@@ -1139,11 +1139,11 @@ struct bio *bio_copy_user_iov(struct request_queue *q,
 	struct bio_map_data *bmd;
 	struct page *page;
 	struct bio *bio;
-	int ret;
-	unsigned long i = 0;
+	int i, ret;
 	int nr_pages = 0;
 	unsigned int len = iter->count;
 	unsigned int offset = map_data ? offset_in_page(map_data->offset) : 0;
+
 
 	for (i = 0; i < iter->nr_segs; i++) {
 		unsigned long uaddr;
@@ -1221,8 +1221,11 @@ struct bio *bio_copy_user_iov(struct request_queue *q,
 			}
 		}
 
-		if (((unsigned int)bio_add_pc_page(q, bio, page, bytes, offset)) < bytes)
+        if (bio_add_pc_page(q, bio, page, bytes, offset) < bytes) {
+			if (!map_data)
+				__free_page(page);
 			break;
+		}
 
 		len -= bytes;
 		offset = 0;
