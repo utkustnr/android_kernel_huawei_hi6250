@@ -3045,7 +3045,7 @@ static int ext4_unlink(struct inode *dir, struct dentry *dentry)
 	ext4_mark_inode_dirty(handle, dir);
 	if (inode->i_nlink == 0)
 		ext4_warning_inode(inode, "Deleting file '%.*s' with no links",
-			dentry->d_name.len, dentry->d_name.name);
+				   dentry->d_name.len, dentry->d_name.name);
 	else
 		drop_nlink(inode);
 	if (!inode->i_nlink)
