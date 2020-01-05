@@ -726,7 +726,6 @@ static bool check_for_block(struct wakeup_source *ws)
 
 		if(strstr(list_wl_search, wakelock_name) == NULL)
 			return false;
-	}
 
 	// wake lock is in list, print it if debug mode on
 		if (wl_blocker_debug)

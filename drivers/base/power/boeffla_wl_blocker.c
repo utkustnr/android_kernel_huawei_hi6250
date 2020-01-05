@@ -35,8 +35,6 @@
 #include <linux/device.h>
 #include <linux/miscdevice.h>
 #include <linux/printk.h>
-
-
 #include "boeffla_wl_blocker.h"
 
 
@@ -50,6 +48,7 @@ char list_wl_default[LENGTH_LIST_WL_DEFAULT] = {0};
 extern char list_wl_search[LENGTH_LIST_WL_SEARCH];
 extern bool wl_blocker_active;
 extern bool wl_blocker_debug;
+
 
 /*****************************************/
 // internal functions
@@ -68,7 +67,6 @@ static void build_search_string(char *list1, char *list2)
 }
 
 
-
 /*****************************************/
 // sysfs interface functions
 /*****************************************/
@@ -82,6 +80,7 @@ static ssize_t wakelock_blocker_show(struct device *dev, struct device_attribute
 }
 
 
+// store list of user configured wakelocks
 static ssize_t wakelock_blocker_store(struct device * dev, struct device_attribute *attr,
 			     const char * buf, size_t n)
 {
@@ -125,6 +124,7 @@ static ssize_t wakelock_blocker_default_store(struct device * dev, struct device
 	return n;
 }
 
+
 // show debug information of driver internals
 static ssize_t debug_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -132,6 +132,7 @@ static ssize_t debug_show(struct device *dev, struct device_attribute *attr, cha
 	return sprintf(buf, "Debug status: %d\n\nUser list: %s\nDefault list: %s\nSearch list: %s\nActive: %d\n",
 					wl_blocker_debug, list_wl, list_wl_default, list_wl_search, wl_blocker_active);
 }
+
 
 // store debug mode on/off (1/0)
 static ssize_t debug_store(struct device *dev, struct device_attribute *attr,
@@ -168,6 +169,7 @@ static ssize_t version_show(struct device *dev, struct device_attribute *attr, c
 /*****************************************/
 
 // define objects
+static DEVICE_ATTR(wakelock_blocker, 0644, wakelock_blocker_show, wakelock_blocker_store);
 static DEVICE_ATTR(wakelock_blocker_default, 0644, wakelock_blocker_default_show, wakelock_blocker_default_store);
 static DEVICE_ATTR(debug, 0664, debug_show, debug_store);
 static DEVICE_ATTR(version, 0664, version_show, NULL);
