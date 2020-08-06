@@ -234,6 +234,7 @@ static int a2mp_discover_rsp(struct amp_mgr *mgr, struct sk_buff *skb,
 
 			found = true;
 			memset(&req, 0, sizeof(req));
+
 			req.id = cl->id;
 			a2mp_send(mgr, A2MP_GETINFO_REQ, __next_ident(mgr),
 				  sizeof(req), &req);
@@ -314,6 +315,7 @@ static int a2mp_getinfo_req(struct amp_mgr *mgr, struct sk_buff *skb,
 		struct a2mp_info_rsp rsp;
 
 		memset(&rsp, 0, sizeof(rsp));
+
 		rsp.id = req->id;
 		rsp.status = A2MP_STATUS_INVALID_CTRL_ID;
 
@@ -358,6 +360,7 @@ static int a2mp_getinfo_rsp(struct amp_mgr *mgr, struct sk_buff *skb,
 		return -ENOMEM;
 
 	memset(&req, 0, sizeof(req));
+
 	req.id = rsp->id;
 	a2mp_send(mgr, A2MP_GETAMPASSOC_REQ, __next_ident(mgr), sizeof(req),
 		  &req);
@@ -387,6 +390,8 @@ static int a2mp_getampassoc_req(struct amp_mgr *mgr, struct sk_buff *skb,
 
 		memset(&rsp, 0, sizeof(rsp));
 		rsp.id = req->id;
+
+		memset(&rsp, 0, sizeof(rsp));
 
 		if (tmp) {
 			rsp.status = A2MP_STATUS_COLLISION_OCCURED;
@@ -476,7 +481,6 @@ static int a2mp_createphyslink_req(struct amp_mgr *mgr, struct sk_buff *skb,
 				   struct a2mp_cmd *hdr)
 {
 	struct a2mp_physlink_req *req = (void *) skb->data;
-
 	struct a2mp_physlink_rsp rsp;
 	struct hci_dev *hdev;
 	struct hci_conn *hcon;
@@ -488,6 +492,7 @@ static int a2mp_createphyslink_req(struct amp_mgr *mgr, struct sk_buff *skb,
 	BT_DBG("local_id %d, remote_id %d", req->local_id, req->remote_id);
 
 	memset(&rsp, 0, sizeof(rsp));
+
 	rsp.local_id = req->remote_id;
 	rsp.remote_id = req->local_id;
 
@@ -565,6 +570,8 @@ static int a2mp_discphyslink_req(struct amp_mgr *mgr, struct sk_buff *skb,
 		return -EINVAL;
 
 	BT_DBG("local_id %d remote_id %d", req->local_id, req->remote_id);
+
+	memset(&rsp, 0, sizeof(rsp));
 
 	rsp.local_id = req->remote_id;
 	rsp.remote_id = req->local_id;
@@ -689,6 +696,7 @@ static int a2mp_chan_recv_cb(struct l2cap_chan *chan, struct sk_buff *skb)
 		struct a2mp_cmd_rej rej;
 
 		memset(&rej, 0, sizeof(rej));
+
 		rej.reason = cpu_to_le16(0);
 		hdr = (void *) skb->data;
 
@@ -913,6 +921,7 @@ void a2mp_send_getinfo_rsp(struct hci_dev *hdev)
 	BT_DBG("%s mgr %p", hdev->name, mgr);
 
 	memset(&rsp, 0, sizeof(rsp));
+
 	rsp.id = hdev->id;
 	rsp.status = A2MP_STATUS_INVALID_CTRL_ID;
 
@@ -1011,6 +1020,7 @@ void a2mp_send_create_phy_link_rsp(struct hci_dev *hdev, u8 status)
 		return;
 
 	memset(&rsp, 0, sizeof(rsp));
+
 	hs_hcon = hci_conn_hash_lookup_state(hdev, AMP_LINK, BT_CONNECT);
 	if (!hs_hcon) {
 		rsp.status = A2MP_STATUS_UNABLE_START_LINK_CREATION;
@@ -1044,6 +1054,7 @@ void a2mp_discover_amp(struct l2cap_chan *chan)
 	mgr->bredr_chan = chan;
 
 	memset(&req, 0, sizeof(req));
+
 	req.mtu = cpu_to_le16(L2CAP_A2MP_DEFAULT_MTU);
 	req.ext_feat = 0;
 	a2mp_send(mgr, A2MP_DISCOVER_REQ, 1, sizeof(req), &req);
