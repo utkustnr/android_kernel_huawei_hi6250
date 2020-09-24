@@ -15,6 +15,9 @@
 
 #ifdef CONFIG_CGROUP_SCHEDTUNE
 bool schedtune_initialized = false;
+static struct schedtune *getSchedtune(char *st_name);
+int reset_schedtune_boost(char *st_name, int boost);
+int reset_schedtune_prefer_idle(char *st_name, int prefer_idle);
 #endif
 
 unsigned int sysctl_sched_cfs_boost __read_mostly;
@@ -1173,6 +1176,53 @@ schedtune_init_cgroups(void)
 		BOOSTGROUPS_COUNT);
 
 	schedtune_initialized = true;
+}
+
+static struct schedtune *getSchedtune(char *st_name)
+{
+	int idx;
+
+	for (idx = 1; idx < BOOSTGROUPS_COUNT; ++idx) {
+		char name_buf[NAME_MAX + 1];
+		struct schedtune *st = allocated_group[idx];
+
+		if (!st) {
+			pr_warn("SCHEDTUNE: Could not find %s\n", st_name);
+			break;
+		}
+
+		cgroup_name(st->css.cgroup, name_buf, sizeof(name_buf));
+		if (strncmp(name_buf, st_name, strlen(st_name)) == 0)
+			return st;
+	}
+
+	return NULL;
+}
+
+int reset_schedtune_boost(char *st_name, int boost)
+{
+	struct schedtune *st = getSchedtune(st_name);
+
+	if (!st)
+		return -EINVAL;
+
+	/* reset schedtune.boost value */
+	boost_write(&st->css, NULL, boost);
+
+	return 0;
+}
+
+int reset_schedtune_prefer_idle(char *st_name, int prefer_idle)
+{
+	struct schedtune *st = getSchedtune(st_name);
+
+	if (!st)
+		return -EINVAL;
+
+	/* reset schedtune.prefer_idle value */
+	prefer_idle_write(&st->css, NULL, prefer_idle);
+
+	return 0;
 }
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
