@@ -207,8 +207,7 @@ fq_find(struct net *net, __be32 id, const struct in6_addr *src,
 }
 
 static int ip6_frag_queue(struct frag_queue *fq, struct sk_buff *skb,
-			  struct frag_hdr *fhdr, int nhoff,
-			  u32 *prob_offset)
+			   struct frag_hdr *fhdr, int nhoff)
 {
 	struct sk_buff *prev, *next;
 	struct net_device *dev;
@@ -224,7 +223,11 @@ static int ip6_frag_queue(struct frag_queue *fq, struct sk_buff *skb,
 			((u8 *)(fhdr + 1) - (u8 *)(ipv6_hdr(skb) + 1)));
 
 	if ((unsigned int)end > IPV6_MAXPLEN) {
-		*prob_offset = (u8 *)&fhdr->frag_off - skb_network_header(skb);
+		__IP6_INC_STATS(net, ip6_dst_idev(skb_dst(skb)),
+				IPSTATS_MIB_INHDRERRORS);
+		icmpv6_param_prob(skb, ICMPV6_HDR_FIELD,
+				  ((u8 *)&fhdr->frag_off -
+				   skb_network_header(skb)));
 		return -1;
 	}
 
@@ -255,7 +258,10 @@ static int ip6_frag_queue(struct frag_queue *fq, struct sk_buff *skb,
 			/* RFC2460 says always send parameter problem in
 			 * this case. -DaveM
 			 */
-			*prob_offset = offsetof(struct ipv6hdr, payload_len);
+			__IP6_INC_STATS(net, ip6_dst_idev(skb_dst(skb)),
+					IPSTATS_MIB_INHDRERRORS);
+			icmpv6_param_prob(skb, ICMPV6_HDR_FIELD,
+					  offsetof(struct ipv6hdr, payload_len));
 			return -1;
 		}
 		if (end > fq->q.len) {
@@ -550,22 +556,14 @@ static int ipv6_frag_rcv(struct sk_buff *skb)
 	fq = fq_find(net, fhdr->identification, &hdr->saddr, &hdr->daddr,
 		     skb->dev ? skb->dev->ifindex : 0, ip6_frag_ecn(hdr));
 	if (fq) {
-		u32 prob_offset = 0;
 		int ret;
 
 		spin_lock(&fq->q.lock);
 
-		fq->iif = iif;
-		ret = ip6_frag_queue(fq, skb, fhdr, IP6CB(skb)->nhoff,
-				     &prob_offset);
+		ret = ip6_frag_queue(fq, skb, fhdr, IP6CB(skb)->nhoff);
 
 		spin_unlock(&fq->q.lock);
-		inet_frag_put(&fq->q);
-		if (prob_offset) {
-			__IP6_INC_STATS(net, ip6_dst_idev(skb_dst(skb)),
-					IPSTATS_MIB_INHDRERRORS);
-			icmpv6_param_prob(skb, ICMPV6_HDR_FIELD, prob_offset);
-		}
+		inet_frag_put(&fq->q, &ip6_frags);
 		return ret;
 	}
 
