@@ -226,7 +226,7 @@ hwcam_data_table_get_next_entry(hwcam_data_table_t* tbl,
         || next == &tbl->used_list ? NULL : next;
 }
 
-static inline uint32_t
+static inline uint64_t
 hwcam_data_table_entry_index(hwcam_data_table_t* tbl,
                              hwcam_data_entry_t* cur)
 {

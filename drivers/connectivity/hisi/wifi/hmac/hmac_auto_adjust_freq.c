@@ -184,7 +184,7 @@ OAL_STATIC OAL_INLINE oal_bool_enum_uint8 hmac_get_cpu_freq_raw(oal_uint8 uc_fre
 
     if (IS_ERR_OR_NULL(filp))
     {
-        OAM_ERROR_LOG1(0,OAM_SF_ANY,"{hmac_get_cpu_freq_raw:　freq　= %d error !}",uc_freq_type);
+        OAM_ERROR_LOG1(0,OAM_SF_ANY,"{hmac_get_cpu_freq_raw:freq= %d error !}",uc_freq_type);
         return -1;
     }
     old_fs = get_fs();
@@ -221,7 +221,7 @@ oal_bool_enum_uint8 hmac_set_cpu_freq_raw(oal_uint8 uc_freq_type, oal_uint32 ul_
 
     if (IS_ERR_OR_NULL(filp))
     {
-        OAM_ERROR_LOG1(0,OAM_SF_ANY,"{hmac_set_cpu_freq_raw:　freq　= %d error !}",ul_freq_value);
+        OAM_ERROR_LOG1(0,OAM_SF_ANY,"{hmac_set_cpu_freq_raw:freq= %d error !}",ul_freq_value);
         return -1;
     }
     old_fs = get_fs();
@@ -251,7 +251,7 @@ OAL_STATIC OAL_INLINE oal_bool_enum_uint8 hmac_get_ddr_freq_raw(oal_uint8 uc_fre
 
     if (IS_ERR_OR_NULL(filp))
     {
-        OAM_ERROR_LOG1(0,OAM_SF_ANY,"{hmac_get_ddr_freq_raw:　freq　= %d error !}",uc_freq_type);
+        OAM_ERROR_LOG1(0,OAM_SF_ANY,"{hmac_get_ddr_freq_raw:freq= %d error !}",uc_freq_type);
         return -1;
     }
     old_fs = get_fs();

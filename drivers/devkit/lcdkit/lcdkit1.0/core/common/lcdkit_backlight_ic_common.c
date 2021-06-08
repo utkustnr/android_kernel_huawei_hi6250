@@ -616,7 +616,7 @@ void lcdkit_parse_backlight_fault_check_param(struct device_node *pnp)
 	return;
 }
 #endif
-void lcdkit_parse_backlight_ic_config(struct device_node *np)
+void lcdkit_parse_backlight_ic_config(struct device_node *np) 
 {
     char tmp_buf[128] = {0};
     int ret = 0;
@@ -629,7 +629,7 @@ void lcdkit_parse_backlight_ic_config(struct device_node *np)
     LCDKIT_INFO("lcdkit_parse_backlight_ic_config\n");
     if(!strlen(chip_name) || !strcmp(chip_name,"default") ||(NULL == np))
     {
-        return -1;
+        return (void)-1;
     }
 
 	lcdkit_parse_backlight_ic_param(np, "lcdkit-bl-ic-level", &g_bl_config.bl_level);

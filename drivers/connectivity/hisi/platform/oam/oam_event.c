@@ -556,7 +556,7 @@ OAL_STATIC oal_uint32  oam_event_format_string(
     /* 格式化输出内容 */
     OAL_SPRINTF(pac_output_data,
                 ul_data_len,
-                "【EVENT】:Tick=%u, VAP=%d, ModId=%d, EVENT TYPE=%u\r\n",
+                "EVENT:Tick=%u, VAP=%d, ModId=%d, EVENT TYPE=%u\r\n",
                 ul_tick,
                 uc_vap_id,
                 en_mod,

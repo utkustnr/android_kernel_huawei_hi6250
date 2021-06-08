@@ -169,18 +169,18 @@ enum FIRMWARE_SUBSYS_ENUM
 *****************************************************************************/
 typedef struct cmd_type_st
 {
-    int32       cmd_type;
-    uint8       cmd_name[DOWNLOAD_CMD_LEN];
-    uint8       cmd_para[DOWNLOAD_CMD_PARA_LEN];
+    int32_t       cmd_type;
+    uint8_t       cmd_name[DOWNLOAD_CMD_LEN];
+    uint8_t       cmd_para[DOWNLOAD_CMD_PARA_LEN];
 
 }CMD_TYPE_STRUCT;
 
 typedef struct firmware_globals_st
 {
-    int32            al_count[CFG_FILE_TOTAL];      /*存储每个cfg文件解析后有效的命令个数*/
+    int32_t            al_count[CFG_FILE_TOTAL];      /*存储每个cfg文件解析后有效的命令个数*/
     CMD_TYPE_STRUCT *apst_cmd[CFG_FILE_TOTAL];      /*存储每个cfg文件的有效命令*/
-    uint8            auc_CfgVersion[VERSION_LEN];   /*存储cfg文件中配置的版本号信息*/
-    uint8            auc_DevVersion[VERSION_LEN];   /*存储加载时device侧上报的版本号信息*/
+    uint8_t            auc_CfgVersion[VERSION_LEN];   /*存储cfg文件中配置的版本号信息*/
+    uint8_t            auc_DevVersion[VERSION_LEN];   /*存储加载时device侧上报的版本号信息*/
 }FIRMWARE_GLOBALS_STRUCT;
 
 /*****************************************************************************
@@ -196,10 +196,10 @@ typedef struct file OS_KERNEL_FILE_STRU;
 /*****************************************************************************
   10 函数声明
 *****************************************************************************/
-extern int32 firmware_download(uint32 ul_index);
-extern int32 firmware_cfg_init(void);
-extern int32 firmware_cfg_clear(void);
-extern int32 sdio_device_mem_dump(struct st_wifi_dump_mem_info *pst_mem_dump_info, uint32 count);
+extern int32_t firmware_download(uint32_t ul_index);
+extern int32_t firmware_cfg_init(void);
+extern int32_t firmware_cfg_clear(void);
+extern int32_t sdio_device_mem_dump(struct st_wifi_dump_mem_info *pst_mem_dump_info, uint32_t count);
 extern void save_nfc_lowpower_log_2_sdt(void);
 #ifdef __cplusplus
     #if __cplusplus

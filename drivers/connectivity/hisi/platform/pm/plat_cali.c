@@ -55,7 +55,7 @@ oal_int32 get_cali_count(oal_uint32 *count)
 }
 
 
-int32 get_bfgx_cali_data(oal_uint8 *buf, oal_uint32 *len, oal_uint32 buf_len)
+int32_t get_bfgx_cali_data(oal_uint8 *buf, oal_uint32 *len, oal_uint32 buf_len)
 {
     oal_cali_param_stru *pst_cali_data         = NULL;
     oal_cali_param_addition_stru cali_addition = {0x00};

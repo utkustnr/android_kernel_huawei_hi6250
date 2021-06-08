@@ -799,7 +799,7 @@ oal_int32 dev_netlink_create(void)
         return -OAL_EFAIL;
     }
 
-    OAL_IO_PRINT("WIFI DFR:suceed to create netlink socket£¬%p \n", dev_excp_handler_data.nlsk);
+    OAL_IO_PRINT("WIFI DFR:suceed to create netlink socket %p \n", dev_excp_handler_data.nlsk);
     return OAL_SUCC;
 }
 

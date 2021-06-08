@@ -2103,7 +2103,7 @@ OAL_STATIC oal_int32 hwifi_config_host_global_ini_param(oal_void)
         pst_cfg_hmac_vap = (hmac_vap_stru *)mac_res_get_hmac_vap(0);
         if (OAL_PTR_NULL == pst_cfg_hmac_vap)
         {
-            OAM_WARNING_LOG0(0, OAM_SF_ANY, "{hwifi_config_host_global_ini_param::pst_cfg_hmac_vap is null。}\r\n");
+            OAM_WARNING_LOG0(0, OAM_SF_ANY, "{hwifi_config_host_global_ini_param::pst_cfg_hmac_vap is null}\r\n");
             return -OAL_EFAUL;
         }
 
@@ -2949,7 +2949,7 @@ oal_bool_enum hwifi_config_init_nvram_main(oal_net_device_stru *pst_cfg_net_dev)
     if (OAL_PTR_NULL == pst_nvram_params)
     {
         OAM_ERROR_LOG0(0, OAM_SF_ANY, "{hwifi_config_init_nvram_main::alloc nvram params mem fail, return null ptr!}\r\n");
-        return OAL_FAIL;
+        return (oal_bool_enum)OAL_FAIL;
     }
     /* 结构体数组赋值 */
     for(uc_idx = 0; uc_idx < NUM_OF_NV_MAX_TXPOWER; ++uc_idx)
@@ -2976,7 +2976,7 @@ oal_bool_enum hwifi_config_init_nvram_main(oal_net_device_stru *pst_cfg_net_dev)
         OAM_ERROR_LOG0(0, OAM_SF_ANY, "{hwifi_config_init_nvram_main::one or more params not correct, check value in dts file or nvram!}\r\n");
         /* 释放pst_nvram_params内存 */
         OAL_MEM_FREE(pst_nvram_params, OAL_TRUE);
-        return OAL_FAIL;
+        return (oal_bool_enum)OAL_FAIL;
     }
 
     WAL_WRITE_MSG_HDR_INIT(&st_write_msg, WLAN_CFGID_SET_CUS_NVRAM_PARAM, ul_offset + OAL_SIZEOF(oal_int32));
@@ -2995,13 +2995,13 @@ oal_bool_enum hwifi_config_init_nvram_main(oal_net_device_stru *pst_cfg_net_dev)
         OAM_ERROR_LOG1(0, OAM_SF_ANY, "{hwifi_config_init_nvram_main::return err code [%d]!}\r\n", l_ret);
         /* 释放pst_nvram_params内存 */
         OAL_MEM_FREE(pst_nvram_params, OAL_TRUE);
-        return OAL_FAIL;
+        return (oal_bool_enum)OAL_FAIL;
     }
 
     /* 释放pst_nvram_params内存 */
     OAL_MEM_FREE(pst_nvram_params, OAL_TRUE);
 
-    return OAL_SUCC;
+    return (oal_bool_enum)OAL_SUCC;
 }
 
 oal_uint32 hwifi_config_init_dts_main(oal_net_device_stru *pst_cfg_net_dev)

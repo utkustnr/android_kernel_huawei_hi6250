@@ -60,30 +60,30 @@ EXPORT_SYMBOL_GPL(g_wlan_pm_switch);
 oal_uint32 auto_freq_enable = 1;
 module_param(auto_freq_enable, uint, S_IRUGO | S_IWUSR);
 
-extern  int32 wlan_power_on(void);
-extern  int32 wlan_power_off(void);
+extern  int32_t wlan_power_on(void);
+extern  int32_t wlan_power_off(void);
 void wlan_pm_wakeup_work(oal_work_stru *pst_worker);
 void wlan_pm_sleep_work(oal_work_stru *pst_worker);
 void wlan_pm_freq_adjust_work(oal_work_stru *pst_worker);
 
 void wlan_pm_wdg_timeout(struct wlan_pm_s *pm_data);
 
-int32 wlan_pm_wakeup_done_callback(void *data);
-int32 wlan_pm_close_done_callback(void *data);
-int32 wlan_pm_open_bcpu_done_callback(void *data);
-int32 wlan_pm_close_bcpu_done_callback(void *data);
-int32 wlan_pm_halt_bcpu_done_callback(void *data);
+int32_t wlan_pm_wakeup_done_callback(void *data);
+int32_t wlan_pm_close_done_callback(void *data);
+int32_t wlan_pm_open_bcpu_done_callback(void *data);
+int32_t wlan_pm_close_bcpu_done_callback(void *data);
+int32_t wlan_pm_halt_bcpu_done_callback(void *data);
 
 #ifdef _PRE_WLAN_DOWNLOAD_PM
 oal_uint16 g_us_download_rate_limit_pps = 0;
 EXPORT_SYMBOL_GPL(g_us_download_rate_limit_pps);
 #endif
 
-int32 wlan_pm_stop_wdg(struct wlan_pm_s *pst_wlan_pm_info);
+int32_t wlan_pm_stop_wdg(struct wlan_pm_s *pst_wlan_pm_info);
 oal_int wlan_pm_work_submit(struct wlan_pm_s    *pst_wlan_pm, oal_work_stru* pst_worker);
 void wlan_pm_info_clean(void);
 void wlan_pm_deepsleep_delay_timeout_02(struct wlan_pm_s *pm_data);
-int32 wlan_pm_stop_deepsleep_delay_timer_02(struct wlan_pm_s *pm_data);
+int32_t wlan_pm_stop_deepsleep_delay_timer_02(struct wlan_pm_s *pm_data);
 
 extern oal_atomic g_wakeup_dev_wait_ack;
 
@@ -312,7 +312,7 @@ struct wifi_srv_callback_handler* wlan_pm_get_wifi_srv_handler(oal_void)
 
     if(OAL_PTR_NULL == pst_wlan_pm)
     {
-        return OAL_FALSE;
+        return 0;
     }
 
     return &pst_wlan_pm->st_wifi_srv_handler;
@@ -1017,7 +1017,7 @@ void wlan_pm_wakeup_work(oal_work_stru *pst_worker)
 
 
 
-int32 wlan_pm_wakeup_done_callback(void *data)
+int32_t wlan_pm_wakeup_done_callback(void *data)
 {
     struct wlan_pm_s *pst_wlan_pm = (struct wlan_pm_s *)data;
 
@@ -1033,7 +1033,7 @@ int32 wlan_pm_wakeup_done_callback(void *data)
 
 
 
-int32 wlan_pm_close_done_callback(void *data)
+int32_t wlan_pm_close_done_callback(void *data)
 {
     struct wlan_pm_s *pst_wlan_pm = (struct wlan_pm_s *)data;
 
@@ -1053,7 +1053,7 @@ int32 wlan_pm_close_done_callback(void *data)
 
 
 
-int32 wlan_pm_open_bcpu_done_callback(void *data)
+int32_t wlan_pm_open_bcpu_done_callback(void *data)
 {
     struct wlan_pm_s *pst_wlan_pm = (struct wlan_pm_s *)data;
 
@@ -1069,7 +1069,7 @@ int32 wlan_pm_open_bcpu_done_callback(void *data)
 
 
 
-int32 wlan_pm_close_bcpu_done_callback(void *data)
+int32_t wlan_pm_close_bcpu_done_callback(void *data)
 {
     struct wlan_pm_s *pst_wlan_pm = (struct wlan_pm_s *)data;
 
@@ -1085,7 +1085,7 @@ int32 wlan_pm_close_bcpu_done_callback(void *data)
 
 
 
-int32 wlan_pm_halt_bcpu_done_callback(void *data)
+int32_t wlan_pm_halt_bcpu_done_callback(void *data)
 {
     struct wlan_pm_s *pst_wlan_pm = (struct wlan_pm_s *)data;
 
@@ -1347,7 +1347,7 @@ oal_void  wlan_pm_feed_wdg(oal_void)
 
 
 
-int32 wlan_pm_stop_wdg(struct wlan_pm_s *pst_wlan_pm_info)
+int32_t wlan_pm_stop_wdg(struct wlan_pm_s *pst_wlan_pm_info)
 {
     OAL_IO_PRINT("wlan_pm_stop_wdg \r\n");
 
@@ -1443,7 +1443,7 @@ void wlan_pm_deepsleep_delay_timeout_02(struct wlan_pm_s *pm_data)
 }
 
 
-int32 wlan_pm_stop_deepsleep_delay_timer_02(struct wlan_pm_s *pm_data)
+int32_t wlan_pm_stop_deepsleep_delay_timer_02(struct wlan_pm_s *pm_data)
 {
     oal_wake_unlock(&pm_data->st_deepsleep_wakelock);
 

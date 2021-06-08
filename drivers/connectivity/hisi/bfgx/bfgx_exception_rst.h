@@ -63,10 +63,10 @@ typedef enum PLAT_WIFI_EXCP_CMD_e
 *****************************************************************************/
 typedef struct DUMP_MEM_RES
 {
-    uint8 *file_name;
-    uint32 start_addr;
-    uint32 align_type;
-    uint32 men_len;
+    uint8_t *file_name;
+    uint32_t start_addr;
+    uint32_t align_type;
+    uint32_t men_len;
 }exception_bcpu_dump_msg;
 enum dump_msg_align_type
 {
@@ -76,8 +76,8 @@ enum dump_msg_align_type
 };
 typedef struct memdump_driver_s {
     struct sk_buff_head quenue;
-    int32 is_open;
-    int32 is_working;
+    int32_t is_open;
+    int32_t is_working;
     wait_queue_head_t dump_type_wait;
     struct sk_buff_head dump_type_queue;
 }memdump_info_t;
@@ -111,18 +111,18 @@ enum BFGX_DUMP_TYPE
 /*****************************************************************************
   6 EXTERN FUNCTION
 *****************************************************************************/
-extern void plat_dfr_cfg_set(uint64 arg);
-extern void plat_beatTimer_timeOut_reset_cfg_set(uint64 arg);
+extern void plat_dfr_cfg_set(uint64_t arg);
+extern void plat_beatTimer_timeOut_reset_cfg_set(uint64_t arg);
 #ifdef HI110X_HAL_MEMDUMP_ENABLE
-extern void plat_beatTimer_timeOusdio_read_device_memt_reset_cfg_set(uint64 arg);
+extern void plat_beatTimer_timeOusdio_read_device_memt_reset_cfg_set(uint64_t arg);
 extern void bfgx_memdump_finish(void);
 extern void wifi_memdump_finish(void);
-extern int32 wifi_notice_hal_memdump(void);
-extern int32 bfgx_notice_hal_memdump(void);
-extern int32 bfgx_memdump_quenue_clear(void);
+extern int32_t wifi_notice_hal_memdump(void);
+extern int32_t bfgx_notice_hal_memdump(void);
+extern int32_t bfgx_memdump_quenue_clear(void);
 extern void wifi_memdump_quenue_clear(void);
-extern int32 bfgx_memdump_enquenue(uint8 *buf_ptr, uint16 count);
-extern int32 wifi_memdump_enquenue(uint8 *buf_ptr, uint16 count);
+extern int32_t bfgx_memdump_enquenue(uint8_t *buf_ptr, uint16_t count);
+extern int32_t wifi_memdump_enquenue(uint8_t *buf_ptr, uint16_t count);
 extern memdump_info_t bcpu_memdump_cfg;
 extern memdump_info_t wcpu_memdump_cfg;
 #endif

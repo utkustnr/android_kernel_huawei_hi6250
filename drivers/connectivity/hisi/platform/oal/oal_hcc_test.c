@@ -937,12 +937,12 @@ OAL_STATIC ssize_t  hcc_test_get_para(struct device *dev, struct device_attribut
                                                             g_hcc_test_event->test_data.total_rcvd_bytes,
                                                             g_hcc_test_event->test_data.trans_info.total_d2h_trans_bytes);
     /*SDIO通道利用率*/
-    ret +=  snprintf(buf + ret,  PAGE_SIZE-1, "Hcc Utilization Ratio %llu ‰\n",
+    ret +=  snprintf(buf + ret,  PAGE_SIZE-1, "Hcc Utilization Ratio %llu \n",
                             hcc_test_utilization_ratio_gen(g_hcc_test_event->test_data.total_sent_bytes + g_hcc_test_event->test_data.total_rcvd_bytes,
                                                             g_hcc_test_event->test_data.trans_info.total_h2d_trans_bytes +
                                                              g_hcc_test_event->test_data.trans_info.total_d2h_trans_bytes));
     /*发送方向的丢包率*/
-    ret +=  snprintf(buf + ret,  PAGE_SIZE-1, "TxPackageLoss %u ‰, pkt_sent: %d actual_tx_pkts: %u\n",
+    ret +=  snprintf(buf + ret,  PAGE_SIZE-1, "TxPackageLoss %u , pkt_sent: %d actual_tx_pkts: %u\n",
                                     hcc_test_tx_pkt_loss_gen(g_hcc_test_event->test_data.pkt_sent,g_hcc_test_event->test_data.trans_info.actual_tx_pkts),
                                     g_hcc_test_event->test_data.pkt_sent,
                                     g_hcc_test_event->test_data.trans_info.actual_tx_pkts);

@@ -69,7 +69,7 @@ typedef enum proc_enum
 *****************************************************************************/
 #if (_PRE_OS_VERSION_LINUX == _PRE_OS_VERSION)
 extern bool is_my_chip(void);
-extern bool is_hisi_chiptype(int32 chip);
+extern bool is_hisi_chiptype(int32_t chip);
 extern bool is_my_nfc_chip(void);
 extern int read_nfc_conf_name_from_dts(char *buf, int buf_len, char *node_name, char *property_name);
 #endif

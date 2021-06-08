@@ -22,9 +22,9 @@
 /*****************************************************************************
   5 EXTERN FUNCTION
 *****************************************************************************/
-extern uint8 check_bfg_not_booting(struct ps_core_s *ps_core_d);
+extern uint8_t check_bfg_not_booting(struct ps_core_s *ps_core_d);
 extern void host_allow_bfg_sleep(struct ps_core_s *ps_core_d);
-extern void bfg_timer_expire(uint64 data);
-extern uint8 bfgx_wakeup_device(struct ps_core_s *ps_core_d, uint8 type);
+extern void bfg_timer_expire(uint64_t data);
+extern uint8_t bfgx_wakeup_device(struct ps_core_s *ps_core_d, uint8_t type);
 #endif
 

@@ -36,7 +36,7 @@
 /*****************************************************************************
   3 全局变量定义
 *****************************************************************************/
-uint8 *g_auc_cfg_in_system_path[CFG_FILE_TOTAL] =
+uint8_t *g_auc_cfg_in_system_path[CFG_FILE_TOTAL] =
                     {
                         BFGX_AND_WIFI_CFG_PATH,
                         WIFI_CFG_PATH,
@@ -44,7 +44,7 @@ uint8 *g_auc_cfg_in_system_path[CFG_FILE_TOTAL] =
                         RAM_CHECK_CFG_PATH,
                     };
 
-uint8 **g_auc_cfg_path = g_auc_cfg_in_system_path;
+uint8_t **g_auc_cfg_path = g_auc_cfg_in_system_path;
 
 struct st_wifi_dump_mem_info nfc_buffer_data = {0x30000000+0x000f9d00, OMLNFCDATABUFFLEN, "nfc_buffer_data"};
 
@@ -52,24 +52,24 @@ struct st_wifi_dump_mem_info nfc_buffer_data = {0x30000000+0x000f9d00, OMLNFCDAT
 FIRMWARE_GLOBALS_STRUCT  g_st_cfg_info;
 
 /*保存firmware file内容的buffer，先将文件读到这个buffer中，然后从这个向device buffer发送*/
-uint8 *g_pucDataBuf = NULL;
+uint8_t *g_pucDataBuf = NULL;
 
 /* g_pucDataBuf的长度 */
-uint32 g_ulDataBufLen = 0;
+uint32_t g_ulDataBufLen = 0;
 
-uint32 g_ulJumpCmdResult = CMD_JUMP_EXEC_RESULT_SUCC;
+uint32_t g_ulJumpCmdResult = CMD_JUMP_EXEC_RESULT_SUCC;
 
 extern oal_uint32   oam_send_device_data2sdt(oal_uint8* pc_string, oal_uint16 len);
 
-uint8* g_pucNfcLog= NULL;
+uint8_t* g_pucNfcLog= NULL;
 /*****************************************************************************
   4 函数实现
 *****************************************************************************/
 
 
-int32 read_msg(uint8 *data, int32 len)
+int32_t read_msg(uint8_t *data, int32_t len)
 {
-    int32  l_len;
+    int32_t  l_len;
 
     if (unlikely((NULL == data)))
     {
@@ -83,9 +83,9 @@ int32 read_msg(uint8 *data, int32 len)
     return l_len;
 }
 
-int32 read_msg_timeout(uint8 *data, int32 len, uint32 timeout)
+int32_t read_msg_timeout(uint8_t *data, int32_t len, uint32_t timeout)
 {
-    int32  l_len;
+    int32_t  l_len;
 
     if (unlikely((NULL == data)))
     {
@@ -101,9 +101,9 @@ int32 read_msg_timeout(uint8 *data, int32 len, uint32 timeout)
 
 
 
-int32 send_msg(uint8 *data, int32 len)
+int32_t send_msg(uint8_t *data, int32_t len)
 {
-    int32   l_ret;
+    int32_t   l_ret;
 
     PS_PRINT_DBG("len = %d\n", len);
 #ifdef HW_DEBUG
@@ -116,11 +116,11 @@ int32 send_msg(uint8 *data, int32 len)
 }
 
 
-int32 recv_expect_result(const uint8 *expect)
+int32_t recv_expect_result(const uint8_t *expect)
 {
-    uint8 auc_buf[RECV_BUF_LEN];
-    int32 l_len;
-    int32 i;
+    uint8_t auc_buf[RECV_BUF_LEN];
+    int32_t l_len;
+    int32_t i;
 
     if (!OS_STR_LEN(expect))
     {
@@ -152,10 +152,10 @@ int32 recv_expect_result(const uint8 *expect)
     return -EFAIL;
 }
 
-int32 recv_expect_result_timeout(const uint8 *expect, uint32 timeout)
+int32_t recv_expect_result_timeout(const uint8_t *expect, uint32_t timeout)
 {
-    uint8 auc_buf[RECV_BUF_LEN];
-    int32 l_len;
+    uint8_t auc_buf[RECV_BUF_LEN];
+    int32_t l_len;
 
     if (!OS_STR_LEN(expect))
     {
@@ -186,10 +186,10 @@ int32 recv_expect_result_timeout(const uint8 *expect, uint32 timeout)
 
 
 
-int32 msg_send_and_recv_except(uint8 *data, int32 len, const uint8 *expect)
+int32_t msg_send_and_recv_except(uint8_t *data, int32_t len, const uint8_t *expect)
 {
-    int32  i;
-    int32  l_ret;
+    int32_t  i;
+    int32_t  l_ret;
 
     for(i = 0; i < HOST_DEV_TIMEOUT; i++)
     {
@@ -210,11 +210,11 @@ int32 msg_send_and_recv_except(uint8 *data, int32 len, const uint8 *expect)
 }
 
 
-void *malloc_cmd_buf(uint8 *puc_cfg_info_buf, uint32 ul_index)
+void *malloc_cmd_buf(uint8_t *puc_cfg_info_buf, uint32_t ul_index)
 {
-    int32           l_len;
-    uint8          *flag;
-    uint8          *p_buf;
+    int32_t           l_len;
+    uint8_t          *flag;
+    uint8_t          *p_buf;
 
     if (NULL == puc_cfg_info_buf)
     {
@@ -252,7 +252,7 @@ void *malloc_cmd_buf(uint8 *puc_cfg_info_buf, uint32 ul_index)
 }
 
 
-uint8 *delete_space(uint8 *string, int32 *len)
+uint8_t *delete_space(uint8_t *string, int32_t *len)
 {
     int i;
 
@@ -294,10 +294,10 @@ uint8 *delete_space(uint8 *string, int32 *len)
 }
 
 
-int32 string_to_num(uint8 *string, int32 *number)
+int32_t string_to_num(uint8_t *string, int32_t *number)
 {
-    int32       i;
-    int32       l_num;
+    int32_t       i;
+    int32_t       l_num;
 
     if (NULL == string)
     {
@@ -317,11 +317,11 @@ int32 string_to_num(uint8 *string, int32 *number)
 }
 
 
-int32 num_to_string(uint8 *string, uint32 number)
+int32_t num_to_string(uint8_t *string, uint32_t number)
 {
-    int32  i = 0, j = 0;
-    int32  tmp[INT32_STR_LEN];
-    uint32 num = number;
+    int32_t  i = 0, j = 0;
+    int32_t  tmp[INT32_STR_LEN];
+    uint32_t num = number;
 
     if (NULL == string)
     {
@@ -346,10 +346,10 @@ int32 num_to_string(uint8 *string, uint32 number)
 }
 
 
-OS_KERNEL_FILE_STRU * open_file_to_readm(uint8 *name)
+OS_KERNEL_FILE_STRU * open_file_to_readm(uint8_t *name)
 {
     OS_KERNEL_FILE_STRU *fp;
-    uint8 *file_name = NULL;
+    uint8_t *file_name = NULL;
 
     if (WARN_ON(NULL == name))
     {
@@ -366,12 +366,12 @@ OS_KERNEL_FILE_STRU * open_file_to_readm(uint8 *name)
 }
 
 
-int32 recv_device_mem(OS_KERNEL_FILE_STRU *fp, uint8 *pucDataBuf, int32 len)
+int32_t recv_device_mem(OS_KERNEL_FILE_STRU *fp, uint8_t *pucDataBuf, int32_t len)
 {
-    int32 l_ret = -EFAIL;
+    int32_t l_ret = -EFAIL;
     mm_segment_t fs;
-    uint8 retry = 3;
-    int32 lenbuf = 0;
+    uint8_t retry = 3;
+    int32_t lenbuf = 0;
 
     if (IS_ERR_OR_NULL(fp))
     {
@@ -422,18 +422,18 @@ int32 recv_device_mem(OS_KERNEL_FILE_STRU *fp, uint8 *pucDataBuf, int32 len)
 }
 
 
-int32 check_version(void)
+int32_t check_version(void)
 {
-    int32   l_ret;
-    int32   l_len;
-    int32   i;
-    uint8   rec_buf[VERSION_LEN];
+    int32_t   l_ret;
+    int32_t   l_len;
+    int32_t   i;
+    uint8_t   rec_buf[VERSION_LEN];
 
     for (i = 0; i < HOST_DEV_TIMEOUT; i++)
     {
         OS_MEM_SET(rec_buf, 0, VERSION_LEN);
 
-        OS_MEM_CPY(rec_buf, (uint8 *)VER_CMD_KEYWORD, OS_STR_LEN(VER_CMD_KEYWORD));
+        OS_MEM_CPY(rec_buf, (uint8_t *)VER_CMD_KEYWORD, OS_STR_LEN(VER_CMD_KEYWORD));
         l_len = OS_STR_LEN(VER_CMD_KEYWORD);
 
         rec_buf[l_len] = COMPART_KEYWORD;
@@ -459,8 +459,8 @@ int32 check_version(void)
 
         OS_MEM_CPY(g_st_cfg_info.auc_DevVersion, rec_buf, VERSION_LEN);
 
-        if (!OS_MEM_CMP((int8 *)g_st_cfg_info.auc_DevVersion,
-                              (int8 *)g_st_cfg_info.auc_CfgVersion,
+        if (!OS_MEM_CMP((int8_t *)g_st_cfg_info.auc_DevVersion,
+                              (int8_t *)g_st_cfg_info.auc_CfgVersion,
                               OS_STR_LEN(g_st_cfg_info.auc_CfgVersion)))
         {
             PS_PRINT_INFO("Device Version = [%s], CfgVersion = [%s].\n",
@@ -478,17 +478,17 @@ int32 check_version(void)
 }
 
 
-int32 number_type_cmd_send(uint8 *Key, uint8 *Value)
+int32_t number_type_cmd_send(uint8_t *Key, uint8_t *Value)
 {
-    int32       l_ret;
-    int32       data_len;
-    int32       Value_len;
-    int32       i;
-    int32       n;
-    uint8       auc_num[INT32_STR_LEN];
-    uint8       buff_tx[SEND_BUF_LEN];
+    int32_t       l_ret;
+    int32_t       data_len;
+    int32_t       Value_len;
+    int32_t       i;
+    int32_t       n;
+    uint8_t       auc_num[INT32_STR_LEN];
+    uint8_t       buff_tx[SEND_BUF_LEN];
 
-    Value_len = OS_STR_LEN((int8 *)Value);
+    Value_len = OS_STR_LEN((int8_t *)Value);
 
     OS_MEM_SET(auc_num, 0, INT32_STR_LEN);
     OS_MEM_SET(buff_tx, 0, SEND_BUF_LEN);
@@ -509,7 +509,7 @@ int32 number_type_cmd_send(uint8 *Key, uint8 *Value)
             {
                 continue;
             }
-            OS_MEM_CPY((uint8 *)&buff_tx[data_len], auc_num, n);
+            OS_MEM_CPY((uint8_t *)&buff_tx[data_len], auc_num, n);
             data_len = data_len + n;
 
             buff_tx[data_len] = COMPART_KEYWORD;
@@ -536,13 +536,13 @@ int32 number_type_cmd_send(uint8 *Key, uint8 *Value)
 }
 
 
-int32 update_device_cali_count(uint8 *Key, uint8 *Value)
+int32_t update_device_cali_count(uint8_t *Key, uint8_t *Value)
 {
-    int32  l_ret;
-    uint32 len, Value_len;
-    uint32 number = 0;
-    uint8 *addr;
-    uint8  buff_tx[SEND_BUF_LEN];
+    int32_t  l_ret;
+    uint32_t len, Value_len;
+    uint32_t number = 0;
+    uint8_t *addr;
+    uint8_t  buff_tx[SEND_BUF_LEN];
 
     /*重新组合Value字符串，入参Value只是一个地址，形式为"0xXXXXX"*/
     /*组合以后的形式为"数据宽度,要写的地址,要写的值"---"4,0xXXXX,value"*/
@@ -593,12 +593,12 @@ int32 update_device_cali_count(uint8 *Key, uint8 *Value)
 }
 
 
-int32 download_bfgx_cali_data(uint8 *Key, uint8 *Value)
+int32_t download_bfgx_cali_data(uint8_t *Key, uint8_t *Value)
 {
-    int32  l_ret;
-    uint32 len = 0, Value_len;
-    uint8 *addr;
-    uint8  buff_tx[SEND_BUF_LEN];
+    int32_t  l_ret;
+    uint32_t len = 0, Value_len;
+    uint8_t *addr;
+    uint8_t  buff_tx[SEND_BUF_LEN];
 
     /*重新组合Value字符串，入参Value只是一个地址，形式为"0xXXXXX"*/
     /*组合以后的形式为"FILES 文件个数 要写的地址"---"FILES 1 0xXXXX "*/
@@ -662,11 +662,11 @@ int32 download_bfgx_cali_data(uint8 *Key, uint8 *Value)
 }
 
 
-int32 parse_file_cmd(uint8 *string, ulong *addr, int8 **file_path)
+int32_t parse_file_cmd(uint8_t *string, ulong *addr, int8_t **file_path)
 {
-    uint8 *tmp;
-    int32 count = 0;
-    int8 *after;
+    uint8_t *tmp;
+    int32_t count = 0;
+    int8_t *after;
 
     if (string == NULL || addr == NULL || file_path == NULL)
     {
@@ -703,7 +703,7 @@ int32 parse_file_cmd(uint8 *string, ulong *addr, int8 **file_path)
         }
     }
 
-    *addr = simple_strtoul(tmp, &after, 16);
+    *addr = simple_strtoul(tmp, (char **)&after, (uint8_t)16);
 
     PS_PRINT_DBG("file to send addr:[0x%lx]\n", *addr);
 
@@ -727,11 +727,11 @@ int32 parse_file_cmd(uint8 *string, ulong *addr, int8 **file_path)
 extern void oal_sdio_sdt_print_wcpu_reg(oal_uint32* pst_buf, oal_uint32 ul_size);
 #endif
 #ifdef HI110X_HAL_MEMDUMP_ENABLE
-int32 recv_device_memdump(uint8 *pucDataBuf, int32 len)
+int32_t recv_device_memdump(uint8_t *pucDataBuf, int32_t len)
 {
-    int32 l_ret = -EFAIL;
-    uint8 retry = 3;
-    int32 lenbuf = 0;
+    int32_t l_ret = -EFAIL;
+    uint8_t retry = 3;
+    int32_t lenbuf = 0;
     if (NULL == pucDataBuf)
     {
         PS_PRINT_ERR("pucDataBuf is NULL\n");
@@ -763,15 +763,15 @@ int32 recv_device_memdump(uint8 *pucDataBuf, int32 len)
     }
     return l_ret;
 }
-int32 sdio_read_device_mem(struct st_wifi_dump_mem_info *pst_mem_dump_info,
-                                  uint8 *pucDataBuf,
-                                  uint32 ulDataBufLen)
+int32_t sdio_read_device_mem(struct st_wifi_dump_mem_info *pst_mem_dump_info,
+                                  uint8_t *pucDataBuf,
+                                  uint32_t ulDataBufLen)
 {
-    uint8 buf_tx[SEND_BUF_LEN];
-    int32 ret = 0;
-    uint32 size = 0;
-    uint32 offset;
-    uint32 remainder = pst_mem_dump_info->size;
+    uint8_t buf_tx[SEND_BUF_LEN];
+    int32_t ret = 0;
+    uint32_t size = 0;
+    uint32_t offset;
+    uint32_t remainder = pst_mem_dump_info->size;
     offset=0;
     while(remainder > 0)
     {
@@ -813,14 +813,14 @@ int32 sdio_read_device_mem(struct st_wifi_dump_mem_info *pst_mem_dump_info,
     }
     return ret;
 }
-int32 sdio_device_mem_dump(struct st_wifi_dump_mem_info *pst_mem_dump_info, uint32 count)
+int32_t sdio_device_mem_dump(struct st_wifi_dump_mem_info *pst_mem_dump_info, uint32_t count)
 {
-    int32 ret = -EFAIL;
-    uint32 i;
-    uint8 *pucDataBuf = NULL;
-    uint8 buff[100];
-    uint32* pcount = (uint32*)&buff[0];
-    uint32 sdio_transfer_limit = oal_sdio_func_max_req_size(oal_get_sdio_default_handler());
+    int32_t ret = -EFAIL;
+    uint32_t i;
+    uint8_t *pucDataBuf = NULL;
+    uint8_t buff[100];
+    uint32_t* pcount = (uint32_t*)&buff[0];
+    uint32_t sdio_transfer_limit = oal_sdio_func_max_req_size(oal_get_sdio_default_handler());
     sdio_transfer_limit = OAL_MIN(PAGE_SIZE, sdio_transfer_limit);
     if (NULL == pst_mem_dump_info)
     {
@@ -830,7 +830,7 @@ int32 sdio_device_mem_dump(struct st_wifi_dump_mem_info *pst_mem_dump_info, uint
     do
     {
         PS_PRINT_INFO("try to malloc mem dump buf len is [%d]\n", sdio_transfer_limit);
-        pucDataBuf = (uint8 *)OS_KMALLOC_GFP(sdio_transfer_limit);
+        pucDataBuf = (uint8_t *)OS_KMALLOC_GFP(sdio_transfer_limit);
         if (NULL == pucDataBuf)
         {
             PS_PRINT_WARNING("malloc mem  len [%d] fail, continue to try in a smaller size\n", sdio_transfer_limit);
@@ -862,16 +862,16 @@ int32 sdio_device_mem_dump(struct st_wifi_dump_mem_info *pst_mem_dump_info, uint
 #else
 
 
-int32 sdio_read_device_mem(struct st_wifi_dump_mem_info *pst_mem_dump_info,
+int32_t sdio_read_device_mem(struct st_wifi_dump_mem_info *pst_mem_dump_info,
                                   OS_KERNEL_FILE_STRU *fp,
-                                  uint8 *pucDataBuf,
-                                  uint32 ulDataBufLen)
+                                  uint8_t *pucDataBuf,
+                                  uint32_t ulDataBufLen)
 {
-    uint8 buf_tx[SEND_BUF_LEN];
-    int32 ret = 0;
-    uint32 size = 0;
-    uint32 offset;
-    uint32 remainder = pst_mem_dump_info->size;
+    uint8_t buf_tx[SEND_BUF_LEN];
+    int32_t ret = 0;
+    uint32_t size = 0;
+    uint32_t offset;
+    uint32_t remainder = pst_mem_dump_info->size;
 
     offset=0;
     while(remainder > 0)
@@ -926,17 +926,17 @@ int32 sdio_read_device_mem(struct st_wifi_dump_mem_info *pst_mem_dump_info,
 }
 
 
-int32 sdio_device_mem_dump(struct st_wifi_dump_mem_info *pst_mem_dump_info, uint32 count)
+int32_t sdio_device_mem_dump(struct st_wifi_dump_mem_info *pst_mem_dump_info, uint32_t count)
 {
     OS_KERNEL_FILE_STRU *fp;
-    int32 ret = -EFAIL;
-    uint32 i;
+    int32_t ret = -EFAIL;
+    uint32_t i;
     char filename[100] = {0};
 
     ktime_t time_start, time_stop;
     oal_uint64  trans_us;
-    uint8 *pucDataBuf = NULL;
-    uint32 sdio_transfer_limit = oal_sdio_func_max_req_size(oal_get_sdio_default_handler());
+    uint8_t *pucDataBuf = NULL;
+    uint32_t sdio_transfer_limit = oal_sdio_func_max_req_size(oal_get_sdio_default_handler());
 
     /*导内存先考虑成功率,页大小对齐的内存容易申请成功。*/
     sdio_transfer_limit = OAL_MIN(PAGE_SIZE, sdio_transfer_limit);
@@ -950,7 +950,7 @@ int32 sdio_device_mem_dump(struct st_wifi_dump_mem_info *pst_mem_dump_info, uint
     do
     {
         PS_PRINT_INFO("try to malloc mem dump buf len is [%d]\n", sdio_transfer_limit);
-        pucDataBuf = (uint8 *)OS_KMALLOC_GFP(sdio_transfer_limit);
+        pucDataBuf = (uint8_t *)OS_KMALLOC_GFP(sdio_transfer_limit);
         if (NULL == pucDataBuf)
         {
             PS_PRINT_WARNING("malloc mem  len [%d] fail, continue to try in a smaller size\n", sdio_transfer_limit);
@@ -1004,14 +1004,14 @@ int32 sdio_device_mem_dump(struct st_wifi_dump_mem_info *pst_mem_dump_info, uint
 }
 
 #endif
-int32 sdio_read_mem(uint8 *Key, uint8 *Value)
+int32_t sdio_read_mem(uint8_t *Key, uint8_t *Value)
 {
-    int32 l_ret = -EFAIL;
-    int32 size;
-    uint8 *flag;
+    int32_t l_ret = -EFAIL;
+    int32_t size;
+    uint8_t *flag;
     OS_KERNEL_FILE_STRU *fp;
-    uint8 *pucDataBuf = NULL;
-    uint32 sdio_transfer_limit = oal_sdio_func_max_req_size(oal_get_sdio_default_handler());
+    uint8_t *pucDataBuf = NULL;
+    uint32_t sdio_transfer_limit = oal_sdio_func_max_req_size(oal_get_sdio_default_handler());
 
     flag = OS_STR_CHR(Value, ',');
     if (NULL == flag)
@@ -1031,7 +1031,7 @@ int32 sdio_read_mem(uint8 *Key, uint8 *Value)
     do
     {
         PS_PRINT_INFO("try to malloc sdio mem read buf len is [%d]\n", sdio_transfer_limit);
-        pucDataBuf = (uint8 *)OS_KMALLOC_GFP(sdio_transfer_limit);
+        pucDataBuf = (uint8_t *)OS_KMALLOC_GFP(sdio_transfer_limit);
         if (NULL == pucDataBuf)
         {
             PS_PRINT_WARNING("malloc mem len [%d] fail, continue to try in a smaller size\n", sdio_transfer_limit);
@@ -1073,9 +1073,9 @@ int32 sdio_read_mem(uint8 *Key, uint8 *Value)
 }
 
 
-int32 exec_number_type_cmd(uint8 *Key, uint8 *Value)
+int32_t exec_number_type_cmd(uint8_t *Key, uint8_t *Value)
 {
-    int32       l_ret = -EFAIL;
+    int32_t       l_ret = -EFAIL;
     BOARD_INFO* board_info = NULL;
 
     board_info = get_hi110x_board_info();
@@ -1096,9 +1096,9 @@ int32 exec_number_type_cmd(uint8 *Key, uint8 *Value)
             }
         }
 
-        if (!OS_STR_CMP((int8 *)Key, WMEM_CMD_KEYWORD))
+        if (!OS_STR_CMP((int8_t *)Key, WMEM_CMD_KEYWORD))
         {
-            if (NULL != OS_STR_STR((int8 *)Value, (int8 *)STR_REG_NFC_EN_KEEP))
+            if (NULL != OS_STR_STR((int8_t *)Value, (int8_t *)STR_REG_NFC_EN_KEEP))
             {
                 if(V100 == get_ec_version())
                 {
@@ -1126,7 +1126,7 @@ int32 exec_number_type_cmd(uint8 *Key, uint8 *Value)
             }
 
         }
-        else if (!OS_STR_CMP((int8 *)Key, CALI_COUNT_CMD_KEYWORD))
+        else if (!OS_STR_CMP((int8_t *)Key, CALI_COUNT_CMD_KEYWORD))
         {
             /*加载校准次数到device*/
             l_ret = update_device_cali_count(Key, Value);
@@ -1136,7 +1136,7 @@ int32 exec_number_type_cmd(uint8 *Key, uint8 *Value)
                 return l_ret;
             }
         }
-        else if (!OS_STR_CMP((int8 *)Key, CALI_BFGX_DATA_CMD_KEYWORD))
+        else if (!OS_STR_CMP((int8_t *)Key, CALI_BFGX_DATA_CMD_KEYWORD))
         {
             /*加载BFGX的校准数据*/
             l_ret = download_bfgx_cali_data(FILES_CMD_KEYWORD, Value);
@@ -1146,7 +1146,7 @@ int32 exec_number_type_cmd(uint8 *Key, uint8 *Value)
                 return l_ret;
             }
         }
-        else if (!OS_STR_CMP((int8 *)Key, JUMP_CMD_KEYWORD))
+        else if (!OS_STR_CMP((int8_t *)Key, JUMP_CMD_KEYWORD))
         {
             g_ulJumpCmdResult = CMD_JUMP_EXEC_RESULT_SUCC;
             l_ret = number_type_cmd_send(Key, Value);
@@ -1170,10 +1170,10 @@ int32 exec_number_type_cmd(uint8 *Key, uint8 *Value)
                 return l_ret;
             }
         }
-        else if (!OS_STR_CMP((int8 *)Key, SETPM_CMD_KEYWORD) || !OS_STR_CMP((int8 *)Key, SETBUCK_CMD_KEYWORD)
-              || !OS_STR_CMP((int8 *)Key, SETSYSLDO_CMD_KEYWORD) || !OS_STR_CMP((int8 *)Key, SETNFCRETLDO_CMD_KEYWORD)
-              || !OS_STR_CMP((int8 *)Key, SETPD_CMD_KEYWORD) || !OS_STR_CMP((int8 *)Key, SETNFCCRG_CMD_KEYWORD)
-              || !OS_STR_CMP((int8 *)Key, SETABB_CMD_KEYWORD) || !OS_STR_CMP((int8 *)Key, SETTCXODIV_CMD_KEYWORD))
+        else if (!OS_STR_CMP((int8_t *)Key, SETPM_CMD_KEYWORD) || !OS_STR_CMP((int8_t *)Key, SETBUCK_CMD_KEYWORD)
+              || !OS_STR_CMP((int8_t *)Key, SETSYSLDO_CMD_KEYWORD) || !OS_STR_CMP((int8_t *)Key, SETNFCRETLDO_CMD_KEYWORD)
+              || !OS_STR_CMP((int8_t *)Key, SETPD_CMD_KEYWORD) || !OS_STR_CMP((int8_t *)Key, SETNFCCRG_CMD_KEYWORD)
+              || !OS_STR_CMP((int8_t *)Key, SETABB_CMD_KEYWORD) || !OS_STR_CMP((int8_t *)Key, SETTCXODIV_CMD_KEYWORD))
         {
             l_ret = number_type_cmd_send(Key, Value);
             if (0 > l_ret)
@@ -1189,7 +1189,7 @@ int32 exec_number_type_cmd(uint8 *Key, uint8 *Value)
                 return l_ret;
             }
         }
-        else if (!OS_STR_CMP((int8 *)Key, RMEM_CMD_KEYWORD))
+        else if (!OS_STR_CMP((int8_t *)Key, RMEM_CMD_KEYWORD))
         {
             l_ret = sdio_read_mem(Key, Value);
         }
@@ -1209,11 +1209,11 @@ int32 exec_number_type_cmd(uint8 *Key, uint8 *Value)
 }
 
 
-int32 exec_quit_type_cmd(void)
+int32_t exec_quit_type_cmd(void)
 {
-    int32   l_ret;
-    int32   l_len;
-    uint8   buf[8];
+    int32_t   l_ret;
+    int32_t   l_len;
+    uint8_t   buf[8];
     BOARD_INFO* board_info = NULL;
 
     board_info = get_hi110x_board_info();
@@ -1226,7 +1226,7 @@ int32 exec_quit_type_cmd(void)
     OS_MEM_SET(buf, 0, 8);
     if (MODE_SDIO == board_info->wlan_download_channel)
     {
-        OS_MEM_CPY(buf, (uint8 *)QUIT_CMD_KEYWORD, OS_STR_LEN(QUIT_CMD_KEYWORD));
+        OS_MEM_CPY(buf, (uint8_t *)QUIT_CMD_KEYWORD, OS_STR_LEN(QUIT_CMD_KEYWORD));
         l_len = OS_STR_LEN(QUIT_CMD_KEYWORD);
 
         buf[l_len] = COMPART_KEYWORD;
@@ -1247,20 +1247,20 @@ int32 exec_quit_type_cmd(void)
 }
 
 
-int32 exec_file_type_cmd(uint8 *Key, uint8 *Value)
+int32_t exec_file_type_cmd(uint8_t *Key, uint8_t *Value)
 {
     ulong addr;
     ulong addr_send;
-    int8 *path;
-    int32 ret;
-    uint32 file_len;
-    uint32 transmit_limit;
-    uint32 per_send_len;
-    uint32 send_count;
-    int32 rdlen;
-    uint32 i;
-    uint32 offset = 0;
-    uint8 buff_tx[SEND_BUF_LEN] = {0};
+    int8_t *path;
+    int32_t ret;
+    uint32_t file_len;
+    uint32_t transmit_limit;
+    uint32_t per_send_len;
+    uint32_t send_count;
+    int32_t rdlen;
+    uint32_t i;
+    uint32_t offset = 0;
+    uint8_t buff_tx[SEND_BUF_LEN] = {0};
     OS_KERNEL_FILE_STRU *fp;
     BOARD_INFO* board_info = NULL;
 
@@ -1381,10 +1381,10 @@ int32 exec_file_type_cmd(uint8 *Key, uint8 *Value)
 }
 
 
-int32 exec_shutdown_type_cmd(uint32 which_cpu)
+int32_t exec_shutdown_type_cmd(uint32_t which_cpu)
 {
-    int32 l_ret = -EFAIL;
-    uint8 Value_SHUTDOWN[SHUTDOWN_TX_CMD_LEN];
+    int32_t l_ret = -EFAIL;
+    uint8_t Value_SHUTDOWN[SHUTDOWN_TX_CMD_LEN];
 
     if (DEV_WCPU == which_cpu)
     {
@@ -1441,9 +1441,9 @@ int32 exec_shutdown_type_cmd(uint32 which_cpu)
 }
 
 
-int32 execute_download_cmd(int32 cmd_type, uint8 *cmd_name, uint8 *cmd_para)
+int32_t execute_download_cmd(int32_t cmd_type, uint8_t *cmd_name, uint8_t *cmd_para)
 {
-    int32 l_ret;
+    int32_t l_ret;
 
     switch(cmd_type)
     {
@@ -1478,10 +1478,10 @@ int32 execute_download_cmd(int32 cmd_type, uint8 *cmd_name, uint8 *cmd_para)
 }
 
 
-int32 firmware_read_cfg(uint8 *puc_CfgPatch, uint8 *puc_read_buffer)
+int32_t firmware_read_cfg(uint8_t *puc_CfgPatch, uint8_t *puc_read_buffer)
 {
     OS_KERNEL_FILE_STRU    *fp;
-    int32                   l_ret;
+    int32_t                   l_ret;
 
     if ((NULL == puc_CfgPatch) || (NULL == puc_read_buffer))
     {
@@ -1507,16 +1507,16 @@ int32 firmware_read_cfg(uint8 *puc_CfgPatch, uint8 *puc_read_buffer)
 }
 
 
-int32 firmware_parse_cmd(uint8 *puc_cfg_buffer, uint8 *puc_cmd_name, uint8 *puc_cmd_para)
+int32_t firmware_parse_cmd(uint8_t *puc_cfg_buffer, uint8_t *puc_cmd_name, uint8_t *puc_cmd_para)
 {
-    int32       l_ret;
-    int32       l_cmdlen;
-    int32       l_paralen;
-    uint8      *begin;
-    uint8      *end;
-    uint8      *link;
-    uint8      *handle;
-    uint8      *handle_temp;
+    int32_t       l_ret;
+    int32_t       l_cmdlen;
+    int32_t       l_paralen;
+    uint8_t      *begin;
+    uint8_t      *end;
+    uint8_t      *link;
+    uint8_t      *handle;
+    uint8_t      *handle_temp;
 
     begin = puc_cfg_buffer;
     if((NULL == puc_cfg_buffer) || (NULL == puc_cmd_name) || (NULL == puc_cmd_para))
@@ -1532,19 +1532,19 @@ int32 firmware_parse_cmd(uint8 *puc_cfg_buffer, uint8 *puc_cmd_name, uint8 *puc_
     }
 
     /* 错误行，或者退出命令行 */
-    link = OS_STR_CHR((int8 *)begin, '=');
+    link = OS_STR_CHR((int8_t *)begin, '=');
     if (NULL == link)
     {
         /* 退出命令行 */
-        if (NULL != OS_STR_STR((int8 *)puc_cfg_buffer, QUIT_CMD_KEYWORD))
+        if (NULL != OS_STR_STR((int8_t *)puc_cfg_buffer, QUIT_CMD_KEYWORD))
         {
             return QUIT_TYPE_CMD;
         }
-        else if (NULL != OS_STR_STR((int8 *)puc_cfg_buffer, SHUTDOWN_WIFI_CMD_KEYWORD))
+        else if (NULL != OS_STR_STR((int8_t *)puc_cfg_buffer, SHUTDOWN_WIFI_CMD_KEYWORD))
         {
             return SHUTDOWN_WIFI_TYPE_CMD;
         }
-        else if (NULL != OS_STR_STR((int8 *)puc_cfg_buffer, SHUTDOWN_BFGX_CMD_KEYWORD))
+        else if (NULL != OS_STR_STR((int8_t *)puc_cfg_buffer, SHUTDOWN_BFGX_CMD_KEYWORD))
         {
             return SHUTDOWN_BFGX_TYPE_CMD;
         }
@@ -1562,16 +1562,16 @@ int32 firmware_parse_cmd(uint8 *puc_cfg_buffer, uint8 *puc_cmd_name, uint8 *puc_
     l_cmdlen = link - begin;
 
     /* 删除关键字的两边空格 */
-    handle = delete_space((uint8 *)begin, &l_cmdlen);
+    handle = delete_space((uint8_t *)begin, &l_cmdlen);
     if (NULL == handle)
     {
         return ERROR_TYPE_CMD;
     }
 
     /* 判断命令类型 */
-    if (!OS_MEM_CMP(handle, (uint8 *)FILE_TYPE_CMD_KEY, OS_STR_LEN((uint8 *)FILE_TYPE_CMD_KEY)))
+    if (!OS_MEM_CMP(handle, (uint8_t *)FILE_TYPE_CMD_KEY, OS_STR_LEN((uint8_t *)FILE_TYPE_CMD_KEY)))
     {
-        handle_temp = OS_STR_STR(handle, (uint8 *)FILE_TYPE_CMD_KEY);
+        handle_temp = OS_STR_STR(handle, (uint8_t *)FILE_TYPE_CMD_KEY);
         if (NULL == handle_temp)
         {
             PS_PRINT_ERR("'ADDR_FILE_'is not handle child string, handle=%s", handle);
@@ -1581,9 +1581,9 @@ int32 firmware_parse_cmd(uint8 *puc_cfg_buffer, uint8 *puc_cmd_name, uint8 *puc_
         l_cmdlen = l_cmdlen - OS_STR_LEN(FILE_TYPE_CMD_KEY);
         l_ret = FILE_TYPE_CMD;
     }
-    else if (!OS_MEM_CMP(handle, (uint8 *)NUM_TYPE_CMD_KEY, OS_STR_LEN(NUM_TYPE_CMD_KEY)))
+    else if (!OS_MEM_CMP(handle, (uint8_t *)NUM_TYPE_CMD_KEY, OS_STR_LEN(NUM_TYPE_CMD_KEY)))
     {
-        handle_temp = OS_STR_STR(handle, (uint8 *)NUM_TYPE_CMD_KEY);
+        handle_temp = OS_STR_STR(handle, (uint8_t *)NUM_TYPE_CMD_KEY);
         if (NULL == handle_temp)
         {
             PS_PRINT_ERR("'PARA_' is not handle child string, handle=%s", handle);
@@ -1614,7 +1614,7 @@ int32 firmware_parse_cmd(uint8 *puc_cfg_buffer, uint8 *puc_cmd_name, uint8 *puc_
         return ERROR_TYPE_CMD;
     }
 
-    handle = delete_space((uint8 *)begin, &l_paralen);
+    handle = delete_space((uint8_t *)begin, &l_paralen);
     if (NULL == handle)
     {
         return ERROR_TYPE_CMD;
@@ -1625,17 +1625,17 @@ int32 firmware_parse_cmd(uint8 *puc_cfg_buffer, uint8 *puc_cmd_name, uint8 *puc_
 }
 
 
-int32 firmware_parse_cfg(uint8 *puc_cfg_info_buf, int32 l_buf_len, uint32 ul_index)
+int32_t firmware_parse_cfg(uint8_t *puc_cfg_info_buf, int32_t l_buf_len, uint32_t ul_index)
 {
-    int32           i;
-    int32           l_len;
-    uint8          *flag;
-    uint8          *begin;
-    uint8          *end;
-    int32           cmd_type;
-    uint8           cmd_name[DOWNLOAD_CMD_LEN];
-    uint8           cmd_para[DOWNLOAD_CMD_PARA_LEN];
-    uint32          cmd_para_len = 0;
+    int32_t           i;
+    int32_t           l_len;
+    uint8_t          *flag;
+    uint8_t          *begin;
+    uint8_t          *end;
+    int32_t           cmd_type;
+    uint8_t           cmd_name[DOWNLOAD_CMD_LEN];
+    uint8_t           cmd_para[DOWNLOAD_CMD_PARA_LEN];
+    uint32_t          cmd_para_len = 0;
     if (NULL == puc_cfg_info_buf)
     {
         PS_PRINT_ERR("puc_cfg_info_buf is NULL!\n");
@@ -1720,11 +1720,11 @@ int32 firmware_parse_cfg(uint8 *puc_cfg_info_buf, int32 l_buf_len, uint32 ul_ind
 }
 
 
-int32 firmware_get_cfg(uint8 *puc_CfgPatch, uint32 ul_index)
+int32_t firmware_get_cfg(uint8_t *puc_CfgPatch, uint32_t ul_index)
 {
-    uint8   *puc_read_cfg_buf;
-    int32   l_readlen;
-    int32   l_ret;
+    uint8_t   *puc_read_cfg_buf;
+    int32_t   l_readlen;
+    int32_t   l_ret;
 
     if (NULL == puc_CfgPatch)
     {
@@ -1774,13 +1774,13 @@ int32 firmware_get_cfg(uint8 *puc_CfgPatch, uint32 ul_index)
 }
 
 
-int32 firmware_download(uint32 ul_index)
+int32_t firmware_download(uint32_t ul_index)
 {
-    int32 l_ret;
-    int32 i;
-    int32 l_cmd_type;
-    uint8 *puc_cmd_name;
-    uint8 *puc_cmd_para;
+    int32_t l_ret;
+    int32_t i;
+    int32_t l_cmd_type;
+    uint8_t *puc_cmd_name;
+    uint8_t *puc_cmd_para;
 
     if (ul_index >= CFG_FILE_TOTAL)
     {
@@ -1809,7 +1809,7 @@ int32 firmware_download(uint32 ul_index)
     do
     {
         PS_PRINT_INFO("try to malloc firmware download file buf len is [%d]\n", g_ulDataBufLen);
-        g_pucDataBuf = (uint8 *)OS_KMALLOC_GFP(g_ulDataBufLen);
+        g_pucDataBuf = (uint8_t *)OS_KMALLOC_GFP(g_ulDataBufLen);
         if (NULL == g_pucDataBuf)
         {
             PS_PRINT_WARNING("malloc mem len [%d] fail, continue to try in a smaller size\n", g_ulDataBufLen);
@@ -1876,13 +1876,13 @@ int32 firmware_download(uint32 ul_index)
 }
 
 
-int32 print_firmwrae_download_cmd(uint32 ul_index)
+int32_t print_firmwrae_download_cmd(uint32_t ul_index)
 {
-    int32 i;
-    int32 l_cmd_type;
-    uint8 *puc_cmd_name;
-    uint8 *puc_cmd_para;
-    uint32 count;
+    int32_t i;
+    int32_t l_cmd_type;
+    uint8_t *puc_cmd_name;
+    uint8_t *puc_cmd_para;
+    uint32_t count;
 
     count = g_st_cfg_info.al_count[ul_index];
     PS_PRINT_INFO("[%s] download cmd, total count is [%d]\n", g_auc_cfg_path[ul_index], count);
@@ -1899,9 +1899,9 @@ int32 print_firmwrae_download_cmd(uint32 ul_index)
     return 0;
 }
 
-int32 print_cfg_file_cmd(void)
+int32_t print_cfg_file_cmd(void)
 {
-    int32 i;
+    int32_t i;
 
     for (i = 0; i < CFG_FILE_TOTAL; i++)
     {
@@ -1912,10 +1912,10 @@ int32 print_cfg_file_cmd(void)
 }
 
 
-static int32 firmware_cfg_cmd_fill(uint32 index, uint32 cmd_count, uint8* cmd_str)
+static int32_t firmware_cfg_cmd_fill(uint32_t index, uint32_t cmd_count, uint8_t* cmd_str)
 {
-    uint32 ul_size = 0;
-    uint32 ul_len  = 0;
+    uint32_t ul_size = 0;
+    uint32_t ul_len  = 0;
 
     if ((NULL == cmd_str) || (cmd_count > g_st_cfg_info.al_count[index] + CFG_INFO_RESERVE_LEN - 1))
     {
@@ -1924,21 +1924,21 @@ static int32 firmware_cfg_cmd_fill(uint32 index, uint32 cmd_count, uint8* cmd_st
 
     g_st_cfg_info.apst_cmd[index][cmd_count].cmd_type = NUM_TYPE_CMD;
 
-    ul_len  = OS_STR_LEN((uint8 *)WMEM_CMD_KEYWORD) + 1;
+    ul_len  = OS_STR_LEN((uint8_t *)WMEM_CMD_KEYWORD) + 1;
     ul_size = (DOWNLOAD_CMD_LEN > ul_len) ? ul_len : DOWNLOAD_CMD_LEN;
     OS_MEM_CPY(g_st_cfg_info.apst_cmd[index][cmd_count].cmd_name, WMEM_CMD_KEYWORD, ul_size);
 
-    ul_len  = OS_STR_LEN((uint8 *)cmd_str) + 1;
+    ul_len  = OS_STR_LEN((uint8_t *)cmd_str) + 1;
     ul_size = (DOWNLOAD_CMD_PARA_LEN > ul_len) ? ul_len : DOWNLOAD_CMD_PARA_LEN;
     OS_MEM_CPY(g_st_cfg_info.apst_cmd[index][cmd_count].cmd_para, cmd_str, ul_size);
 
     return 0;
 }
 
-static int32 firmware_cfg_fill (uint32 index, uint32 cmd_count)
+static int32_t firmware_cfg_fill (uint32_t index, uint32_t cmd_count)
 {
-    int32  result = 0;
-    uint32 count;
+    int32_t  result = 0;
+    uint32_t count;
 
     if (CFG_FILE_TOTAL <= index || (0 == cmd_count))
     {
@@ -1967,12 +1967,12 @@ static int32 firmware_cfg_fill (uint32 index, uint32 cmd_count)
     return result;
 }
 
-int32 firmware_cfg_init_extra(void)
+int32_t firmware_cfg_init_extra(void)
 {
     oal_int32  result;
     oal_int32  wifi_5g_enable_info = WIFI_MODE_5G;
-    uint32 index = BFGX_AND_WIFI_CFG;
-    uint32 cmd_count = g_st_cfg_info.al_count[BFGX_AND_WIFI_CFG];
+    uint32_t index = BFGX_AND_WIFI_CFG;
+    uint32_t cmd_count = g_st_cfg_info.al_count[BFGX_AND_WIFI_CFG];
 
     result = get_cust_conf_int32(INI_MODU_WIFI, CHECK_5G_ENABLE, &wifi_5g_enable_info);
     if (0 > result)
@@ -2000,10 +2000,10 @@ int32 firmware_cfg_init_extra(void)
 
 
 
-int32 firmware_cfg_init(void)
+int32_t firmware_cfg_init(void)
 {
-    int32  l_ret;
-    uint32 i;
+    int32_t  l_ret;
+    uint32_t i;
 
     /*解析cfg文件*/
     for (i = 0; i < CFG_FILE_TOTAL; i++)
@@ -2048,9 +2048,9 @@ cfg_file_init_fail:
 }
 
 
-int32 firmware_cfg_clear(void)
+int32_t firmware_cfg_clear(void)
 {
-    int32 i;
+    int32_t i;
 
     cali_data_buf_free();
 
@@ -2068,11 +2068,11 @@ int32 firmware_cfg_clear(void)
 }
 
 
-int32 nfc_buffer_data_recv(uint8 *pucDataBuf, int32 len)
+int32_t nfc_buffer_data_recv(uint8_t *pucDataBuf, int32_t len)
 {
-    uint32 l_ret = 0;
-    int32 lenbuf = 0;
-    int32 retry = 3;
+    uint32_t l_ret = 0;
+    int32_t lenbuf = 0;
+    int32_t retry = 3;
 
     if (NULL == pucDataBuf)
     {
@@ -2105,12 +2105,12 @@ int32 nfc_buffer_data_recv(uint8 *pucDataBuf, int32 len)
 
 void save_nfc_lowpower_log_2_sdt(void)
 {
-    uint32 cp_len = 0;
-    uint32 index = 0;
-    uint8 buf_tx[SEND_BUF_LEN];
-    uint32 total_len = 0;
-    uint32 buf_tx_len = 0;
-    uint8 retry;
+    uint32_t cp_len = 0;
+    uint32_t index = 0;
+    uint8_t buf_tx[SEND_BUF_LEN];
+    uint32_t total_len = 0;
+    uint32_t buf_tx_len = 0;
+    uint8_t retry;
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
     {

@@ -18,7 +18,7 @@
  */
 
 #ifndef _SLIMBUS_6402_H_
-#define _slimbus_6402_h_
+#define _SLIMBUS_6402_H_
 
 #include "slimbus_types.h"
 

@@ -142,7 +142,7 @@ typedef struct cookie_arry
 
 #define CHAN2G(_channel, _freq, _flags)  \
 {                       \
-    .band                   = IEEE80211_BAND_2GHZ,          \
+    .band                   = NL80211_BAND_2GHZ,          \
     .center_freq            = (_freq),                      \
     .hw_value               = (_channel),                   \
     .flags                  = (_flags),                     \
@@ -152,7 +152,7 @@ typedef struct cookie_arry
 
 #define CHAN5G(_channel, _flags) \
 {                                              \
-    .band                   = IEEE80211_BAND_5GHZ,          \
+    .band                   = NL80211_BAND_5GHZ,          \
     .center_freq            = 5000 + (5 * (_channel)),      \
     .hw_value               = (_channel),                   \
     .flags                  = (_flags),                     \
@@ -162,7 +162,7 @@ typedef struct cookie_arry
 
 #define CHAN4_9G(_channel, _flags) \
 {                                              \
-    .band                   = IEEE80211_BAND_5GHZ,          \
+    .band                   = NL80211_BAND_5GHZ,          \
     .center_freq            = 4000 + (5 * (_channel)),      \
     .hw_value               = (_channel),                   \
     .flags                  = (_flags),                     \

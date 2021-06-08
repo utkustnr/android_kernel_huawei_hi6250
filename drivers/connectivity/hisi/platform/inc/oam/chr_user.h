@@ -46,8 +46,8 @@ typedef enum chr_LogTag{
 }CHR_LOG_TAG;
 
 extern int __chr_printLog(CHR_LOGPRIORITY prio, CHR_LOG_TAG tag, const char *fmt,...);
-extern int __chr_exception(uint32 errno);
-extern void chr_dev_exception_callback(void *buff, uint16 len);
+extern int __chr_exception(uint32_t errno);
+extern void chr_dev_exception_callback(void *buff, uint16_t len);
 
 #define CHR_LOG(prio, tag, fmt...)                  __chr_printLog(prio, tag, ##fmt)
 #define CHR_EXCEPTION(errno)                        __chr_exception(errno)

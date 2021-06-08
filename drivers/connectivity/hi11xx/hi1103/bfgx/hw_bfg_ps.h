@@ -16,7 +16,7 @@
 #include <linux/types.h>
 #include <linux/debugfs.h>
 #include <linux/workqueue.h>
-#include "plat_type.h"
+//#include "plat_type.h"
 
 #define DTS_COMP_HI110X_PS_NAME     "hisilicon,hisi_bfgx"
 

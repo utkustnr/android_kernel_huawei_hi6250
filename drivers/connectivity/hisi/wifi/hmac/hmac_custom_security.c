@@ -1627,7 +1627,7 @@ cs_isolation_forward_enum hmac_isolation_filter(mac_vap_stru *pst_mac_vap, oal_u
     if (OAL_PTR_NULL == pst_hmac_vap)
     {
         OAM_ERROR_LOG0(pst_mac_vap->uc_vap_id, OAM_SF_CFG, "{hmac_isolation_filter::pst_hmac_vap null.}");
-        return OAL_ERR_CODE_PTR_NULL;
+        return (cs_isolation_forward_enum)OAL_ERR_CODE_PTR_NULL;
     }
 
     pst_isolation_info = &pst_hmac_vap->st_isolation_info;

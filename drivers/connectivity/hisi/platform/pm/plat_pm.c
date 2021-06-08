@@ -94,9 +94,9 @@ static void pm_set_drvdata(struct pm_drv_data * data)
 /*****************************************************************************
   3 Function Definition
 *****************************************************************************/
-int32 sdio_dev_init(struct sdio_func *func)
+int32_t sdio_dev_init(struct sdio_func *func)
 {
-    int32 ret;
+    int32_t ret;
     struct pm_drv_data * pm_data = NULL;
 
     sdio_claim_host(func);
@@ -143,9 +143,9 @@ int32 sdio_dev_init(struct sdio_func *func)
     return ret;
 }
 
-int32 sdio_reinit(void)
+int32_t sdio_reinit(void)
 {
-    int32 ret = 0;
+    int32_t ret = 0;
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
     {
@@ -176,7 +176,7 @@ int32 sdio_reinit(void)
 }
 
 
-int32 check_bfg_state(void)
+int32_t check_bfg_state(void)
 {
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
@@ -197,7 +197,7 @@ STATIC void host_allow_devslp_in_node(struct ps_core_s *ps_core_d)
     atomic_inc(&ps_core_d->node_visit_flag);
 }
 
-void bfgx_state_set(uint8 on)
+void bfgx_state_set(uint8_t on)
 {
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
@@ -209,12 +209,12 @@ void bfgx_state_set(uint8 on)
     pm_data->bfgx_dev_state = on;
 }
 
-int32 bfgx_state_get(void)
+int32_t bfgx_state_get(void)
 {
     return check_bfg_state();
 }
 
-STATIC void bfgx_uart_state_set(uint8 uart_state)
+STATIC void bfgx_uart_state_set(uint8_t uart_state)
 {
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
@@ -226,7 +226,7 @@ STATIC void bfgx_uart_state_set(uint8 uart_state)
     pm_data->uart_ready = uart_state;
 }
 
-STATIC int8 bfgx_uart_state_get(void)
+STATIC int8_t bfgx_uart_state_get(void)
 {
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
@@ -238,7 +238,7 @@ STATIC int8 bfgx_uart_state_get(void)
     return pm_data->uart_ready;
 }
 
-int32 bfgx_pm_feature_set(void)
+int32_t bfgx_pm_feature_set(void)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct pm_drv_data *pm_data = pm_get_drvdata();
@@ -350,9 +350,9 @@ void host_wkup_dev_work(struct work_struct *work)
 #define RETRY_TIMES (3)
     int i = 0;
     int j;
-    uint8 zero_num = 0;
+    uint8_t zero_num = 0;
     int bwkup_gpio_val = 0;
-    uint64 timeleft;
+    uint64_t timeleft;
     int ret = 0;
     struct ps_core_s *ps_core_d = NULL;
 
@@ -415,7 +415,7 @@ void host_wkup_dev_work(struct work_struct *work)
 
         do
         {
-            ps_write_tty(ps_core_d, &zero_num, sizeof(uint8));
+            ps_write_tty(ps_core_d, &zero_num, sizeof(uint8_t));
             msleep(100);
 
             if (BFGX_ACTIVE == ps_core_d->ps_pm->bfgx_dev_state_get())
@@ -471,9 +471,9 @@ void host_send_disallow_msg(struct work_struct *work)
 {
 #define MAX_TTYRESUME_LOOPCNT (300)
 #define MAX_SENSORHUB_LOOPCNT (30)
-    uint32 loop_tty_resume_cnt = 0;
+    uint32_t loop_tty_resume_cnt = 0;
 #ifdef CONFIG_INPUTHUB
-    uint32 loop_sensorhub_resume_cnt = 0;
+    uint32_t loop_sensorhub_resume_cnt = 0;
 #endif
     struct ps_core_s *ps_core_d = NULL;
     struct pm_drv_data *pm_data = pm_get_drvdata();
@@ -573,9 +573,9 @@ void host_send_disallow_msg(struct work_struct *work)
     }
 }
 
-int32 host_wkup_dev(void)
+int32_t host_wkup_dev(void)
 {
-    uint64 timeleft;
+    uint64_t timeleft;
     struct pm_drv_data *pm_data = pm_get_drvdata();
     struct ps_core_s *ps_core_d = NULL;
     if (unlikely(NULL == pm_data))
@@ -612,9 +612,9 @@ int32 host_wkup_dev(void)
 }
 
 
-int32 bfgx_other_subsys_all_shutdown(uint8 subsys)
+int32_t bfgx_other_subsys_all_shutdown(uint8_t subsys)
 {
-    int32  i = 0;
+    int32_t  i = 0;
     struct ps_core_s *ps_core_d = NULL;
 
     ps_get_core_reference(&ps_core_d);
@@ -640,10 +640,10 @@ int32 bfgx_other_subsys_all_shutdown(uint8 subsys)
     return true;
 }
 
-int32 bfgx_dev_power_on(void)
+int32_t bfgx_dev_power_on(void)
 {
-    uint64 timeleft;
-    int32 error;
+    uint64_t timeleft;
+    int32_t error;
     struct ps_core_s *ps_core_d = NULL;
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
@@ -750,9 +750,9 @@ bfgx_power_on_fail:
 }
 
 
-int32 bfgx_dev_power_off(void)
+int32_t bfgx_dev_power_off(void)
 {
-    int32  error = SUCCESS;
+    int32_t  error = SUCCESS;
     struct ps_core_s *ps_core_d = NULL;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
@@ -836,9 +836,9 @@ int32 bfgx_dev_power_off(void)
 }
 
 
-int32 bfgx_dev_power_control(uint8 subsys, uint8 flag)
+int32_t bfgx_dev_power_control(uint8_t subsys, uint8_t flag)
 {
-    int32 ret = 0;
+    int32_t ret = 0;
 
     if (BFG_POWER_GPIO_UP == flag)
     {
@@ -866,9 +866,9 @@ int32 bfgx_dev_power_control(uint8 subsys, uint8 flag)
 }
 
 
-int firmware_download_function(uint32 which_cfg)
+int firmware_download_function(uint32_t which_cfg)
 {
-    int32 ret = 0;
+    int32_t ret = 0;
     unsigned long long total_time = 0;
     ktime_t start_time, end_time, trans_time;
     static unsigned long long max_time = 0;
@@ -891,7 +891,7 @@ int firmware_download_function(uint32 which_cfg)
     PS_PRINT_INFO("enter firmware_download_function\n");
 
     /*firmware_cfg_init(sdio) function should just be called once*/
-    if (!test_bit(FIRMWARE_CFG_INIT_OK, &pm_data->firmware_cfg_init_flag))
+    if (!test_bit(FIRMWARE_CFG_INIT_OK, (const volatile unsigned long *)&pm_data->firmware_cfg_init_flag))
     {
         PS_PRINT_INFO("firmware_cfg_init begin\n");
         ret = firmware_cfg_init();
@@ -902,7 +902,7 @@ int firmware_download_function(uint32 which_cfg)
         }
 
         PS_PRINT_INFO("firmware_cfg_init OK\n");
-        set_bit(FIRMWARE_CFG_INIT_OK, &pm_data->firmware_cfg_init_flag);
+        set_bit(FIRMWARE_CFG_INIT_OK, (volatile unsigned long *)&pm_data->firmware_cfg_init_flag);
     }
 
     oal_sdio_wake_lock(pm_data->pst_wlan_pm_info->pst_sdio);
@@ -961,7 +961,7 @@ int firmware_download_function(uint32 which_cfg)
     return SUCCESS;
 }
 
-int32 wlan_is_shutdown(void)
+int32_t wlan_is_shutdown(void)
 {
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
@@ -973,7 +973,7 @@ int32 wlan_is_shutdown(void)
     return ((POWER_STATE_SHUTDOWN == pm_data->pst_wlan_pm_info->ul_wlan_power_state) ? true : false);
 }
 
-int32 bfgx_is_shutdown(void)
+int32_t bfgx_is_shutdown(void)
 {
     struct ps_core_s *ps_core_d = NULL;
 
@@ -987,7 +987,7 @@ int32 bfgx_is_shutdown(void)
     return ps_chk_bfg_active(ps_core_d) ? false : true;
 }
 
-int32 wifi_power_fail_process(int32 error)
+int32_t wifi_power_fail_process(int32_t error)
 {
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
@@ -1058,9 +1058,9 @@ int32 wifi_power_fail_process(int32 error)
     return WIFI_POWER_FAIL;
 }
 
-int32 wlan_power_on(void)
+int32_t wlan_power_on(void)
 {
-    int32  error = WIFI_POWER_SUCCESS;
+    int32_t  error = WIFI_POWER_SUCCESS;
     unsigned long long total_time = 0;
     ktime_t start_time, end_time, trans_time;
     static unsigned long long max_download_time = 0;
@@ -1179,7 +1179,7 @@ wifi_power_fail:
     return wifi_power_fail_process(error);
 }
 
-int32 wlan_power_off(void)
+int32_t wlan_power_off(void)
 {
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
@@ -1248,9 +1248,9 @@ int32 wlan_power_off(void)
     return SUCCESS;
 }
 
-int32 bfgx_power_on(uint8 subsys)
+int32_t bfgx_power_on(uint8_t subsys)
 {
-    int32  ret = BFGX_POWER_SUCCESS;
+    int32_t  ret = BFGX_POWER_SUCCESS;
     unsigned long long total_time = 0;
     ktime_t start_time, end_time, trans_time;
     static unsigned long long max_download_time = 0;
@@ -1283,7 +1283,7 @@ int32 bfgx_power_on(uint8 subsys)
     return BFGX_POWER_SUCCESS;
 }
 
-int32 bfgx_power_off(uint8 subsys)
+int32_t bfgx_power_off(uint8_t subsys)
 {
     struct ps_core_s *ps_core_d = NULL;
 
@@ -1312,10 +1312,10 @@ int32 bfgx_power_off(uint8 subsys)
     return SUCCESS;
 }
 
-extern uint32 g_ulJumpCmdResult;
-int32 device_mem_check(unsigned long long *time)
+extern uint32_t g_ulJumpCmdResult;
+int32_t device_mem_check(unsigned long long *time)
 {
-    int32 ret = -FAILURE;
+    int32_t ret = -FAILURE;
     unsigned long long total_time = 0;
     ktime_t start_time, end_time, trans_time;
     struct pm_drv_data *pm_data = pm_get_drvdata();
@@ -1378,7 +1378,7 @@ int32 device_mem_check(unsigned long long *time)
 EXPORT_SYMBOL(device_mem_check);
 
 
-int32 ps_pm_register(struct ps_pm_s *new_pm)
+int32_t ps_pm_register(struct ps_pm_s *new_pm)
 {
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
@@ -1410,7 +1410,7 @@ int32 ps_pm_register(struct ps_pm_s *new_pm)
 EXPORT_SYMBOL_GPL(ps_pm_register);
 
 
-int32 ps_pm_unregister(struct ps_pm_s *new_pm)
+int32_t ps_pm_unregister(struct ps_pm_s *new_pm)
 {
     struct pm_drv_data *pm_data = pm_get_drvdata();
     if (NULL == pm_data)
@@ -1446,7 +1446,7 @@ EXPORT_SYMBOL_GPL(ps_pm_unregister);
 irqreturn_t bfg_wake_host_isr(int irq, void *dev_id)
 {
     struct ps_core_s *ps_core_d = NULL;
-    uint64 flags;
+    uint64_t flags;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -1513,10 +1513,10 @@ STATIC int low_power_remove(void)
     return ret;
 }
 
-STATIC void devack_timer_expire(uint64 data)
+STATIC void devack_timer_expire(uint64_t data)
 {
-    uint64 flags;
-    struct pm_drv_data  *pm_data = (struct pm_drv_data*)data;
+    uint64_t flags;
+    struct pm_drv_data  *pm_data = (struct pm_drv_data*)data; 
     if (unlikely(NULL == pm_data))
     {
         PS_PRINT_ERR("devack timer para is null\n");

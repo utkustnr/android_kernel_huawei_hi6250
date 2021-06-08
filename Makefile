@@ -439,7 +439,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -std=gnu89 $(call cc-option,-fno-PIE) \
 		   -mcpu=cortex-a53 -mtune=cortex-a53 -fdiagnostics-color=always \
-		   -Wno-maybe-uninitialized -Wno-unused-variable -Wno-unused-function -Wno-unused-label \
+		   -Wno-uninitialized -Wno-unused-variable -Wno-unused-function -Wno-unused-label \
 		   -Wno-array-bounds -Wno-parentheses -Wno-format
 		   
 KBUILD_CPPFLAGS := -D__KERNEL__
@@ -909,6 +909,8 @@ KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)
 KBUILD_CFLAGS += $(call cc-disable-warning, gnu)
 KBUILD_CFLAGS += $(call cc-disable-warning, address-of-packed-member)
 KBUILD_CFLAGS += $(call cc-disable-warning, duplicate-decl-specifier)
+
+
 # Quiet clang warning: comparison of unsigned expression < 0 is always false
 KBUILD_CFLAGS += $(call cc-disable-warning, tautological-compare)
 

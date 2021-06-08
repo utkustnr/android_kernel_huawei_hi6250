@@ -167,28 +167,28 @@ struct pm_drv_data
     spinlock_t                      uart_state_spinlock;
 
     /* uart could be used or not */
-    uint8   uart_state;
+    uint8_t   uart_state;
 
     /* mark receiving data after set dev as sleep state but before get ack of device */
-    uint8 rcvdata_bef_devack_flag;
+    uint8_t rcvdata_bef_devack_flag;
 
-    uint8 uc_dev_ack_wait_cnt;
+    uint8_t uc_dev_ack_wait_cnt;
 
     /*bfgx sleep state*/
-    uint8 bfgx_dev_state;
+    uint8_t bfgx_dev_state;
 
     /*flag for firmware cfg file init*/
-    uint64 firmware_cfg_init_flag;
+    uint64_t firmware_cfg_init_flag;
 
     spinlock_t bfg_irq_spinlock;
 
     /*bfg irq num*/
-    uint32 bfg_irq;
+    uint32_t bfg_irq;
 
-    uint32 ul_irq_stat;
+    uint32_t ul_irq_stat;
 
     /*bfg wakeup host count*/
-    uint32 bfg_wakeup_host;
+    uint32_t bfg_wakeup_host;
 
     /* gnss lowpower state */
     atomic_t gnss_sleep_flag;
@@ -196,11 +196,11 @@ struct pm_drv_data
     atomic_t bfg_needwait_devboot_flag;
 
     /* flag to mark whether enable lowpower or not */
-    uint32 bfgx_pm_ctrl_enable;
-    uint8  bfgx_lowpower_enable;
-    uint8  bfgx_bt_lowpower_enable;
-    uint8  bfgx_gnss_lowpower_enable;
-    uint8  bfgx_nfc_lowpower_enable;
+    uint32_t bfgx_pm_ctrl_enable;
+    uint8_t  bfgx_lowpower_enable;
+    uint8_t  bfgx_bt_lowpower_enable;
+    uint8_t  bfgx_gnss_lowpower_enable;
+    uint8_t  bfgx_nfc_lowpower_enable;
 
     /* workqueue for wkup device */
     struct workqueue_struct *wkup_dev_workqueue;
@@ -208,15 +208,15 @@ struct pm_drv_data
     struct work_struct send_disallow_msg_work;
     struct work_struct send_allow_sleep_work;
     struct work_struct baud_change_work;
-    uint32 uart_baud_switch_to;
+    uint32_t uart_baud_switch_to;
 
     /* wait device ack timer */
     struct timer_list bfg_timer;
-    uint32 bfg_timer_mod_cnt;
-    uint32 bfg_timer_mod_cnt_pre;
+    uint32_t bfg_timer_mod_cnt;
+    uint32_t bfg_timer_mod_cnt_pre;
     unsigned long bfg_timer_check_time;
-    uint64 rx_pkt_gnss_pre;
-    uint32 gnss_votesleep_check_cnt;
+    uint64_t rx_pkt_gnss_pre;
+    uint32_t gnss_votesleep_check_cnt;
     struct timer_list dev_ack_timer;
     struct timer_list baud_change_timer;
 
@@ -232,8 +232,8 @@ struct pm_drv_data
 struct gnss_sync_data
 {
     void __iomem *addr_base_virt;
-    uint32 addr_offset;
-    uint32 version;
+    uint32_t addr_offset;
+    uint32_t version;
 };
 #endif
 
@@ -244,27 +244,27 @@ struct gnss_sync_data
 /*****************************************************************************
   5 EXTERN FUNCTION
 *****************************************************************************/
-extern void bfgx_gpio_intr_enable(uint32  ul_en);
+extern void bfgx_gpio_intr_enable(uint32_t  ul_en);
 extern struct pm_drv_data * pm_get_drvdata_etc(void);
-extern int32 host_wkup_dev_etc(void);
+extern int32_t host_wkup_dev_etc(void);
 extern struct pm_drv_data * pm_get_drvdata_etc(void);
-extern int32 bfgx_other_subsys_all_shutdown_etc(uint8 subsys);
+extern int32_t bfgx_other_subsys_all_shutdown_etc(uint8_t subsys);
 extern void bfgx_print_subsys_state(void);
 extern bool wlan_is_shutdown_etc(void);
 extern bool bfgx_is_shutdown_etc(void);
-extern int32 wlan_power_on_etc(void);
-extern int32 wlan_power_off_etc(void);
-extern int32 bfgx_power_on_etc(uint8 subsys);
-extern int32 bfgx_power_off_etc(uint8 subsys);
-extern int32 bfgx_pm_feature_set_etc(void);
-extern int firmware_download_function_etc(uint32 which_cfg);
-typedef int32 (*firmware_downlaod_privfunc)(void);
-extern int firmware_download_function_priv(uint32 which_cfg, firmware_downlaod_privfunc);
+extern int32_t wlan_power_on_etc(void);
+extern int32_t wlan_power_off_etc(void);
+extern int32_t bfgx_power_on_etc(uint8_t subsys);
+extern int32_t bfgx_power_off_etc(uint8_t subsys);
+extern int32_t bfgx_pm_feature_set_etc(void);
+extern int firmware_download_function_etc(uint32_t which_cfg);
+typedef int32_t (*firmware_downlaod_privfunc)(void);
+extern int firmware_download_function_priv(uint32_t which_cfg, firmware_downlaod_privfunc);
 extern oal_int32 hi110x_get_wifi_power_stat_etc(oal_void);
-extern int32 device_mem_check_etc(unsigned long long *time);
-extern int32 bfgx_uart_rcv_baud_change_req(uint8 uc_msg_type);
-extern int32 bfgx_uart_rcv_baud_change_complete_ack(void);
-extern int32 memcheck_is_working(void);
+extern int32_t device_mem_check_etc(unsigned long long *time);
+extern int32_t bfgx_uart_rcv_baud_change_req(uint8_t uc_msg_type);
+extern int32_t bfgx_uart_rcv_baud_change_complete_ack(void);
+extern int32_t memcheck_is_working(void);
 extern void bfg_wake_lock_etc(void);
 extern void bfg_wake_unlock_etc(void);
 extern void bfg_check_timer_work(void);
