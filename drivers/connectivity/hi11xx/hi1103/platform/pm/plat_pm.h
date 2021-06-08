@@ -247,7 +247,7 @@ struct gnss_sync_data
 extern void bfgx_gpio_intr_enable(uint32_t  ul_en);
 extern struct pm_drv_data * pm_get_drvdata_etc(void);
 extern int32_t host_wkup_dev_etc(void);
-extern struct pm_drv_data * pm_get_drvdata_etc(void);
+//extern struct pm_drv_data * pm_get_drvdata_etc(void);
 extern int32_t bfgx_other_subsys_all_shutdown_etc(uint8_t subsys);
 extern void bfgx_print_subsys_state(void);
 extern bool wlan_is_shutdown_etc(void);

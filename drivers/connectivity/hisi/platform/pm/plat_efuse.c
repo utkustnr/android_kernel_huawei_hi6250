@@ -166,7 +166,7 @@ static int32_t store_efuse_into_file(uint32_t* buff)
     pos = 0;
     for (index = 0; index < EFUSE_REG_NUM; index++)
     {
-        ret = vfs_write(fp, (uint8_t *)(&buff[index]), sizeof(uint16), &pos);
+        ret = vfs_write(fp, (uint8_t *)(&buff[index]), sizeof(uint16_t), &pos);
         if (ret < 0)
         {
             PS_PRINT_ERR("write %s fail, ret = %d\n", EFUSE_FILE_PATH, (int32_t)ret);

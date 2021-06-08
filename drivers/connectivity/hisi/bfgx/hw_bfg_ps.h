@@ -324,7 +324,7 @@ typedef enum
     RX_SEQ_LAST  = 3,
 
     RX_SEQ_BUTT,
-}bfgx_rx_sepreted_pk_type;
+}bfgx_rx_sepreted_pkt_type;
 
 typedef enum
 {
@@ -432,8 +432,8 @@ struct ps_core_s {
     void  *pm_data;
 
     /* define variable for decode rx data from uart */
-    uint8_t  rx_pk_type;
-    uint16_t rx_pk_total_len;
+    uint8_t  rx_pkt_type;
+    uint16_t rx_pkt_total_len;
     uint16_t rx_have_recv_pkt_len;
     uint16_t rx_have_del_public_len;
     uint8_t *rx_decode_tty_ptr;
@@ -565,7 +565,7 @@ int32_t ps_core_exit(struct ps_core_s *);
 
 int32_t ps_get_core_reference(struct ps_core_s **core_data);
 int32_t ps_core_recv(void *disc_data, const uint8_t *data, int32_t count);
-int32_t ps_core_recv_uar_test(void *disc_data, const uint8_t *data, int32_t count);
+int32_t ps_core_recv_uart_test(void *disc_data, const uint8_t *data, int32_t count);
 int32_t ps_tx_sys_cmd(struct ps_core_s *ps_core_d, uint8_t type, uint8_t content);
 int32_t ps_tx_gnssbuf(struct ps_core_s *ps_core_d, const int8_t __user *buf, size_t count);
 int32_t ps_tx_nfcbuf(struct ps_core_s *ps_core_d, const int8_t __user *buf, size_t count);
@@ -586,7 +586,7 @@ int32_t ps_check_packet_head(struct ps_core_s *ps_core_d, uint8_t *buf_ptr, int3
 bool ps_chk_bfg_active(struct ps_core_s *ps_core_d);
 int32_t bfgx_open_cmd_send(uint32_t subsys);
 int32_t prepare_to_visit_node(struct ps_core_s *ps_core_d);
-int32_t pos_to_visit_node(struct ps_core_s *ps_core_d);
+int32_t post_to_visit_node(struct ps_core_s *ps_core_d);
 void reset_uart_rx_buf(void);
 int32_t ps_push_skb_queue(struct ps_core_s *ps_core_d, uint8_t *buf_ptr, uint16_t pkt_len, uint8_t type);
 bool ps_chk_only_gnss_and_cldslp(struct ps_core_s *ps_core_d);

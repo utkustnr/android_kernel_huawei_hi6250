@@ -1446,7 +1446,7 @@ EXPORT_SYMBOL_GPL(ps_pm_unregister);
 irqreturn_t bfg_wake_host_isr(int irq, void *dev_id)
 {
     struct ps_core_s *ps_core_d = NULL;
-    uint64_t flags;
+    unsigned long flags;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -1515,7 +1515,7 @@ STATIC int low_power_remove(void)
 
 STATIC void devack_timer_expire(uint64_t data)
 {
-    uint64_t flags;
+    unsigned long flags;
     struct pm_drv_data  *pm_data = (struct pm_drv_data*)data; 
     if (unlikely(NULL == pm_data))
     {

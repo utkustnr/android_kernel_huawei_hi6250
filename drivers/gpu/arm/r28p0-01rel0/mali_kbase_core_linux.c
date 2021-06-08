@@ -2907,7 +2907,7 @@ static DEVICE_ATTR(js_ctx_scheduling_mode, S_IRUGO | S_IWUSR,
 		set_js_ctx_scheduling_mode);
 
 #pragma GCC diagnostic push
-//#pragma GCC diagnostic ignored "-Wformat="
+#pragma GCC diagnostic ignored "-Wformat="
 static ssize_t show_gpu_error_info(struct device *dev, struct device_attribute *attr, char * const buf)
 {
 	struct kbase_device *kbdev;
