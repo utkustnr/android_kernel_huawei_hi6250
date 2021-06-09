@@ -110,7 +110,7 @@ typedef int*                BSP_PBOOL;
 typedef void*               BSP_PVOID;
 typedef int*                BSP_PSTATUS;
 typedef BSP_S32             STATUS;
-typedef BSP_S32             UDI_HANDLE;
+//typedef BSP_S32             UDI_HANDLE;
 
 #ifndef BSP_CONST
 #define BSP_CONST           const
@@ -153,7 +153,7 @@ typedef BSP_S32             UDI_HANDLE;
 #endif
 
 typedef int (*PWRCTRLFUNCPTRVOID)(void);
-typedef unsigned int (*PWRCTRLFUNCPTR)(unsigned int arg);     /* ptr to function returning int */
+// typedef unsigned int (*PWRCTRLFUNCPTR)(unsigned int arg);     /* ptr to function returning int */
 
 #ifdef __OS_VXWORKS__
 #ifndef INLINE
@@ -174,7 +174,7 @@ typedef unsigned int (*PWRCTRLFUNCPTR)(unsigned int arg);     /* ptr to function
 #if defined(BSP_CORE_MODEM) || defined(PRODUCT_CFG_CORE_TYPE_MODEM)
 #else
 
-typedef BSP_VOID (*VOIDFUNCPTR)(BSP_U32);
+//typedef BSP_VOID (*VOIDFUNCPTR)(BSP_U32);
 #define SEM_FULL            (1)
 #define SEM_EMPTY           (0)
 #define IVEC_TO_INUM(intVec)    ((int)(intVec))
@@ -224,7 +224,7 @@ typedef BSP_VOID (*VOIDFUNCPTR)(BSP_U32);
 
 /* 基本数据类型定义 */
 
-typedef int  (*pFUNCPTR)(void);
+//typedef int  (*pFUNCPTR)(void);
 
 typedef unsigned long (*pFUNCPTR2)( unsigned long ulPara1, unsigned long ulPara2);
 

@@ -20,32 +20,34 @@
  * @ingroup TEEC_COMMON_DATA
  * 无符号整型定义
  */
-typedef unsigned int uint32_t;
+
+//typedef unsigned int uint32_t;
 /**
  * @ingroup TEEC_COMMON_DATA
  * 有符号整型定义
  */
-typedef signed int int32_t;
+//typedef signed int int32_t;
 /**
  * @ingroup TEEC_COMMON_DATA
  * 无符号短整型定义
  */
-typedef unsigned short uint16_t;
+//typedef unsigned short uint16_t;
 /**
  * @ingroup TEEC_COMMON_DATA
  * 有符号短整型定义
  */
-typedef signed short int16_t;
+//typedef signed short int16_t;
 /**
  * @ingroup TEEC_COMMON_DATA
  * 无符号字符型定义
  */
-typedef unsigned char uint8_t;
+//typedef unsigned char uint8_t;
 /**
  * @ingroup TEEC_COMMON_DATA
  * 有符号字符型定义
  */
-typedef signed char int8_t;
+//typedef signed char int8_t;
+
 
 /**
  * @ingroup TEEC_COMMON_DATA

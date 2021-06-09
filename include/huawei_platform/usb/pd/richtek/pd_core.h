@@ -686,7 +686,7 @@ typedef struct __svdm_svid_list {
 	uint16_t svids[VDO_MAX_SVID_SIZE];
 } svdm_svid_list_t;
 
-typedef struct __pd_port {
+struct __pd_port {
 	struct tcpc_device *tcpc_dev;
 	struct mutex pd_lock;
 
@@ -826,7 +826,7 @@ typedef struct __pd_port {
 	bool postpone_pr_swap;
 	bool postpone_dr_swap;
 #endif	/* CONFIG_USB_PD_HANDLE_PRDR_SWAP */	
-} pd_port_t;
+};
 
 extern int pd_core_init(struct tcpc_device *tcpc_dev);
 int pd_alert_vbus_changed(pd_port_t *pd_port, int vbus_level);

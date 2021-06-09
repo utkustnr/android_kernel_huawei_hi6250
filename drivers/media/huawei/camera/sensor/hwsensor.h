@@ -30,7 +30,7 @@ typedef struct _tag_hwsensor_intf hwsensor_intf_t;
 /**
  * @brief the huawei sensor interface.
  */
-typedef struct _tag_hwsensor_vtbl {
+struct _tag_hwsensor_vtbl {
 	/* sensor function table */
 	char const *(*get_name)(hwsensor_intf_t*);
 	int (*match_id)(hwsensor_intf_t *, void *);
@@ -54,12 +54,12 @@ typedef struct _tag_hwsensor_vtbl {
     int (*otp_get)(hwsensor_intf_t *, hwsensor_config_otp_t *);
     int (*otp_update)(hwsensor_intf_t *, hwsensor_config_otp_t *);
     int (*get_thermal)(hwsensor_intf_t *,void *);
-}hwsensor_vtbl_t;
+};
 
-typedef struct _tag_hwsensor_intf
+struct _tag_hwsensor_intf
 {
     hwsensor_vtbl_t *vtbl;
-} hwsensor_intf_t;
+};
 
 static inline int
 hwsensor_intf_otp_config(hwsensor_intf_t *hsi,

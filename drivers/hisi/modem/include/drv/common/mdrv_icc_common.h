@@ -75,7 +75,7 @@ typedef enum tagICC_CHAN_MODE_E{
     ICC_CHAN_MODE_BUTT
 }ICC_CHAN_MODE_E;
 
-typedef unsigned int tagUDI_DEVICE_ID_UINT32;
+//tagUDI_DEVICE_ID_UINT32;
 typedef unsigned int (*icc_event_cb)(unsigned int u32ChanID, unsigned int u32Event, void* Param);
 typedef unsigned int (*icc_write_cb)(unsigned int u32ChanID);
 typedef unsigned int (*icc_read_cb)(unsigned int u32ChanID, int u32Size);

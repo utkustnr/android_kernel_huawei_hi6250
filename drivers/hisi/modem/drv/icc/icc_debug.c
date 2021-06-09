@@ -409,13 +409,13 @@ void icc_sub_channel_info_show_all(u32 msg_type, u32 real_channel_id)
 
 void icc_recv_ipc_int_show(void)
 {
-	icc_print_info("*******icc收到的ipc中断统计*******\n");
+	icc_print_info("*******icc ipc *******\n");
 	icc_print_info("ipc_int_cnt: %d\n", g_icc_dbg.ipc_int_cnt);
 }
 
 void icc_errno_show(void)
 {
-	icc_print_info("******************icc错误码信息******************\n");
+	icc_print_info("******************icc******************\n");
 	icc_print_info("0x%x: channel init error\n",ICC_CHN_INIT_FAIL);
 	icc_print_info("0x%x: malloc channel memory fail\n",ICC_MALLOC_CHANNEL_FAIL);
 	icc_print_info("0x%x: malloc rector memory fail\n",ICC_MALLOC_VECTOR_FAIL);
@@ -442,28 +442,28 @@ void icc_print_level_set(u32 level)
 
 void icc_struct_dump(void)
 {
-	icc_print_info("***************************icc结构体信息***************************\n");
-	icc_print_info("icc初始化信息            : icc_init_info_dump channel_id\n");
-	icc_print_info("icc_control结构体        : icc_control_dump\n");
-	icc_print_info("icc_channel结构体        : icc_channel_dump channel_id\n");
-	icc_print_info("icc_channel_fifo结构体   : icc_channel_fifo_dump channel_id\n");
-	icc_print_info("icc_channel_vector结构体 : icc_channel_vector_dump channel_id func_id\n");
-	icc_print_info("结构体显示函数参数说明   : channel_id, 主通道号; fucn_id,子通道号\n");
+	icc_print_info("***************************icc***************************\n");
+	icc_print_info("icc            : icc_init_info_dump channel_id\n");
+	icc_print_info("icc_control        : icc_control_dump\n");
+	icc_print_info("icc_channel        : icc_channel_dump channel_id\n");
+	icc_print_info("icc_channel_fifo   : icc_channel_fifo_dump channel_id\n");
+	icc_print_info("icc_channel_vector : icc_channel_vector_dump channel_id func_id\n");
+	icc_print_info("channel_id; fucn_id\n");
 }
 
 void icc_help(void)
 {
-	icc_print_info("***************************************icc调试帮助信息***************************************\n");
-	icc_print_info("结构体信息dump          : icc_struct_dump\n");
-	icc_print_info("调试打印开关            : icc_dbg_print_sw 0|1\n");
-	icc_print_info("错误码说明              : icc_errno_show\n");
-	icc_print_info("收到ipc中断统计         : icc_recv_ipc_int_show\n");
-	icc_print_info("最近n条收发消息显示     : icc_msg_record_show msg_type msg_num\n");
-	icc_print_info("单个通道统计信息        : icc_channel_info_show msg_type channel_id\n");
-	icc_print_info("所有子通道统计信息      : icc_sub_channel_info_show_all msg_type channel_id\n");
-	icc_print_info("单个子通道统计信息      : icc_sub_channel_info_show msg_type channel_id func_id\n");
-	icc_print_info("收发消息显示函数参数说明: msg_type, 消息类型(0: 接收; 1: 发送); msg_num, 显示消息个数(<=10)\n");
-	icc_print_info("通道统计信息函数参数说明: msg_type, 同上; channel_id, 主通道号; fucn_id, 子通道号\n");
+	icc_print_info("***************************************icc***************************************\n");
+	icc_print_info("dump          : icc_struct_dump\n");
+	icc_print_info("            : icc_dbg_print_sw 0|1\n");
+	icc_print_info("              : icc_errno_show\n");
+	icc_print_info("         : icc_recv_ipc_int_show\n");
+	icc_print_info("     : icc_msg_record_show msg_type msg_num\n");
+	icc_print_info("        : icc_channel_info_show msg_type channel_id\n");
+	icc_print_info("      : icc_sub_channel_info_show_all msg_type channel_id\n");
+	icc_print_info("      : icc_sub_channel_info_show msg_type channel_id func_id\n");
+	icc_print_info(": msg_type, (0: ; 1: ); msg_num, (<=10)\n");
+	icc_print_info(": msg_type, ; channel_id, ; fucn_id, \n");
 }
 
 void icc_dump_hook(void)

@@ -3,10 +3,12 @@
 #include "soc_acpu_baseaddr_interface.h"
 #include "pmic_interface.h"
 #include "global_ddr_map.h"
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned int u32;
-typedef unsigned long long u64;
+/*
+typedef unsigned char unsigned char;
+typedef unsigned short unsigned short;
+typedef unsigned int uint32_t;
+typedef unsigned long long uint64_t;
+*/
 #define PMU_RESET_REG_OFFSET (PMIC_HRST_REG0_ADDR(0))
 #define RST_FLAG_MASK (0xFF)
 #define PMU_RESET_VALUE_USED 0xFFFFFF00
@@ -23,9 +25,9 @@ AP_RECORD_PC;
 typedef struct
 {
     char magic[ETR_MAGIC_SIZE];
-    u64 paddr;
-    u32 size;
-    u32 rd_offset;
+    uint64_t paddr;
+    uint32_t size;
+    uint32_t rd_offset;
 }
 AP_RECORD_ETR;
 #define BOARD_COLD_START_ADDR ((HISI_RESERVED_MNTN_PHYMEM_BASE_UNIQUE) + 0x280)
@@ -46,22 +48,22 @@ struct dfx_head_info {
  int total_number;
  int cur_number;
  int need_save_number;
- u64 every_number_addr[TOTAL_NUMBER];
- u64 every_number_size;
- u64 temp_number_addr;
+ uint64_t every_number_addr[TOTAL_NUMBER];
+ uint64_t every_number_size;
+ uint64_t temp_number_addr;
 };
 struct every_number_info {
- u64 rtc_time;
- u64 boot_time;
- u64 bootup_keypoint;
- u64 reboot_type;
- u64 exce_subtype;
- u64 fastbootlog_start_addr;
- u64 fastbootlog_size;
- u64 last_kmsg_start_addr;
- u64 last_kmsg_size;
- u64 last_applog_start_addr;
- u64 last_applog_size;
+ uint64_t rtc_time;
+ uint64_t boot_time;
+ uint64_t bootup_keypoint;
+ uint64_t reboot_type;
+ uint64_t exce_subtype;
+ uint64_t fastbootlog_start_addr;
+ uint64_t fastbootlog_size;
+ uint64_t last_kmsg_start_addr;
+ uint64_t last_kmsg_size;
+ uint64_t last_applog_start_addr;
+ uint64_t last_applog_size;
 };
 enum boot_stage_point
 {
@@ -407,9 +409,9 @@ enum CORE_LIST {
 #define FTRACE_DUMP_FS_NAME "/proc/balong/memory/"FTRACE_DUMP_NAME
 typedef struct
 {
-    u64 magic;
-    u64 paddr;
-    u32 size;
+    uint64_t magic;
+    uint64_t paddr;
+    uint32_t size;
 }
 FTRACE_MDUMP_HEAD;
 #define DTS_MNTNDUMP_NAME "/reserved-memory/mntndump"
@@ -470,8 +472,8 @@ enum {
  BL31_TRACE_IRQ_SMC_SIZE = 0x3F000,
 };
 typedef struct bl31_trace_irq_smc_head_s {
- u64 cpu_num;
- u64 offset[0];
+ uint64_t cpu_num;
+ uint64_t offset[0];
 } bl31_trace_irq_smc_head_t;
 enum {
  EXCEPTION_TRACE_AP,
@@ -479,11 +481,11 @@ enum {
  EXCEPTION_TRACE_ENUM,
 };
 typedef struct rdr_exception_trace_s {
- u64 e_32k_time;
- u64 e_reset_core_mask;
- u64 e_from_core;
- u32 e_exce_type;
- u32 e_exce_subtype;
+ uint64_t e_32k_time;
+ uint64_t e_reset_core_mask;
+ uint64_t e_from_core;
+ uint32_t e_exce_type;
+ uint32_t e_exce_subtype;
 } rdr_exception_trace_t;
 enum {
  BL31_MNTN_TST_PANIC,
@@ -499,28 +501,28 @@ enum {
  BL31_TRACE_OUT
 };
 typedef struct bl31_trace_s {
- u64 bl31_32k_time;
- u8 type;
- u8 dir;
- u8 ns;
+ uint64_t bl31_32k_time;
+ unsigned char type;
+ unsigned char dir;
+ unsigned char ns;
  union {
   struct {
-   u64 func_id;
+   uint64_t func_id;
   } smc;
   struct {
-   u32 id;
+   uint32_t id;
   } interrupt;
  };
 } bl31_trace_t;
 #define HISIAP_KEYS_MAX 71
 typedef struct hisiap_ringbuffer_s {
- u32 max_num;
- u32 field_count;
- u32 rear;
- u32 r_idx;
- u32 count;
- u32 is_full;
+ uint32_t max_num;
+ uint32_t field_count;
+ uint32_t rear;
+ uint32_t r_idx;
+ uint32_t count;
+ uint32_t is_full;
  char keys[HISIAP_KEYS_MAX + 1];
- u8 data[1];
+ unsigned char data[1];
 } hisiap_ringbuffer_t;
 #endif

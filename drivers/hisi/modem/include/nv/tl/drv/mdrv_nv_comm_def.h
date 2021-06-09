@@ -55,6 +55,7 @@ extern "C" {
 #endif
 #endif
 
+    /*
 #ifndef __u8_defined
 #define __u8_defined
 typedef signed char          s8;
@@ -66,6 +67,7 @@ typedef unsigned int         u32;
 typedef signed long long     s64;
 typedef unsigned long long   u64;
 #endif
+*/
 
 /*****************************************************************************
  ½á¹¹Ãû       :  NV_FEMPIN_TO_GPIO_STRU

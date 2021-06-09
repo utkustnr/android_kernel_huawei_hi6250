@@ -158,7 +158,7 @@ static char *opc_array[] = {
 	"RDX: LOCK READ",
 	"WR:  INCR WRITE",
 	"WRW: WRAP WRITE",
-	"WRC£ºEXCLUSIVE WRITE",
+	"WRC: EXCLUSIVE WRITE",
 	"Reversed",
 	"PRE: FIXED BURST",
 	"Abnormal"
