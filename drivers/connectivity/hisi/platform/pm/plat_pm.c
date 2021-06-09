@@ -1513,7 +1513,7 @@ STATIC int low_power_remove(void)
     return ret;
 }
 
-STATIC void devack_timer_expire(uint64_t data)
+STATIC void devack_timer_expire(unsigned long data)
 {
     unsigned long flags;
     struct pm_drv_data  *pm_data = (struct pm_drv_data*)data; 

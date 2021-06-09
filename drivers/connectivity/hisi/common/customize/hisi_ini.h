@@ -169,7 +169,7 @@ extern INI_PARAM_VERSION_STRU g_param_version;
  */
 extern int32_t get_cust_conf_int32(int32_t tag_index, int8_t * puc_var, int32_t *pul_value);
 extern int32_t get_cust_conf_string(int32_t tag_index, int8_t* puc_var, int8_t *puc_value, uint32_t size);
-extern int32_t find_download_channel(uint8_t* buff, int8_t * puc_var);
+extern int32_t find_download_channel(char* buff, int8_t * puc_var);
 extern int32_t ini_cfg_init(void);
 extern void  ini_cfg_exit(void);
 #endif 

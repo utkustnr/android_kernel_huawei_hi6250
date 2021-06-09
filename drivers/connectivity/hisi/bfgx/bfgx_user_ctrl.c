@@ -372,12 +372,12 @@ STATIC ssize_t show_flow_cntrl(struct device *dev, struct kobj_attribute *attr, 
 STATIC ssize_t show_bfgx_active_state(struct device *dev, struct kobj_attribute *attr, int8_t *buf)
 {
     struct ps_plat_s *pm_data = NULL;
-    uint8 bt_state   = POWER_STATE_SHUTDOWN;
-    uint8 fm_state   = POWER_STATE_SHUTDOWN;
-    uint8 gnss_state = POWER_STATE_SHUTDOWN;
-    uint8 ir_state   = POWER_STATE_SHUTDOWN;
+    uint8_t bt_state   = POWER_STATE_SHUTDOWN;
+    uint8_t fm_state   = POWER_STATE_SHUTDOWN;
+    uint8_t gnss_state = POWER_STATE_SHUTDOWN;
+    uint8_t ir_state   = POWER_STATE_SHUTDOWN;
 #ifdef HAVE_HISI_NFC
-    uint8 nfc_state  = POWER_STATE_SHUTDOWN;
+    uint8_t nfc_state  = POWER_STATE_SHUTDOWN;
 #endif
 
     PS_PRINT_DBG("%s\n", __func__);

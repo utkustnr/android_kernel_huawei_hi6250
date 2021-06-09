@@ -18,12 +18,12 @@ extern void creat_flash_otp_init(void);
 #else
 static inline void creat_flash_otp_thread(void)
 {
-	return OK;
+	return (void)OK;
 }
 
 static inline void creat_flash_otp_init(void)
 {
-	return OK;
+	return (void)OK;
 }
 #endif
 

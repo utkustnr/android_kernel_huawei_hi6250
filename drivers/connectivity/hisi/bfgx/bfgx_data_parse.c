@@ -18,9 +18,9 @@
 #include "plat_pm.h"
 #include "oal_ext_if.h"
 /* function pointer for rx data */
-int32 (*tty_recv)(void *, const uint8 *, int32);
+int32_t (*tty_recv)(void *, const uint8_t *, int32_t);
 
-uint32 g_bfgx_rx_max_frame[BFGX_BUTT] =
+uint32_t g_bfgx_rx_max_frame[BFGX_BUTT] =
 {
     BT_RX_MAX_FRAME,
     FM_RX_MAX_FRAME,
@@ -29,7 +29,7 @@ uint32 g_bfgx_rx_max_frame[BFGX_BUTT] =
     NFC_RX_MAX_FRAME,
 };
 
-uint32 g_bfgx_rx_queue[BFGX_BUTT] =
+uint32_t g_bfgx_rx_queue[BFGX_BUTT] =
 {
     RX_BT_QUEUE,
     RX_FM_QUEUE,
@@ -38,7 +38,7 @@ uint32 g_bfgx_rx_queue[BFGX_BUTT] =
     RX_NFC_QUEUE,
 };
 
-uint32 g_bfgx_rx_queue_max_num[BFGX_BUTT] =
+uint32_t g_bfgx_rx_queue_max_num[BFGX_BUTT] =
 {
     RX_BT_QUE_MAX_NUM,
     RX_FM_QUE_MAX_NUM,
@@ -87,7 +87,7 @@ void print_uart_decode_param(void)
  *     Modification : Created function
  *
  */
-int32 ps_write_tty(struct ps_core_s *ps_core_d,const uint8 *data, int32 count)
+int32_t ps_write_tty(struct ps_core_s *ps_core_d,const uint8_t *data, int32_t count)
 {
     struct tty_struct *tty;
 
@@ -122,12 +122,12 @@ int32 ps_write_tty(struct ps_core_s *ps_core_d,const uint8 *data, int32 count)
  *     Modification : Created function
  *
  */
-int32 ps_exe_sys_func(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
+int32_t ps_exe_sys_func(struct ps_core_s *ps_core_d, uint8_t *buf_ptr)
 {
     struct pm_drv_data *pm_data = NULL;
     struct st_exception_info *pst_exception_data = NULL;
-    uint8 syschar;
-    uint64 flags;
+    uint8_t syschar;
+    unsigned long flags;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -323,7 +323,7 @@ int32 ps_exe_sys_func(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
  *     Modification : Created function
  *
  */
-int32 ps_push_skb_queue(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uint16 pkt_len, uint8 type)
+int32_t ps_push_skb_queue(struct ps_core_s *ps_core_d, uint8_t *buf_ptr, uint16_t pkt_len, uint8_t type)
 {
     struct sk_buff *skb = NULL;
 
@@ -353,11 +353,11 @@ int32 ps_push_skb_queue(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uint16 pkt_
     return 0;
 }
 
-int32 delete_gnss_head_skb_msg(void)
+int32_t delete_gnss_head_skb_msg(void)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct sk_buff *skb = NULL;
-    uint8  seperate_tag = 0;
+    uint8_t  seperate_tag = 0;
 
     ps_get_core_reference(&ps_core_d);
     if (unlikely(NULL == ps_core_d))
@@ -394,13 +394,13 @@ int32 delete_gnss_head_skb_msg(void)
     return 0;
 }
 
-int32 ps_push_skb_queue_gnss(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uint16 pkt_len, uint8 type)
+int32_t ps_push_skb_queue_gnss(struct ps_core_s *ps_core_d, uint8_t *buf_ptr, uint16_t pkt_len, uint8_t type)
 {
     struct sk_buff *skb = NULL;
 
-    uint8 seperate_tag = 0;
-    uint16 seperate_len = 0;
-    int32   copy_cnt = 0;
+    uint8_t seperate_tag = 0;
+    uint16_t seperate_len = 0;
+    int32_t   copy_cnt = 0;
     if (NULL == ps_core_d)
     {
         PS_PRINT_ERR("ps_core_d is NULL\n");
@@ -466,11 +466,11 @@ int32 ps_push_skb_queue_gnss(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uint16
     return 0;
 }
 
-int32 ps_push_skb_debug_queue(struct ps_core_s *ps_core_d, const uint8 *buf_ptr,
-                                uint16 pkt_len, uint8 type)
+int32_t ps_push_skb_debug_queue(struct ps_core_s *ps_core_d, const uint8_t *buf_ptr,
+                                uint16_t pkt_len, uint8_t type)
 {
     struct sk_buff *skb = NULL;
-    uint16 count = 0;
+    uint16_t count = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -516,11 +516,11 @@ int32 ps_push_skb_debug_queue(struct ps_core_s *ps_core_d, const uint8 *buf_ptr,
     return 0;
 }
 
-int32 ps_recv_mem_dump_size_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
+int32_t ps_recv_mem_dump_size_data(struct ps_core_s *ps_core_d, uint8_t *buf_ptr)
 {
-    uint16 dump_mem_size = 0;
+    uint16_t dump_mem_size = 0;
 #ifdef HI110X_HAL_MEMDUMP_ENABLE
-    uint16 rx_pkt_total_len = 0;
+    uint16_t rx_pkt_total_len = 0;
 #endif
 
     if (NULL == ps_core_d)
@@ -548,9 +548,9 @@ int32 ps_recv_mem_dump_size_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
     return 0;
 }
 
-int32 ps_recv_mem_dump_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uint32 system)
+int32_t ps_recv_mem_dump_data(struct ps_core_s *ps_core_d, uint8_t *buf_ptr, uint32_t system)
 {
-    uint16 rx_pkt_total_len = 0;
+    uint16_t rx_pkt_total_len = 0;
 
     if (NULL == ps_core_d)
     {
@@ -594,10 +594,10 @@ int32 ps_recv_mem_dump_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uint32 
     return 0;
 }
 
-int32 ps_recv_uart_loop_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
+int32_t ps_recv_uart_loop_data(struct ps_core_s *ps_core_d, uint8_t *buf_ptr)
 {
-    int32  ret;
-    uint16 rx_pkt_total_len = 0;
+    int32_t  ret;
+    uint16_t rx_pkt_total_len = 0;
 
     if (NULL == ps_core_d)
     {
@@ -647,13 +647,13 @@ int32 ps_recv_uart_loop_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
  *     Modification : Created function
  *
  */
-int32 ps_recv_debug_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
+int32_t ps_recv_debug_data(struct ps_core_s *ps_core_d, uint8_t *buf_ptr)
 {
     struct sk_buff *skb = NULL;
-    int32  ret;
-    uint16 rx_pkt_total_len = 0;
-    uint16 dbg_pkt_lenth = 0;
-    uint8 ptr_index = 0;
+    int32_t  ret;
+    uint16_t rx_pkt_total_len = 0;
+    uint16_t dbg_pkt_lenth = 0;
+    uint8_t ptr_index = 0;
 
     if (NULL == ps_core_d)
     {
@@ -673,14 +673,14 @@ int32 ps_recv_debug_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
         &&(PACKET_RX_FUNC_LAST_WORDS == buf_ptr[PACKET_RX_FUNC_INDEX_LAST_WORDS]))
     {
         /*get FrameLen 2 bytes*/
-        dbg_pkt_lenth = *(uint16*)&buf_ptr[PACKET_FRAMELEN_INDEX];
+        dbg_pkt_lenth = *(uint16_t*)&buf_ptr[PACKET_FRAMELEN_INDEX];
         if ((dbg_pkt_lenth == rx_pkt_total_len)
             && (LAST_WORD_LEN == dbg_pkt_lenth)
             && (PACKET_RX_RPT_IND_LAST_WORDS == buf_ptr[RPT_IND_INDEX_LAST_WORDS]))
         {
             PS_PRINT_ERR("recv device last words!Faulttype=0x%x,FaultReason=0x%x,PC=0x%x,LR=0x%x\n",
-                          *(uint32*)&buf_ptr[FAULT_TYPE_INDEX_LAST_WORDS], *(uint32*)&buf_ptr[FAULT_REASON_INDEX_LAST_WORDS],
-                          *(uint32*)&buf_ptr[PC_INDEX_LAST_WORDS], *(uint32*)&buf_ptr[LR_INDEX_LAST_WORDS]);
+                          *(uint32_t*)&buf_ptr[FAULT_TYPE_INDEX_LAST_WORDS], *(uint32_t*)&buf_ptr[FAULT_REASON_INDEX_LAST_WORDS],
+                          *(uint32_t*)&buf_ptr[PC_INDEX_LAST_WORDS], *(uint32_t*)&buf_ptr[LR_INDEX_LAST_WORDS]);
             plat_exception_handler(SUBSYS_BFGX, BFGX_THREAD_BOTTOM, LAST_WORD);
         }
         else
@@ -688,7 +688,7 @@ int32 ps_recv_debug_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
             /*buf maybe less than log header len*/
             if (rx_pkt_total_len > PACKET_HEADER_LEN)
             {
-                PS_PRINT_WARNING("recv wrong last words,[%x %x]\n", *(uint32*)&buf_ptr[0], *(uint32*)&buf_ptr[4]);
+                PS_PRINT_WARNING("recv wrong last words,[%x %x]\n", *(uint32_t*)&buf_ptr[0], *(uint32_t*)&buf_ptr[4]);
             }
             else
             {
@@ -744,9 +744,9 @@ int32 ps_recv_debug_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
  *     Modification : Created function
  *
  */
-int32 ps_store_rx_sepreated_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uint8 subsys)
+int32_t ps_store_rx_sepreated_data(struct ps_core_s *ps_core_d, uint8_t *buf_ptr, uint8_t subsys)
 {
-    uint16 rx_current_pkt_len;
+    uint16_t rx_current_pkt_len;
     struct bfgx_sepreted_rx_st *pst_sepreted_data = NULL;
 
     if (NULL == ps_core_d)
@@ -814,13 +814,13 @@ int32 ps_store_rx_sepreated_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr, ui
  *     Modification : Created function
  *
  */
-int32 ps_recv_sepreated_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uint8 subsys, uint8 sepreted_type)
+int32_t ps_recv_sepreated_data(struct ps_core_s *ps_core_d, uint8_t *buf_ptr, uint8_t subsys, uint8_t sepreted_type)
 {
-    int32  ret;
+    int32_t  ret;
     struct pm_drv_data  *pm_data = NULL;
     struct st_bfgx_data *pst_bfgx_data = NULL;
     struct bfgx_sepreted_rx_st *pst_sepreted_data = NULL;
-    int32  seq_correct = SEPRETED_RX_PKT_SEQ_ERROR;
+    int32_t  seq_correct = SEPRETED_RX_PKT_SEQ_ERROR;
 
     if (NULL == ps_core_d)
     {
@@ -988,10 +988,10 @@ int32 ps_recv_sepreated_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uint8 
  *     Modification : Created function
  *
  */
-int32 ps_recv_no_sepreated_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uint8 subsys)
+int32_t ps_recv_no_sepreated_data(struct ps_core_s *ps_core_d, uint8_t *buf_ptr, uint8_t subsys)
 {
-    int32  ret;
-    uint16 rx_pkt_total_len = 0;
+    int32_t  ret;
+    uint16_t rx_pkt_total_len = 0;
     struct st_bfgx_data *pst_bfgx_data = NULL;
 
     if (NULL == ps_core_d)
@@ -1056,9 +1056,9 @@ int32 ps_recv_no_sepreated_data(struct ps_core_s *ps_core_d, uint8 *buf_ptr, uin
  *     Modification : Created function
  *
  */
-int32 ps_decode_packet_func(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
+int32_t ps_decode_packet_func(struct ps_core_s *ps_core_d, uint8_t *buf_ptr)
 {
-    uint8 *ptr;
+    uint8_t *ptr;
     struct pm_drv_data  *pm_data = NULL;
     struct st_exception_info *pst_exception_data = NULL;
 
@@ -1241,11 +1241,11 @@ int32 ps_decode_packet_func(struct ps_core_s *ps_core_d, uint8 *buf_ptr)
  *     Modification : Created function
  *
  */
-int32 ps_check_packet_head(struct ps_core_s *ps_core_d, uint8 *buf_ptr, int32 count)
+int32_t ps_check_packet_head(struct ps_core_s *ps_core_d, uint8_t *buf_ptr, int32_t count)
 {
-    uint8 *ptr;
-    uint16 len;
-    uint16 lenbak;
+    uint8_t *ptr;
+    uint16_t len;
+    uint16_t lenbak;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1383,7 +1383,7 @@ int32 ps_check_packet_head(struct ps_core_s *ps_core_d, uint8 *buf_ptr, int32 co
 static unsigned int g_reset_cnt = 0;
 void reset_uart_rx_buf(void)
 {
-	uint32 i = 0;
+	uint32_t i = 0;
 	struct ps_core_s *ps_core_d = NULL;
 	ps_get_core_reference(&ps_core_d);
 
@@ -1431,12 +1431,12 @@ void reset_uart_rx_buf(void)
  *     Modification : Created function
  *
  */
-int32 ps_core_recv(void *disc_data, const uint8 *data, int32 count)
+int32_t ps_core_recv(void *disc_data, const uint8_t *data, int32_t count)
 {
     struct ps_core_s *ps_core_d;
-    uint8 *ptr;
-    int32 count1 = 0;
-    int32 ret = 0;
+    uint8_t *ptr;
+    int32_t count1 = 0;
+    int32_t ret = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1474,7 +1474,7 @@ int32 ps_core_recv(void *disc_data, const uint8 *data, int32 count)
     }
 #endif
 
-    ps_core_d->rx_decode_tty_ptr = (uint8 *)data;
+    ps_core_d->rx_decode_tty_ptr = (uint8_t *)data;
     while (count)
     {   /* if curr packet is breaked packet,and first memcpy */
         if (ps_core_d->rx_have_recv_pkt_len)
@@ -1580,7 +1580,7 @@ int32 ps_core_recv(void *disc_data, const uint8 *data, int32 count)
  *     Modification : Created function
  *
  */
-int32 ps_skb_enqueue(struct ps_core_s *ps_core_d, struct sk_buff *skb, uint8 type)
+int32_t ps_skb_enqueue(struct ps_core_s *ps_core_d, struct sk_buff *skb, uint8_t type)
 {
     if (unlikely(NULL == ps_core_d))
     {
@@ -1642,7 +1642,7 @@ int32 ps_skb_enqueue(struct ps_core_s *ps_core_d, struct sk_buff *skb, uint8 typ
  *     Modification : Created function
  *
  */
-struct sk_buff *ps_skb_dequeue(struct ps_core_s *ps_core_d, uint8 type)
+struct sk_buff *ps_skb_dequeue(struct ps_core_s *ps_core_d, uint8_t type)
 {
     struct sk_buff *curr_skb = NULL;
 
@@ -1700,11 +1700,11 @@ struct sk_buff *ps_skb_dequeue(struct ps_core_s *ps_core_d, uint8 type)
  *     Modification : Created function
  *
  */
-int32 ps_core_tx_attemper(struct ps_core_s *ps_core_d)
+int32_t ps_core_tx_attemper(struct ps_core_s *ps_core_d)
 {
     struct sk_buff *skb = NULL;
-    uint8 tx_high_times = 0;
-    int32 len = 0;
+    uint8_t tx_high_times = 0;
+    int32_t len = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1832,10 +1832,10 @@ void ps_core_tx_work(struct work_struct *work)
  *     Modification : Created function
  *
  */
-int32 ps_add_packet_head(uint8 *buf, uint8 type, uint16 lenth)
+int32_t ps_add_packet_head(uint8_t *buf, uint8_t type, uint16_t lenth)
 {
-    int8 *ptr;
-    uint16 len;
+    int8_t *ptr;
+    uint16_t len;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1879,9 +1879,9 @@ int32 ps_add_packet_head(uint8 *buf, uint8 type, uint16 lenth)
  *     Modification : Created function
  *
  */
-int32 ps_set_sys_packet(uint8 *buf, uint8 type, uint8 content)
+int32_t ps_set_sys_packet(uint8_t *buf, uint8_t type, uint8_t content)
 {
-    int8 *ptr;
+    int8_t *ptr;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1922,7 +1922,7 @@ int32 ps_set_sys_packet(uint8 *buf, uint8 type, uint8 content)
  *     Modification : Created function
  *
  */
-int32 ps_tx_sys_cmd(struct ps_core_s *ps_core_d, uint8 type, uint8 content)
+int32_t ps_tx_sys_cmd(struct ps_core_s *ps_core_d, uint8_t type, uint8_t content)
 {
     struct sk_buff *skb = NULL;
     bool ret = false;
@@ -1955,12 +1955,12 @@ int32 ps_tx_sys_cmd(struct ps_core_s *ps_core_d, uint8 type, uint8 content)
 }
 
 
-int32 ps_tx_fmbuf(struct ps_core_s *ps_core_d, const int8 __user *buf, size_t count)
+int32_t ps_tx_fmbuf(struct ps_core_s *ps_core_d, const int8_t __user *buf, size_t count)
 {
     struct sk_buff *skb;
-    uint16 tx_skb_len;
-    uint16 tx_fm_len;
-    uint8  start = 0;
+    uint16_t tx_skb_len;
+    uint16_t tx_fm_len;
+    uint8_t  start = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -2027,12 +2027,12 @@ int32 ps_tx_fmbuf(struct ps_core_s *ps_core_d, const int8 __user *buf, size_t co
 }
 
 
-int32 ps_tx_irbuf(struct ps_core_s *ps_core_d, const int8 __user *buf, size_t count)
+int32_t ps_tx_irbuf(struct ps_core_s *ps_core_d, const int8_t __user *buf, size_t count)
 {
     struct sk_buff *skb;
-    uint16 tx_skb_len;
-    uint16 tx_ir_len;
-    uint8  start = 0;
+    uint16_t tx_skb_len;
+    uint16_t tx_ir_len;
+    uint8_t  start = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -2099,12 +2099,12 @@ int32 ps_tx_irbuf(struct ps_core_s *ps_core_d, const int8 __user *buf, size_t co
 }
 
 
-int32 ps_tx_nfcbuf(struct ps_core_s *ps_core_d, const int8 __user *buf, size_t count)
+int32_t ps_tx_nfcbuf(struct ps_core_s *ps_core_d, const int8_t __user *buf, size_t count)
 {
     struct sk_buff *skb;
-    uint16 tx_skb_len;
-    uint16 tx_nfc_len;
-    uint8  start = 0;
+    uint16_t tx_skb_len;
+    uint16_t tx_nfc_len;
+    uint8_t  start = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -2184,12 +2184,12 @@ int32 ps_tx_nfcbuf(struct ps_core_s *ps_core_d, const int8 __user *buf, size_t c
  *     Modification : Created function
  *
  */
-int32 ps_tx_gnssbuf(struct ps_core_s *ps_core_d, const int8 __user *buf, size_t count)
+int32_t ps_tx_gnssbuf(struct ps_core_s *ps_core_d, const int8_t __user *buf, size_t count)
 {
     struct sk_buff *skb;
-    uint16 tx_skb_len;
-    uint16 tx_gnss_len;
-    uint8  start = 0;
+    uint16_t tx_skb_len;
+    uint16_t tx_gnss_len;
+    uint8_t  start = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -2270,13 +2270,13 @@ int32 ps_tx_gnssbuf(struct ps_core_s *ps_core_d, const int8 __user *buf, size_t 
  *     Modification : Created function
  *
  */
-int32 ps_core_init(struct ps_core_s **core_data)
+int32_t ps_core_init(struct ps_core_s **core_data)
 {
     struct ps_core_s *ps_core_d;
     struct ps_pm_s *ps_pm_d;
-    uint8 *ptr;
-    int32  err;
-    int32 i = 0;
+    uint8_t *ptr;
+    int32_t  err;
+    int32_t i = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -2407,9 +2407,9 @@ int32 ps_core_init(struct ps_core_s **core_data)
  *     Modification : Created function
  *
  */
-int32 ps_core_exit(struct ps_core_s *ps_core_d)
+int32_t ps_core_exit(struct ps_core_s *ps_core_d)
 {
-    int32 err;
+    int32_t err;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -2445,9 +2445,9 @@ int32 ps_core_exit(struct ps_core_s *ps_core_d)
 }
 
 
-int32 wifi_choose_bfgn_channel_send_log2sdt(uint8* data, uint16 len)
+int32_t wifi_choose_bfgn_channel_send_log2sdt(uint8_t* data, uint16_t len)
 {
-    int32  ret = 0;
+    int32_t  ret = 0;
     struct ps_core_s *ps_core_d = NULL;
     ps_get_core_reference(&ps_core_d);
 

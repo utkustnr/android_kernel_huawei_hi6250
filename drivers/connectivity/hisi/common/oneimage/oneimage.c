@@ -59,10 +59,10 @@ bool is_my_chip(void)
 #endif
 }
 
-bool is_hisi_chiptype(int32 chip)
+bool is_hisi_chiptype(int32_t chip)
 {
 #ifdef CONFIG_HWCONNECTIVITY
-    int32 ret= BOARD_FAIL;
+    int32_t ret= BOARD_FAIL;
 
     if(false == is_my_chip())
     {

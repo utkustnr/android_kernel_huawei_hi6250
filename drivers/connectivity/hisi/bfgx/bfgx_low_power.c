@@ -87,7 +87,7 @@ void host_allow_bfg_sleep(struct ps_core_s *ps_core_d)
 /**
  * Prototype    : bfg_timer_expire
  * Description  : bfg timer expired function
- * input        : uint64_t
+ * input        : unsigned long
  * output       : no
  * Calls        :
  * Called By    :
@@ -98,7 +98,7 @@ void host_allow_bfg_sleep(struct ps_core_s *ps_core_d)
  *     Modification : Created function
  *
  */
-void bfg_timer_expire(uint64_t data)
+void bfg_timer_expire(unsigned long data)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct pm_drv_data  *pm_data = (struct pm_drv_data*)data;

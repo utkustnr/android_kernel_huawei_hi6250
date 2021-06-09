@@ -37,7 +37,7 @@ struct platform_device *hw_ps_device = NULL;
 STATIC int g_debug_cnt = 0;
 DUMP_CMD_QUEUE dump_cmd_queue;
 
-uint32 g_bfgx_open_cmd[BFGX_BUTT] =
+uint32_t g_bfgx_open_cmd[BFGX_BUTT] =
 {
     SYS_CFG_OPEN_BT,
     SYS_CFG_OPEN_FM,
@@ -46,7 +46,7 @@ uint32 g_bfgx_open_cmd[BFGX_BUTT] =
     SYS_CFG_OPEN_NFC,
 };
 
-uint32 g_bfgx_close_cmd[BFGX_BUTT] =
+uint32_t g_bfgx_close_cmd[BFGX_BUTT] =
 {
     SYS_CFG_CLOSE_BT,
     SYS_CFG_CLOSE_FM,
@@ -55,7 +55,7 @@ uint32 g_bfgx_close_cmd[BFGX_BUTT] =
     SYS_CFG_CLOSE_NFC,
 };
 
-uint32 g_bfgx_open_cmd_timeout[BFGX_BUTT] =
+uint32_t g_bfgx_open_cmd_timeout[BFGX_BUTT] =
 {
     WAIT_BT_OPEN_TIME,
     WAIT_FM_OPEN_TIME,
@@ -64,7 +64,7 @@ uint32 g_bfgx_open_cmd_timeout[BFGX_BUTT] =
     WAIT_NFC_OPEN_TIME,
 };
 
-uint32 g_bfgx_close_cmd_timeout[BFGX_BUTT] =
+uint32_t g_bfgx_close_cmd_timeout[BFGX_BUTT] =
 {
     WAIT_BT_CLOSE_TIME,
     WAIT_FM_CLOSE_TIME,
@@ -73,7 +73,7 @@ uint32 g_bfgx_close_cmd_timeout[BFGX_BUTT] =
     WAIT_NFC_CLOSE_TIME,
 };
 
-const uint8 *g_bfgx_subsys_name[BFGX_BUTT] =
+const uint8_t *g_bfgx_subsys_name[BFGX_BUTT] =
 {
     "BT",
     "FM",
@@ -107,7 +107,7 @@ extern int isAsic(void);
  *     Modification : Created function
  *
  */
-int32 ps_get_plat_reference(struct ps_plat_s **plat_data)
+int32_t ps_get_plat_reference(struct ps_plat_s **plat_data)
 {
     struct platform_device   *pdev = NULL;
     struct ps_plat_s    *ps_plat_d = NULL;
@@ -141,7 +141,7 @@ int32 ps_get_plat_reference(struct ps_plat_s **plat_data)
  *     Modification : Created function
  *
  */
-int32 ps_get_core_reference(struct ps_core_s **core_data)
+int32_t ps_get_core_reference(struct ps_core_s **core_data)
 {
     struct platform_device *pdev = NULL;
     struct ps_plat_s  *ps_plat_d = NULL;
@@ -183,7 +183,7 @@ int32 ps_get_core_reference(struct ps_core_s **core_data)
  */
 bool ps_chk_bfg_active(struct ps_core_s *ps_core_d)
 {
-    int32 i = 0;
+    int32_t i = 0;
     for (i = 0; i < BFGX_BUTT; i++)
     {
         if (POWER_STATE_SHUTDOWN != atomic_read(&ps_core_d->bfgx_info[i].subsys_state))
@@ -227,7 +227,7 @@ bool ps_chk_only_gnss_and_cldslp(struct ps_core_s *ps_core_d)
  *     Modification : Created function
  *
  */
-struct sk_buff *ps_alloc_skb(uint16 len)
+struct sk_buff *ps_alloc_skb(uint16_t len)
 {
     struct sk_buff *skb = NULL;
 
@@ -260,7 +260,7 @@ struct sk_buff *ps_alloc_skb(uint16 len)
  *     Modification : Created function
  *
  */
-void ps_kfree_skb(struct ps_core_s *ps_core_d, uint8 type)
+void ps_kfree_skb(struct ps_core_s *ps_core_d, uint8_t type)
 {
     struct sk_buff *skb = NULL;
 
@@ -323,7 +323,7 @@ void ps_kfree_skb(struct ps_core_s *ps_core_d, uint8 type)
  *     Modification : Created function
  *
  */
-int32 ps_restore_skbqueue(struct ps_core_s *ps_core_d, struct sk_buff *skb, uint8 type)
+int32_t ps_restore_skbqueue(struct ps_core_s *ps_core_d, struct sk_buff *skb, uint8_t type)
 {
     PS_PRINT_FUNCTION_NAME;
 
@@ -364,11 +364,11 @@ int32 ps_restore_skbqueue(struct ps_core_s *ps_core_d, struct sk_buff *skb, uint
 
 /* prepare to visit dev_node
 */
-int32 prepare_to_visit_node(struct ps_core_s *ps_core_d)
+int32_t prepare_to_visit_node(struct ps_core_s *ps_core_d)
 {
     struct pm_drv_data *pm_data = NULL;
-    uint8 uart_ready = UART_NOT_READY;
-    int32  ret = 0;
+    uint8_t uart_ready = UART_NOT_READY;
+    int32_t  ret = 0;
 
     pm_data = pm_get_drvdata();
     if (unlikely(NULL == pm_data))
@@ -407,18 +407,18 @@ int32 prepare_to_visit_node(struct ps_core_s *ps_core_d)
 }
 
 /* we should do something before exit from visiting dev_node */
-int32 post_to_visit_node(struct ps_core_s *ps_core_d)
+int32_t post_to_visit_node(struct ps_core_s *ps_core_d)
 {
     atomic_dec(&ps_core_d->node_visit_flag);
 
     return 0;
 }
 
-int32 alloc_seperted_rx_buf(uint8 subsys, uint32 len,uint8 alloctype)
+int32_t alloc_seperted_rx_buf(uint8_t subsys, uint32_t len,uint8_t alloctype)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct bfgx_sepreted_rx_st *pst_sepreted_data = NULL;
-    uint8 *p_rx_buf = NULL;
+    uint8_t *p_rx_buf = NULL;
 
     if (subsys >= BFGX_BUTT)
     {
@@ -464,7 +464,7 @@ int32 alloc_seperted_rx_buf(uint8 subsys, uint32 len,uint8 alloctype)
     return 0;
 }
 
-int32 free_seperted_rx_buf(uint8 subsys,uint8 alloctype)
+int32_t free_seperted_rx_buf(uint8_t subsys,uint8_t alloctype)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct bfgx_sepreted_rx_st *pst_sepreted_data = NULL;
@@ -509,7 +509,7 @@ int32 free_seperted_rx_buf(uint8 subsys,uint8 alloctype)
     return 0;
 }
 
-int32 bfgx_open_fail_process(uint8 subsys, int32 error)
+int32_t bfgx_open_fail_process(uint8_t subsys, int32_t error)
 {
     struct ps_core_s *ps_core_d = NULL;
 
@@ -589,11 +589,11 @@ int32 bfgx_open_fail_process(uint8 subsys, int32 error)
 
 /**********************************************************************/
 
-int32 uart_wifi_open(void)
+int32_t uart_wifi_open(void)
 {
     struct ps_core_s *ps_core_d = NULL;
-    uint64 timeleft;
-    int32 ret;
+    uint64_t timeleft;
+    int32_t ret;
 
     PS_PRINT_INFO("%s\n", __func__);
 
@@ -636,11 +636,11 @@ int32 uart_wifi_open(void)
 
 /**********************************************************************/
 
-int32 uart_wifi_close(void)
+int32_t uart_wifi_close(void)
 {
     struct ps_core_s *ps_core_d = NULL;
-    uint64 timeleft;
-    int32  ret;
+    uint64_t timeleft;
+    int32_t  ret;
 
     PS_PRINT_INFO("%s\n", __func__);
 
@@ -683,12 +683,12 @@ int32 uart_wifi_close(void)
 
 /**********************************************************************/
 
-int32 uart_bfgx_close_cmd(void)
+int32_t uart_bfgx_close_cmd(void)
 {
 #define wait_close_times  (100)
     struct ps_core_s *ps_core_d = NULL;
     int bwkup_gpio_val = 1;
-    int32 ret;
+    int32_t ret;
     int i;
 
     PS_PRINT_INFO("%s\n", __func__);
@@ -737,9 +737,9 @@ int32 uart_bfgx_close_cmd(void)
     return ret;
 }
 
-int32 bfgx_open_cmd_send(uint32 subsys)
+int32_t bfgx_open_cmd_send(uint32_t subsys)
 {
-    uint64 timeleft;
+    uint64_t timeleft;
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_bfgx_data = NULL;
 
@@ -783,9 +783,9 @@ int32 bfgx_open_cmd_send(uint32 subsys)
     return 0;
 }
 
-int32 bfgx_close_cmd_send(uint32 subsys)
+int32_t bfgx_close_cmd_send(uint32_t subsys)
 {
-    uint64 timeleft;
+    uint64_t timeleft;
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_bfgx_data = NULL;
 
@@ -846,11 +846,11 @@ int32 bfgx_close_cmd_send(uint32 subsys)
  *     Modification : Created function
  *
  */
-STATIC int32 hw_bt_open(struct inode *inode, struct file *filp)
+STATIC int32_t hw_bt_open(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_bt_data = NULL;
-    int32  error = BFGX_POWER_SUCCESS;
+    int32_t  error = BFGX_POWER_SUCCESS;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -936,12 +936,12 @@ bfgx_power_on_fail:
  *     Modification : Created function
  *
  */
-STATIC ssize_t hw_bt_read(struct file *filp, int8 __user *buf,
+STATIC ssize_t hw_bt_read(struct file *filp, char __user *buf,
                                 size_t count,loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct sk_buff *skb = NULL;
-    uint16 count1;
+    uint16_t count1;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -998,14 +998,14 @@ STATIC ssize_t hw_bt_read(struct file *filp, int8 __user *buf,
  *     Modification : Created function
  *
  */
-STATIC ssize_t hw_bt_write(struct file *filp, const int8 __user *buf, size_t count,loff_t *f_pos)
+STATIC ssize_t hw_bt_write(struct file *filp, const char __user *buf, size_t count,loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct sk_buff *skb;
-    uint16 total_len;
-    int32  ret = 0;
-    uint8 __user *puser = (uint8 __user *)buf;
-    uint8 type = 0;
+    uint16_t total_len;
+    int32_t  ret = 0;
+    uint8_t __user *puser = (uint8_t __user *)buf;
+    uint8_t type = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1106,10 +1106,10 @@ STATIC ssize_t hw_bt_write(struct file *filp, const int8 __user *buf, size_t cou
  *     Modification : Created function
  *
  */
-STATIC uint32 hw_bt_poll(struct file *filp, poll_table *wait)
+STATIC uint32_t hw_bt_poll(struct file *filp, poll_table *wait)
 {
     struct ps_core_s *ps_core_d = NULL;
-    uint32 mask = 0;
+    uint32_t mask = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1146,7 +1146,7 @@ STATIC uint32 hw_bt_poll(struct file *filp, poll_table *wait)
  *     Modification : Created function
  *
  */
-STATIC int64 hw_bt_ioctl(struct file *file, uint32 cmd, uint64 arg)
+STATIC long hw_bt_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     PS_PRINT_FUNCTION_NAME;
 
@@ -1168,11 +1168,11 @@ STATIC int64 hw_bt_ioctl(struct file *file, uint32 cmd, uint64 arg)
  *     Modification : Created function
  *
  */
-STATIC int32 hw_bt_release(struct inode *inode, struct file *filp)
+STATIC int32_t hw_bt_release(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_bt_data = NULL;
-    int32 ret = 0;
+    int32_t ret = 0;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -1229,11 +1229,11 @@ STATIC int32 hw_bt_release(struct inode *inode, struct file *filp)
     return 0;
 }
 
-STATIC int32 hw_nfc_open(struct inode *inode, struct file *filp)
+STATIC int32_t hw_nfc_open(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_nfc_data = NULL;
-    int32 error = BFGX_POWER_SUCCESS;
+    int32_t error = BFGX_POWER_SUCCESS;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -1314,12 +1314,12 @@ bfgx_power_on_fail:
     return BFGX_POWER_FAILED;
 }
 
-STATIC ssize_t hw_nfc_read(struct file *filp, int8 __user *buf,
+STATIC ssize_t hw_nfc_read(struct file *filp, char __user *buf,
                                 size_t count,loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct sk_buff *skb = NULL;
-    uint16 count1;
+    uint16_t count1;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1357,11 +1357,11 @@ STATIC ssize_t hw_nfc_read(struct file *filp, int8 __user *buf,
     return count1;
 }
 
-STATIC ssize_t hw_nfc_write(struct file *filp, const int8 __user *buf,
+STATIC ssize_t hw_nfc_write(struct file *filp, const char __user *buf,
                                 size_t count, loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
-    int32 ret = 0;
+    int32_t ret = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1410,10 +1410,10 @@ STATIC ssize_t hw_nfc_write(struct file *filp, const int8 __user *buf,
 }
 
 
-STATIC uint32 hw_nfc_poll(struct file *filp, poll_table *wait)
+STATIC uint32_t hw_nfc_poll(struct file *filp, poll_table *wait)
 {
     struct ps_core_s *ps_core_d = NULL;
-    uint32 mask = 0;
+    uint32_t mask = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1435,11 +1435,11 @@ STATIC uint32 hw_nfc_poll(struct file *filp, poll_table *wait)
     return mask;
 }
 
-STATIC int32 hw_nfc_release(struct inode *inode, struct file *filp)
+STATIC int32_t hw_nfc_release(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_nfc_data = NULL;
-    int32 ret = 0;
+    int32_t ret = 0;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -1510,11 +1510,11 @@ STATIC int32 hw_nfc_release(struct inode *inode, struct file *filp)
  *     Modification : Created function
  *
  */
-STATIC int32 hw_ir_open(struct inode *inode, struct file *filp)
+STATIC int32_t hw_ir_open(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_ir_data = NULL;
-    int32 error = BFGX_POWER_SUCCESS;
+    int32_t error = BFGX_POWER_SUCCESS;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -1596,7 +1596,7 @@ bfgx_power_on_fail:
 /**
  * Prototype    : hw_ir_read
  * Description  : read ir node data
- * input        : struct file *filp, int8 __user *buf, size_t count,loff_t *f_pos
+ * input        : struct file *filp, int8_t __user *buf, size_t count,loff_t *f_pos
  * output       : return read len
  *
  * Calls        :
@@ -1608,10 +1608,10 @@ bfgx_power_on_fail:
  *     Modification : Created function
  *
  */
-STATIC ssize_t hw_ir_read(struct file *filp, int8 __user *buf,
+STATIC ssize_t hw_ir_read(struct file *filp, char __user *buf,
                                 size_t count, loff_t *f_pos)
 {
-    uint16 ret_count;
+    uint16_t ret_count;
     struct sk_buff *skb = NULL;
     struct ps_core_s *ps_core_d = NULL;
 
@@ -1655,7 +1655,7 @@ STATIC ssize_t hw_ir_read(struct file *filp, int8 __user *buf,
 /**
  * Prototype    : hw_ir_write
  * Description  : write data to ir node
- * input        : struct file *filp, const int8 __user *buf, size_t count, loff_t *f_pos
+ * input        : struct file *filp, const int8_t __user *buf, size_t count, loff_t *f_pos
  * output       : return write len
  *
  * Calls        :
@@ -1667,11 +1667,11 @@ STATIC ssize_t hw_ir_read(struct file *filp, int8 __user *buf,
  *     Modification : Created function
  *
  */
-STATIC ssize_t hw_ir_write(struct file *filp, const int8 __user *buf,
+STATIC ssize_t hw_ir_write(struct file *filp, const char __user *buf,
                                 size_t count, loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
-    int32 ret = 0;
+    int32_t ret = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1733,9 +1733,9 @@ STATIC ssize_t hw_ir_write(struct file *filp, const int8 __user *buf,
  *     Modification : Created function
  *
  */
-STATIC int32 hw_ir_release(struct inode *inode, struct file *filp)
+STATIC int32_t hw_ir_release(struct inode *inode, struct file *filp)
 {
-    int32 ret = 0;
+    int32_t ret = 0;
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_ir_data = NULL;
     struct pm_drv_data *pm_data = pm_get_drvdata();
@@ -1810,11 +1810,11 @@ STATIC int32 hw_ir_release(struct inode *inode, struct file *filp)
  *     Modification : Created function
  *
  */
-STATIC int32 hw_fm_open(struct inode *inode, struct file *filp)
+STATIC int32_t hw_fm_open(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_fm_data = NULL;
-    int32 error = BFGX_POWER_SUCCESS;
+    int32_t error = BFGX_POWER_SUCCESS;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -1909,13 +1909,13 @@ bfgx_power_on_fail:
  *     Modification : Created function
  *
  */
-STATIC ssize_t hw_fm_read(struct file *filp, int8 __user *buf,
+STATIC ssize_t hw_fm_read(struct file *filp, char __user *buf,
                                 size_t count,loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct sk_buff *skb = NULL;
-    uint16 count1;
-    int64 timeout;
+    uint16_t count1;
+    int64_t timeout;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -1986,11 +1986,11 @@ STATIC ssize_t hw_fm_read(struct file *filp, int8 __user *buf,
  *     Modification : Created function
  *
  */
-STATIC ssize_t hw_fm_write(struct file *filp, const int8 __user *buf,
+STATIC ssize_t hw_fm_write(struct file *filp, const char __user *buf,
                                 size_t count,loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
-    int32 ret = 0;
+    int32_t ret = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -2055,7 +2055,7 @@ STATIC ssize_t hw_fm_write(struct file *filp, const int8 __user *buf,
  *     Modification : Created function
  *
  */
-STATIC int64 hw_fm_ioctl(struct file *file, uint32 cmd, uint64 arg)
+STATIC long hw_fm_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     struct ps_core_s *ps_core_d = NULL;
 
@@ -2099,11 +2099,11 @@ STATIC int64 hw_fm_ioctl(struct file *file, uint32 cmd, uint64 arg)
  *     Modification : Created function
  *
  */
-STATIC int32 hw_fm_release(struct inode *inode, struct file *filp)
+STATIC int32_t hw_fm_release(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_fm_data = NULL;
-    int32 ret = 0;
+    int32_t ret = 0;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -2173,11 +2173,11 @@ STATIC int32 hw_fm_release(struct inode *inode, struct file *filp)
  *     Modification : Created function
  *
  */
-STATIC int32 hw_gnss_open(struct inode *inode, struct file *filp)
+STATIC int32_t hw_gnss_open(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_gnss_data = NULL;
-    int32  error = BFGX_POWER_SUCCESS;
+    int32_t  error = BFGX_POWER_SUCCESS;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -2272,16 +2272,16 @@ bfgx_power_on_fail:
  *     Modification : Created function
  *
  */
-STATIC ssize_t hw_gnss_read(struct file *filp, int8 __user *buf, size_t count, loff_t *f_pos)
+STATIC ssize_t hw_gnss_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct sk_buff *skb = NULL;
     struct sk_buff_head read_queue;
-    int32 count1;
-    int64 timeout;
-    uint8 seperate_tag = GNSS_SEPER_TAG_INIT;
-    int32 copy_cnt = 0;
-    uint32 ret;
+    int32_t count1;
+    int64_t timeout;
+    uint8_t seperate_tag = GNSS_SEPER_TAG_INIT;
+    int32_t copy_cnt = 0;
+    uint32_t ret;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -2357,7 +2357,7 @@ STATIC ssize_t hw_gnss_read(struct file *filp, int8 __user *buf, size_t count, l
 
         if (1 >= skb->len)
         {
-            PS_PRINT_ERR("skb len error,skb->len=%x,copy_cnt=%x,count=%x\n", skb->len, copy_cnt, (uint32)count);
+            PS_PRINT_ERR("skb len error,skb->len=%x,copy_cnt=%x,count=%x\n", skb->len, copy_cnt, (uint32_t)count);
             goto copy_error;
         }
 
@@ -2365,7 +2365,7 @@ STATIC ssize_t hw_gnss_read(struct file *filp, int8 __user *buf, size_t count, l
         if (count1 + copy_cnt > count)
         {
             PS_PRINT_ERR("copy total len error,skb->len=%x,tag=%x,copy_cnt=%x,read_cnt=%x\n", \
-                                                 skb->len, skb->data[skb->len -1], copy_cnt, (uint32)count);
+                                                 skb->len, skb->data[skb->len -1], copy_cnt, (uint32_t)count);
             goto copy_error;
         }
 
@@ -2373,7 +2373,7 @@ STATIC ssize_t hw_gnss_read(struct file *filp, int8 __user *buf, size_t count, l
         if (0 != ret)
         {
             PS_PRINT_ERR("copy_to_user err,ret=%x,dest=%p,src=%p,tag:%x,count1=%x,copy_cnt=%x,read_cnt=%x\n", \
-                                  ret,buf+copy_cnt,skb->data,skb->data[skb->len -1],count1,copy_cnt,(uint32)count);
+                                  ret,buf+copy_cnt,skb->data,skb->data[skb->len -1],count1,copy_cnt,(uint32_t)count);
             goto copy_error;
         }
 
@@ -2410,11 +2410,11 @@ skb_dequeue_error:
  *     Modification : Created function
  *
  */
-STATIC ssize_t hw_gnss_write(struct file *filp, const int8 __user *buf,
+STATIC ssize_t hw_gnss_write(struct file *filp, const char __user *buf,
                                     size_t count, loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
-    int32 ret = 0;
+    int32_t ret = 0;
     struct pm_drv_data *pm_data = pm_get_drvdata();
     PS_PRINT_FUNCTION_NAME;
 
@@ -2475,7 +2475,7 @@ STATIC ssize_t hw_gnss_write(struct file *filp, const int8 __user *buf,
  *     Modification : Created function
  *
  */
-STATIC int64 hw_gnss_ioctl(struct file *file, uint32 cmd, uint64 arg)
+STATIC long hw_gnss_ioctl(struct file *file, uint32_t cmd, unsigned long arg)
 {
     struct ps_core_s *ps_core_d = NULL;
 
@@ -2522,7 +2522,7 @@ void plat_rotate_finish_set(void)
 
 void plat_wait_last_rotate_finish(void)
 {
-    uint8 retry = 0;
+    uint8_t retry = 0;
 
 #define RETRY_TIME 3
 
@@ -2540,7 +2540,7 @@ void plat_wait_last_rotate_finish(void)
     atomic_set(&dump_cmd_queue.rotate_finish_state, ROTATE_NOT_FINISH);
 }
 
-int32 plat_send_rotate_cmd_2_app(uint32 which_dump)
+int32_t plat_send_rotate_cmd_2_app(uint32_t which_dump)
 {
     struct sk_buff  *skb =NULL;
 
@@ -2558,11 +2558,11 @@ int32 plat_send_rotate_cmd_2_app(uint32 which_dump)
     skb = alloc_skb(sizeof(which_dump), GFP_KERNEL);
     if( NULL == skb)
     {
-        PS_PRINT_ERR("alloc errno skbuff failed! len=%d, errno=%x\n", (int32)sizeof(which_dump), which_dump);
+        PS_PRINT_ERR("alloc errno skbuff failed! len=%d, errno=%x\n", (int32_t)sizeof(which_dump), which_dump);
         return -EINVAL;
     }
     skb_put(skb, sizeof(which_dump));
-    *(uint32*)skb->data = which_dump;
+    *(uint32_t*)skb->data = which_dump;
     skb_queue_tail(&dump_cmd_queue.dump_type_queue, skb);
     PS_PRINT_INFO("save rotate cmd [%d] in queue\n", which_dump);
 
@@ -2572,13 +2572,13 @@ int32 plat_send_rotate_cmd_2_app(uint32 which_dump)
 }
 
 
-int32 plat_dump_rotate_cmd_read(uint64 arg)
+int32_t plat_dump_rotate_cmd_read(uint64_t arg)
 {
-    uint32 __user  *puser = (uint32 __user *)arg;
+    uint32_t __user  *puser = (uint32_t __user *)arg;
 
     struct sk_buff  *skb =NULL;
 
-    if (!access_ok(VERIFY_WRITE, puser, (int32)sizeof(uint32)))
+    if (!access_ok(VERIFY_WRITE, puser, (int32_t)sizeof(uint32_t)))
     {
         PS_PRINT_ERR("address can not write\n");
         return -EINVAL;
@@ -2597,14 +2597,14 @@ int32 plat_dump_rotate_cmd_read(uint64 arg)
         return -EINVAL;
     }
 
-    if (copy_to_user(puser, skb->data, sizeof(uint32)))
+    if (copy_to_user(puser, skb->data, sizeof(uint32_t)))
     {
-        PS_PRINT_WARNING("copy_to_user err!restore it, len=%d\n", (int32)sizeof(uint32));
+        PS_PRINT_WARNING("copy_to_user err!restore it, len=%d\n", (int32_t)sizeof(uint32_t));
         skb_queue_head(&dump_cmd_queue.dump_type_queue, skb);
         return -EINVAL;
     }
 
-    PS_PRINT_INFO("read rotate cmd [%d] from queue\n", *(uint32*)skb->data);
+    PS_PRINT_INFO("read rotate cmd [%d] from queue\n", *(uint32_t*)skb->data);
 
     skb_pull(skb, skb->len);
     kfree_skb(skb);
@@ -2614,7 +2614,7 @@ int32 plat_dump_rotate_cmd_read(uint64 arg)
 
 
 
-STATIC int64 hw_debug_ioctl(struct file *file, uint32 cmd, uint64 arg)
+STATIC long hw_debug_ioctl(struct file *file, uint32_t cmd, unsigned long arg)
 {
 
     if (NULL == file)
@@ -2645,12 +2645,12 @@ STATIC int64 hw_debug_ioctl(struct file *file, uint32 cmd, uint64 arg)
     return 0;
 }
 #else
-int32 plat_excp_dump_rotate_cmd_read(uint64 arg, memdump_info_t* memdump_info)
+int32_t plat_excp_dump_rotate_cmd_read(uint64_t arg, memdump_info_t* memdump_info)
 {
-    uint32 __user  *puser = (uint32 __user *)arg;
+    uint32_t __user  *puser = (uint32_t __user *)arg;
 
     struct sk_buff  *skb =NULL;
-    if (!access_ok(VERIFY_WRITE, puser, (int32)sizeof(uint32)))
+    if (!access_ok(VERIFY_WRITE, puser, (int32_t)sizeof(uint32_t)))
     {
         PS_PRINT_ERR("address can not write\n");
         return -EINVAL;
@@ -2666,30 +2666,30 @@ int32 plat_excp_dump_rotate_cmd_read(uint64 arg, memdump_info_t* memdump_info)
         PS_PRINT_WARNING("skb is NULL\n");
         return -EINVAL;
     }
-    if (copy_to_user(puser, skb->data, sizeof(uint32)))
+    if (copy_to_user(puser, skb->data, sizeof(uint32_t)))
     {
-        PS_PRINT_WARNING("copy_to_user err!restore it, len=%d,arg=%ld\n", (int32)sizeof(uint32),arg);
+        PS_PRINT_WARNING("copy_to_user err!restore it, len=%d,arg=%ld\n", (int32_t)sizeof(uint32_t),arg);
         skb_queue_head(&memdump_info->dump_type_queue, skb);
         return -EINVAL;
     }
 
-    PS_PRINT_INFO("read rotate cmd [%d] from queue\n", *(uint32*)skb->data);
+    PS_PRINT_INFO("read rotate cmd [%d] from queue\n", *(uint32_t*)skb->data);
     skb_pull(skb, skb->len);
     kfree_skb(skb);
     return 0;
 }
-int32 plat_bfgx_dump_rotate_cmd_read(uint64 arg)
+int32_t plat_bfgx_dump_rotate_cmd_read(uint64_t arg)
 {
     return plat_excp_dump_rotate_cmd_read(arg, &bcpu_memdump_cfg);
 }
-int32 plat_wifi_dump_rotate_cmd_read(uint64 arg)
+int32_t plat_wifi_dump_rotate_cmd_read(uint64_t arg)
 {
     return plat_excp_dump_rotate_cmd_read(arg, &wcpu_memdump_cfg);
 }
 
 
 
-STATIC int64 hw_debug_ioctl(struct file *file, uint32 cmd, uint64 arg)
+STATIC long hw_debug_ioctl(struct file *file, uint32_t cmd, unsigned long arg)
 {
     if (NULL == file)
     {
@@ -2727,11 +2727,11 @@ STATIC int64 hw_debug_ioctl(struct file *file, uint32 cmd, uint64 arg)
  *     Modification : Created function
  *
  */
-STATIC int32 hw_gnss_release(struct inode *inode, struct file *filp)
+STATIC int32_t hw_gnss_release(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct st_bfgx_data *pst_gnss_data = NULL;
-    int32  ret = 0;
+    int32_t  ret = 0;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 
     if (NULL == pm_data)
@@ -2788,11 +2788,11 @@ STATIC int32 hw_gnss_release(struct inode *inode, struct file *filp)
     return 0;
 }
 #ifdef HI110X_HAL_MEMDUMP_ENABLE
-STATIC int32 hw_excp_read(struct file *filp, int8 __user *buf,
+STATIC int32_t hw_excp_read(struct file *filp, int8_t __user *buf,
                                 size_t count,loff_t *f_pos, memdump_info_t *memdump_t)
 {
     struct sk_buff *skb = NULL;
-    uint16 count1;
+    uint16_t count1;
 
     PS_PRINT_WARNING("hw_excp_read\n");
     if (unlikely((NULL == buf)||(NULL == filp)))
@@ -2825,14 +2825,14 @@ STATIC int32 hw_excp_read(struct file *filp, int8 __user *buf,
     return count1;
 }
 
-STATIC ssize_t hw_bfgexcp_read(struct file *filp, int8 __user *buf,
+STATIC ssize_t hw_bfgexcp_read(struct file *filp, char __user *buf,
                                 size_t count,loff_t *f_pos)
 {
     return hw_excp_read(filp, buf, count, f_pos, &bcpu_memdump_cfg);
 }
-STATIC int64 hw_bfgexcp_ioctl(struct file *file, uint32 cmd, uint64 arg)
+STATIC long hw_bfgexcp_ioctl(struct file *file, uint32_t cmd, unsigned long arg)
 {
-    int32 ret = 0;
+    int32_t ret = 0;
     if (NULL == file)
     {
         PS_PRINT_ERR("file is null\n");
@@ -2850,9 +2850,9 @@ STATIC int64 hw_bfgexcp_ioctl(struct file *file, uint32 cmd, uint64 arg)
 
     return ret;
 }
-STATIC int64 hw_wifiexcp_ioctl(struct file *file, uint32 cmd, uint64 arg)
+STATIC long hw_wifiexcp_ioctl(struct file *file, uint32_t cmd, unsigned long arg)
 {
-    int32 ret = 0;
+    int32_t ret = 0;
 
     if (NULL == file)
     {
@@ -2872,7 +2872,7 @@ STATIC int64 hw_wifiexcp_ioctl(struct file *file, uint32 cmd, uint64 arg)
     return ret;
 }
 
-STATIC ssize_t hw_wifiexcp_read(struct file *filp, int8 __user *buf,
+STATIC ssize_t hw_wifiexcp_read(struct file *filp, char __user *buf,
                                 size_t count,loff_t *f_pos)
 {
     return hw_excp_read(filp, buf, count, f_pos, &wcpu_memdump_cfg);
@@ -2895,7 +2895,7 @@ STATIC ssize_t hw_wifiexcp_read(struct file *filp, int8 __user *buf,
  *     Modification : Created function
  *
  */
-STATIC int32 hw_debug_open(struct inode *inode, struct file *filp)
+STATIC int32_t hw_debug_open(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
 
@@ -2932,13 +2932,13 @@ STATIC int32 hw_debug_open(struct inode *inode, struct file *filp)
  *     Modification : Created function
  *
  */
-STATIC ssize_t hw_debug_read(struct file *filp, int8 __user *buf,
+STATIC ssize_t hw_debug_read(struct file *filp, char __user *buf,
                                 size_t count,loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct sk_buff *skb = NULL;
-    uint16 count1 = 0;
-    int64 timeout;
+    uint16_t count1 = 0;
+    int64_t timeout;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -3012,13 +3012,13 @@ STATIC ssize_t hw_debug_read(struct file *filp, int8 __user *buf,
  *
  */
 #ifdef PLATFORM_DEBUG_ENABLE
-STATIC ssize_t hw_debug_write(struct file *filp, const int8 __user *buf,
+STATIC ssize_t hw_debug_write(struct file *filp, const int8_t __user *buf,
                                 size_t count,loff_t *f_pos)
 {
     struct ps_core_s *ps_core_d = NULL;
     struct sk_buff *skb;
-    uint16 total_len;
-    int32 ret = 0;
+    uint16_t total_len;
+    int32_t ret = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -3104,7 +3104,7 @@ STATIC ssize_t hw_debug_write(struct file *filp, const int8 __user *buf,
  *     Modification : Created function
  *
  */
-STATIC int32 hw_debug_release(struct inode *inode, struct file *filp)
+STATIC int32_t hw_debug_release(struct inode *inode, struct file *filp)
 {
     struct ps_core_s *ps_core_d = NULL;
 
@@ -3135,7 +3135,7 @@ STATIC int32 hw_debug_release(struct inode *inode, struct file *filp)
 uart_loop_cfg g_st_uart_loop_test_cfg = {1000, 1024, 0, 0};
 uart_loop_test_struct *g_pst_uart_loop_test_info = NULL;
 
-int32 uart_loop_set_pkt_count(uint32 count)
+int32_t uart_loop_set_pkt_count(uint32_t count)
 {
     PS_PRINT_INFO("uart loop test, set pkt count to [%d]\n", count);
     g_st_uart_loop_test_cfg.loop_count = count;
@@ -3143,7 +3143,7 @@ int32 uart_loop_set_pkt_count(uint32 count)
     return 0;
 }
 
-int32 uart_loop_set_pkt_len(uint32 pkt_len)
+int32_t uart_loop_set_pkt_len(uint32_t pkt_len)
 {
     PS_PRINT_INFO("uart loop test, set pkt len to [%d]\n", pkt_len);
     g_st_uart_loop_test_cfg.pkt_len = pkt_len;
@@ -3151,11 +3151,11 @@ int32 uart_loop_set_pkt_len(uint32 pkt_len)
     return 0;
 }
 
-int32 alloc_uart_loop_test(void)
+int32_t alloc_uart_loop_test(void)
 {
-    uint8 *uart_loop_tx_buf = NULL;
-    uint8 *uart_loop_rx_buf = NULL;
-    uint16 pkt_len = 0;
+    uint8_t *uart_loop_tx_buf = NULL;
+    uint8_t *uart_loop_rx_buf = NULL;
+    uint16_t pkt_len = 0;
 
     if (NULL == g_pst_uart_loop_test_info)
     {
@@ -3173,14 +3173,14 @@ int32 alloc_uart_loop_test(void)
             g_st_uart_loop_test_cfg.pkt_len = UART_LOOP_MAX_PKT_LEN;
         }
 
-        uart_loop_tx_buf = (uint8 *)kzalloc(pkt_len, GFP_KERNEL);
+        uart_loop_tx_buf = (uint8_t *)kzalloc(pkt_len, GFP_KERNEL);
         if (NULL == uart_loop_tx_buf)
         {
             PS_PRINT_ERR("malloc uart_loop_tx_buf fail\n");
             goto malloc_tx_buf_fail;
         }
 
-        uart_loop_rx_buf = (uint8 *)kzalloc(pkt_len, GFP_KERNEL);
+        uart_loop_rx_buf = (uint8_t *)kzalloc(pkt_len, GFP_KERNEL);
         if (NULL == uart_loop_rx_buf)
         {
             PS_PRINT_ERR("malloc uart_loop_rx_buf fail\n");
@@ -3228,10 +3228,10 @@ void free_uart_loop_test(void)
     return;
 }
 
-int32 uart_loop_test_open(void)
+int32_t uart_loop_test_open(void)
 {
     struct ps_core_s *ps_core_d = NULL;
-    int32  error = BFGX_POWER_SUCCESS;
+    int32_t  error = BFGX_POWER_SUCCESS;
 
     PS_PRINT_INFO("%s\n", __func__);
 
@@ -3283,7 +3283,7 @@ alloc_mem_fail:
     return BFGX_POWER_FAILED;
 }
 
-int32 uart_loop_test_close(void)
+int32_t uart_loop_test_close(void)
 {
     struct ps_core_s *ps_core_d = NULL;
 
@@ -3316,11 +3316,11 @@ int32 uart_loop_test_close(void)
     return 0;
 }
 
-int32 uart_loop_test_set(uint8 flag)
+int32_t uart_loop_test_set(uint8_t flag)
 {
-    uint64 timeleft;
+    uint64_t timeleft;
     struct ps_core_s *ps_core_d = NULL;
-    uint8 cmd;
+    uint8_t cmd;
 
     ps_get_core_reference(&ps_core_d);
     if (unlikely(NULL == ps_core_d))
@@ -3352,12 +3352,12 @@ int32 uart_loop_test_set(uint8 flag)
     return 0;
 }
 
-int32 uart_loop_test_send_data(struct ps_core_s *ps_core_d, uint8 *buf, size_t count)
+int32_t uart_loop_test_send_data(struct ps_core_s *ps_core_d, uint8_t *buf, size_t count)
 {
     struct sk_buff *skb;
-    uint16 tx_skb_len;
-    uint16 tx_gnss_len;
-    uint8  start = 0;
+    uint16_t tx_skb_len;
+    uint16_t tx_gnss_len;
+    uint8_t  start = 0;
 
     PS_PRINT_FUNCTION_NAME;
 
@@ -3419,9 +3419,9 @@ int32 uart_loop_test_send_data(struct ps_core_s *ps_core_d, uint8 *buf, size_t c
 }
 
 
-int32 uart_loop_test_send_pkt(void)
+int32_t uart_loop_test_send_pkt(void)
 {
-    uint64 timeleft;
+    uint64_t timeleft;
     struct ps_core_s *ps_core_d = NULL;
 
     ps_get_core_reference(&ps_core_d);
@@ -3468,11 +3468,11 @@ int32 uart_loop_test_send_pkt(void)
     return 0;
 }
 
-int32 uart_loop_test_recv_pkt(struct ps_core_s *ps_core_d, const uint8 *buf_ptr, uint16 pkt_len)
+int32_t uart_loop_test_recv_pkt(struct ps_core_s *ps_core_d, const uint8_t *buf_ptr, uint16_t pkt_len)
 {
-    uint16  expect_pkt_len;
-    uint8 * rx_buf;
-    uint16  recvd_len;
+    uint16_t  expect_pkt_len;
+    uint8_t * rx_buf;
+    uint16_t  recvd_len;
 
     if (unlikely((NULL == ps_core_d)||(NULL == g_pst_uart_loop_test_info)))
     {
@@ -3504,10 +3504,10 @@ int32 uart_loop_test_recv_pkt(struct ps_core_s *ps_core_d, const uint8 *buf_ptr,
     return 0;
 }
 
-int32 uart_loop_test(void)
+int32_t uart_loop_test(void)
 {
-    uint32 i, count;
-    uint16 pkt_len;
+    uint32_t i, count;
+    uint16_t pkt_len;
     unsigned long long tx_total_len = 0, total_time, throughout, effect;
     ktime_t start_time, end_time, trans_time;
 
@@ -3715,7 +3715,7 @@ static int plat_poweroff_notify_sys(struct notifier_block *this, unsigned long c
     struct st_bfgx_data *pst_gnss_data = NULL;
     struct inode gnss_inode;
     struct file gnss_filp;
-    int32  err;
+    int32_t  err;
 
 
     ps_get_core_reference(&ps_core_d);
@@ -3742,11 +3742,11 @@ static struct notifier_block  plat_poweroff_notifier = {
 };
 #endif
 
-STATIC int32 ps_probe(struct platform_device *pdev)
+STATIC int32_t ps_probe(struct platform_device *pdev)
 {
     struct hw_ps_plat_data *pdata = NULL;
     struct ps_plat_s *ps_plat_d;
-    int32  err;
+    int32_t  err;
 	struct device_node *np;
 	const char * pdev_name;
 
@@ -3937,7 +3937,7 @@ STATIC int32 ps_probe(struct platform_device *pdev)
  *     Modification : Created function
  *
  */
-int32 ps_suspend(struct platform_device *pdev, pm_message_t state)
+int32_t ps_suspend(struct platform_device *pdev, pm_message_t state)
 {
 #if 0
     struct hw_ps_plat_data  *pdata = pdev->dev.platform_data;
@@ -3967,7 +3967,7 @@ int32 ps_suspend(struct platform_device *pdev, pm_message_t state)
  *     Modification : Created function
  *
  */
-int32 ps_resume(struct platform_device *pdev)
+int32_t ps_resume(struct platform_device *pdev)
 {
 #if 0
     struct hw_ps_plat_data  *pdata = pdev->dev.platform_data;
@@ -3996,7 +3996,7 @@ int32 ps_resume(struct platform_device *pdev)
  *     Modification : Created function
  *
  */
-STATIC int32 ps_remove(struct platform_device *pdev)
+STATIC int32_t ps_remove(struct platform_device *pdev)
 {
     struct ps_plat_s *ps_plat_d;
     struct hw_ps_plat_data *pdata;
@@ -4071,9 +4071,9 @@ STATIC struct platform_driver ps_platform_driver = {
         },
 };
 
-int32 hw_ps_init(void)
+int32_t hw_ps_init(void)
 {
-    int32 ret;
+    int32_t ret;
 
     PS_PRINT_FUNCTION_NAME;
 

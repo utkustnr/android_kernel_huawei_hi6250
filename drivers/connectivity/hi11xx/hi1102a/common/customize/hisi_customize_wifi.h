@@ -669,9 +669,9 @@ extern unsigned char* hwifi_get_nvram_param(unsigned int ul_nvram_param_idx);
 extern int hwifi_is_regdomain_changed(const countrycode_t, const countrycode_t);
 extern int hwifi_atcmd_update_host_nv_params(void);
 extern int hwifi_custom_host_read_cfg_init(void);
-extern int32 hwifi_get_init_priv_value(int32 l_cfg_id, int32 *pl_priv_value);
+extern int32_t hwifi_get_init_priv_value(int32_t l_cfg_id, int32_t *pl_priv_value);
 extern oal_void hwifi_config_init_base_power(oal_void);
-extern int32 hwifi_get_plat_tag_from_country_code(const countrycode_t country_code);
+extern int32_t hwifi_get_plat_tag_from_country_code(const countrycode_t country_code);
 extern regdomain_enum hwifi_get_regdomain_from_country_code(const countrycode_t country_code);
 extern oal_uint32 hwifi_config_get_bt_dpn(oal_int32 *pl_params, oal_uint16 size);
 

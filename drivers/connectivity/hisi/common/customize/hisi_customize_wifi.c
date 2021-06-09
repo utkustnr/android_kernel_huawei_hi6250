@@ -31,11 +31,11 @@ extern "C" {
 /*
  * 2 Global Variable Definition
  */
-int32 g_al_host_init_params[WLAN_CFG_INIT_BUTT] = {0};      /* ini定制化参数数组 */
-int32 g_al_dts_params[WLAN_CFG_DTS_BUTT] = {0};             /* dts定制化参数数组 */
-uint8 g_auc_nv_params[NUM_OF_NV_PARAMS] = {0};              /* nv定制化参数数组 */
-int8 g_ac_country_code[COUNTRY_CODE_LEN] = "00";
-uint8 g_auc_wifimac[MAC_LEN] = {0x00,0x00,0x00,0x00,0x00,0x00};
+int32_t g_al_host_init_params[WLAN_CFG_INIT_BUTT] = {0};      /* ini定制化参数数组 */
+int32_t g_al_dts_params[WLAN_CFG_DTS_BUTT] = {0};             /* dts定制化参数数组 */
+uint8_t g_auc_nv_params[NUM_OF_NV_PARAMS] = {0};              /* nv定制化参数数组 */
+int8_t g_ac_country_code[COUNTRY_CODE_LEN] = "00";
+uint8_t g_auc_wifimac[MAC_LEN] = {0x00,0x00,0x00,0x00,0x00,0x00};
 
 /*
  * 定制化结构体
@@ -661,7 +661,7 @@ OAL_STATIC oal_void host_params_init_first(oal_void)
 regdomain_enum hwifi_get_regdomain_from_country_code_1102(const countrycode_t country_code)
 {
     regdomain_enum  en_regdomain = REGDOMAIN_COMMON;
-    int32           table_idx = 0;
+    int32_t           table_idx = 0;
 
     while (g_ast_country_info_table[table_idx].en_regdomain != REGDOMAIN_COUNT)
     {
@@ -681,16 +681,16 @@ regdomain_enum hwifi_get_regdomain_from_country_code_1102(const countrycode_t co
 }
 
 
-int32 hwifi_is_regdomain_changed(const countrycode_t country_code_old, const countrycode_t country_code_new)
+int32_t hwifi_is_regdomain_changed(const countrycode_t country_code_old, const countrycode_t country_code_new)
 {
     return hwifi_get_regdomain_from_country_code_1102(country_code_old) != hwifi_get_regdomain_from_country_code_1102(country_code_new);
 }
 
 
-OAL_STATIC int32 hwifi_get_plat_tag_from_country_code(const countrycode_t country_code)
+OAL_STATIC int32_t hwifi_get_plat_tag_from_country_code(const countrycode_t country_code)
 {
     regdomain_enum  en_regdomain;
-    int32           table_idx = 0;
+    int32_t           table_idx = 0;
 
     en_regdomain = hwifi_get_regdomain_from_country_code_1102(country_code);
 
@@ -711,11 +711,11 @@ OAL_STATIC int32 hwifi_get_plat_tag_from_country_code(const countrycode_t countr
 }
 
 
-int32 hwifi_fetch_ori_caldata(uint8* auc_caldata, int32 l_nvm_len)
+int32_t hwifi_fetch_ori_caldata(uint8_t* auc_caldata, int32_t l_nvm_len)
 {
-    int32 l_ret = INI_FAILED;
-    int32 l_cfg_id;
-    int32 aul_nvram_params[NVRAM_PARAMS_INDEX_BUTT]={0};
+    int32_t l_ret = INI_FAILED;
+    int32_t l_cfg_id;
+    int32_t aul_nvram_params[NVRAM_PARAMS_INDEX_BUTT]={0};
 
     if (l_nvm_len != HISI_CUST_NVRAM_LEN)
     {
@@ -742,13 +742,13 @@ int32 hwifi_fetch_ori_caldata(uint8* auc_caldata, int32 l_nvm_len)
     return INI_SUCC;
 }
 
-OAL_STATIC int32 hwifi_config_init_nvram(void)
+OAL_STATIC int32_t hwifi_config_init_nvram(void)
 {
     OAL_STATIC oal_bool_enum en_nvm_initialed = OAL_FALSE;  /* 是否为第一次初始化，如果是国家码更新调用的本接口，则不再去nvm读取参数 */
-    int32 l_ret = INI_FAILED;
-    int32 l_cfg_id;
-    int32 aul_nvram_params[NVRAM_PARAMS_INDEX_BUTT]={0};
-    int32 l_plat_tag;
+    int32_t l_ret = INI_FAILED;
+    int32_t l_cfg_id;
+    int32_t aul_nvram_params[NVRAM_PARAMS_INDEX_BUTT]={0};
+    int32_t l_plat_tag;
 
     oal_memset(g_auc_nv_params, 0x00, sizeof(g_auc_nv_params));
 
@@ -797,15 +797,15 @@ OAL_STATIC int32 hwifi_config_init_nvram(void)
     return INI_SUCC;
 }
 
-int32 hwifi_config_init(int32 cus_tag)
+int32_t hwifi_config_init(int32_t cus_tag)
 {
-    int32               l_cfg_id;
-    int32               l_ret = INI_FAILED;
-    int32               l_ori_val;
+    int32_t               l_cfg_id;
+    int32_t               l_ret = INI_FAILED;
+    int32_t               l_ori_val;
     wlan_cfg_cmd*       pgast_wifi_config;
-    int32*              pgal_params;
-    int32               l_cfg_value = 0;
-    int32               l_wlan_cfg_butt;
+    int32_t*              pgal_params;
+    int32_t               l_cfg_value = 0;
+    int32_t               l_wlan_cfg_butt;
 
     switch (cus_tag)
     {
@@ -882,11 +882,11 @@ OAL_STATIC int char2byte( char* strori, char* outbuf )
     return sum;
 }
 
-int32 hwifi_get_mac_addr(uint8 *puc_buf)
+int32_t hwifi_get_mac_addr(uint8_t *puc_buf)
 {
     struct hisi_nve_info_user st_info;
-    int32 l_ret = -1;
-    int32 l_sum = 0;
+    int32_t l_ret = -1;
+    int32_t l_sum = 0;
 
     if (NULL == puc_buf)
     {
@@ -934,10 +934,10 @@ int32 hwifi_get_mac_addr(uint8 *puc_buf)
     return INI_SUCC;
 }
 
-int32 hwifi_get_init_value(int32 cus_tag, int32 cfg_id)
+int32_t hwifi_get_init_value(int32_t cus_tag, int32_t cfg_id)
 {
-    int32*              pgal_params = OAL_PTR_NULL;
-    int32               l_wlan_cfg_butt;
+    int32_t*              pgal_params = OAL_PTR_NULL;
+    int32_t               l_wlan_cfg_butt;
 
     if (CUS_TAG_INI == cus_tag)
     {
@@ -963,9 +963,9 @@ int32 hwifi_get_init_value(int32 cus_tag, int32 cfg_id)
     return pgal_params[cfg_id];
 }
 
-int8* hwifi_get_country_code(void)
+char* hwifi_get_country_code(void)
 {
-    int32 l_ret;
+    int32_t l_ret;
 
     if (g_ac_country_code[0] != '0' && g_ac_country_code[1] != '0')
     {
@@ -986,7 +986,7 @@ int8* hwifi_get_country_code(void)
 }
 
 
-void hwifi_set_country_code(int8* country_code, const uint32 len)
+void hwifi_set_country_code(char* country_code, const uint32_t len)
 {
     if (OAL_PTR_NULL == country_code || len != COUNTRY_CODE_LEN)
     {
@@ -1000,15 +1000,15 @@ void hwifi_set_country_code(int8* country_code, const uint32 len)
     return;
 }
 
-uint8* hwifi_get_nvram_params(void)
+uint8_t* hwifi_get_nvram_params(void)
 {
     return g_auc_nv_params;
 }
 
 
-int32 hwifi_atcmd_update_host_nv_params(void)
+int32_t hwifi_atcmd_update_host_nv_params(void)
 {
-    int32 l_ret = INI_FAILED;
+    int32_t l_ret = INI_FAILED;
 
     oal_memset(g_auc_nv_params, 0x00, sizeof(g_auc_nv_params));
 

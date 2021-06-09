@@ -31,9 +31,9 @@
 /*
  * Prototype    : sdio_patch_writesb
  * Description  : provide interface for pm driver
- * Input        : uint8* buf, uint32 len
+ * Input        : uint8_t* buf, uint32_t len
  * Output       : None
- * Return Value : int32
+ * Return Value : int32_t
  * Calls        :
  * Called By    :
  *
@@ -43,7 +43,7 @@
  *     Modification : Created function
  *
  */
-int32 sdio_patch_writesb(uint8* buf, uint32 len)
+int32_t sdio_patch_writesb(uint8_t* buf, uint32_t len)
 {
     int ret;
     struct pm_drv_data *pm_data = pm_get_drvdata();
@@ -85,9 +85,9 @@ int32 sdio_patch_writesb(uint8* buf, uint32 len)
 /*
  * Prototype    : sdio_patch_readsb
  * Description  : provide interface for pm driver
- * Input        : uint8* buf, uint32 len uint32 timeout (ms)
+ * Input        : uint8_t* buf, uint32_t len uint32_t timeout (ms)
  * Output       : None
- * Return Value : int32
+ * Return Value : int32_t
  * Calls        :
  * Called By    :
  *
@@ -98,13 +98,13 @@ int32 sdio_patch_writesb(uint8* buf, uint32 len)
  *
  */
 
-int32 sdio_patch_readsb(uint8* buf, uint32 len, uint32 timeout)
+int32_t sdio_patch_readsb(uint8_t* buf, uint32_t len, uint32_t timeout)
 {
-    uint8   int_mask;
-    uint8  *ver_info;
+    uint8_t   int_mask;
+    uint8_t  *ver_info;
     int     ret = 0;
     unsigned long timeout_jiffies;
-    uint32  xfer_count;
+    uint32_t  xfer_count;
     int     i;
     struct pm_drv_data *pm_data = pm_get_drvdata();
 

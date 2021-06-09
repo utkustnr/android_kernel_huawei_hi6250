@@ -58,9 +58,9 @@ bool is_my_chip_etc(void)
     return true;
 }
 
-bool is_hisi_chiptype_etc(int32 chip)
+bool is_hisi_chiptype_etc(int32_t chip)
 {
-    int32 ret= BOARD_FAIL;
+    int32_t ret= BOARD_FAIL;
     BOARD_INFO * bd_info = NULL;
 
     if(false == is_my_chip_etc())
@@ -214,7 +214,7 @@ static ssize_t hwconn_read_proc_p2p(struct file *filp, char __user *buffer, size
 
     /*Note:symbol printk() has arg.count conflict*/
     /*lint -e516*/
-    printk(KERN_DEBUG "[HW_CONN] hwconn_read_proc_chiptype off = %d\n", (int32)*off);
+    printk(KERN_DEBUG "[HW_CONN] hwconn_read_proc_chiptype off = %d\n", (int32_t)*off);
     /*lint +e516*/
     if ((unsigned long)*off > 0) {
         return 0;
@@ -444,7 +444,7 @@ bool is_my_chip_etc(void)
     return true;
 }
 
-bool is_hisi_chiptype_etc(int32 chip)
+bool is_hisi_chiptype_etc(int32_t chip)
 {
     return true;
 }

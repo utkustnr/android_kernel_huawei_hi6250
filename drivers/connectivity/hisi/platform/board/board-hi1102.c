@@ -36,10 +36,10 @@
  Function Definition
 ***
 **************************************************************************/
-int32 hi1102_get_board_gpio(void)
+int32_t hi1102_get_board_gpio(void)
 {
-    int32 ret = BOARD_FAIL;
-    int32 physical_gpio = 0;
+    int32_t ret = BOARD_FAIL;
+    int32_t physical_gpio = 0;
     ret = get_board_gpio(DTS_NODE_HI110X, DTS_PROP_GPIO_POWEN_ON, &physical_gpio);
     if(BOARD_SUCC != ret)
     {
@@ -63,10 +63,10 @@ void hi1102_free_board_power_gpio(void)
     gpio_free(g_board_info.power_on_enable);
 }
 
-int32 hi1102_board_wakeup_gpio_init(void)
+int32_t hi1102_board_wakeup_gpio_init(void)
 {
-    int32 ret = BOARD_FAIL;
-    int32 physical_gpio = 0;
+    int32_t ret = BOARD_FAIL;
+    int32_t physical_gpio = 0;
 
     /*wifi wake host gpio request*/
     ret = get_board_gpio(DTS_NODE_HI110X_WIFI, DTS_PROP_GPIO_WLAN_WAKEUP_HOST, &physical_gpio);
