@@ -322,7 +322,7 @@ static int subfunc_pre_setup_trampoline(struct oases_patch_entry *patch,
 	memcpy(trampoline, &oases_handler_subfunc_pre_start[0],
 		&oases_handler_subfunc_pre_end[0] - &oases_handler_subfunc_pre_start[0]);
 	/* filter_addr */
-	*((void **)(trampoline + SUBFUNC_PRE_FILTER_ADDR_OFFSET)) = (void *)(insn->handler);
+	*(void **)(trampoline + SUBFUNC_PRE_FILTER_ADDR_OFFSET) = (void *)(insn->handler);
 	/* origin_addr */
 	*((void **)(trampoline + SUBFUNC_PRE_ORIGIN_ADDR_OFFSET)) = (void *)(insn->origin_to);
 	/* retn_addr */

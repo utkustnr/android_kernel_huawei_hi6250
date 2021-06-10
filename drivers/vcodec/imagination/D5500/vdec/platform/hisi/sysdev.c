@@ -236,7 +236,7 @@ static int driver_probe(struct platform_device *pdev)
 	gvdec_regulator = devm_regulator_get(dev, "ldo_vdec");
 	if (IS_ERR(gvdec_regulator)) {
 		printk("[VXD]Couldn't get regulator [%s]! \n", __func__);
-		return;
+		/*return*/;
 	}
 
 #endif

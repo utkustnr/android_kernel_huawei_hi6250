@@ -1521,7 +1521,7 @@ int slimbus_drv_track_update(int cg, int sm, int track, struct slimbus_device_in
 			for (j = 0; j < active_ch_num; j++) {
 				/* Configuring Data Channel */
 				ret += csmiDrv->msgNextDefineChannel(devm_slimbus_priv, active_channel[j].cn, (CSMI_TransportProtocol)active_channel[j].tp, active_channel[j].sd, (CSMI_TransportProtocol)active_channel[j].sl);
-				ret += csmiDrv->msgNextDefineContent(devm_slimbus_priv, active_channel[j].cn, active_channel[j].fl, active_channel[j].pr, (CSMI_PresenceRate)active_channel[j].af, (CSMI_DataType)active_channel[j].dt, active_channel[j].cl, (CSMI_AuxFieldFormat)active_channel[j].dl);
+				ret += csmiDrv->msgNextDefineContent(devm_slimbus_priv, active_channel[j].cn, active_channel[j].fl, (CSMI_PresenceRate)active_channel[j].pr, (CSMI_AuxFieldFormat)active_channel[j].af, (CSMI_DataType)active_channel[j].dt, active_channel[j].cl, active_channel[j].dl);
 				/* Activating Data Channel */
 				ret += csmiDrv->msgNextActivateChannel(devm_slimbus_priv, active_channel[j].cn);
 				msg_count = msg_count + 3;

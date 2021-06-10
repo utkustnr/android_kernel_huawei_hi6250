@@ -21,7 +21,7 @@ extern "C" {
 #define MAX_SINGLE_TL_BAND_CHECK_NUM        12
 #define MAX_NV_GUC_CHECK_ITEM_NUM           32
 #define MAX_NV_TL_CHECK_ITEM_NUM            64
-
+/*
 #ifndef __u8_defined
 #define __u8_defined
 typedef signed char          s8;
@@ -33,6 +33,7 @@ typedef unsigned int         u32;
 typedef signed long long     s64;
 typedef unsigned long long   u64;
 #endif
+*/
 
 /*请参考结构体样例*/
 typedef struct

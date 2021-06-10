@@ -173,7 +173,7 @@ int driver_probe(struct platform_device *ofdev) {
     if (IS_ERR_OR_NULL(clk))
     {
         pr_err("clk venc not found!");
-        ret = PTR_ERR(clk); return;
+        ret = PTR_ERR(clk); return ret;
     }
     ret = clk_set_rate(clk,enc_clk_rate);
     if (ret)
@@ -185,7 +185,7 @@ int driver_probe(struct platform_device *ofdev) {
 		gvenc_regulator = devm_regulator_get(&ofdev->dev, "ldo_venc");
 		if (IS_ERR(gvenc_regulator)) {
 			printk("[VXE]Couldn't get regulator [%s]! \n", __func__);
-			return;
+			//return;
 		}
 #endif
 	
@@ -223,7 +223,7 @@ static void handle_suspend(SYSDEVU_sInfo *dev, IMG_BOOL forAPM)
 	ret = regulator_disable(gvenc_regulator);
 	if (ret != 0) {
 		pr_err("Failed to disable %s: %d\n", __func__, ret);
-		return ;
+		return;
 	}
 #endif
     if (!forAPM) {
