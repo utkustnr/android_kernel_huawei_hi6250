@@ -185,7 +185,7 @@ int driver_probe(struct platform_device *ofdev) {
 		gvenc_regulator = devm_regulator_get(&ofdev->dev, "ldo_venc");
 		if (IS_ERR(gvenc_regulator)) {
 			printk("[VXE]Couldn't get regulator [%s]! \n", __func__);
-			//return;
+			return -1;
 		}
 #endif
 	
