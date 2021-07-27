@@ -1327,7 +1327,7 @@ static void increase_address_space(struct protection_domain *domain,
 
 	pte = (void *)get_zeroed_page(gfp);
 	if (!pte)
-		goto out;
+		return;
 
 	spin_lock_irqsave(&domain->lock, flags);
 
