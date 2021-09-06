@@ -373,6 +373,8 @@ struct vm_area_struct {
 #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
 	seqcount_t vm_sequence;
 	atomic_t vm_ref_count;		/* see vma_get(), vma_put() */
+#ifdef CONFIG_UKSM
+	struct vma_slot *uksm_vma_slot;
 #endif
 };
 
