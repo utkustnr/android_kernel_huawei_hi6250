@@ -842,6 +842,7 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p,
 #ifdef CONFIG_TASK_PROTECT_LRU
 	mm->protect = 0;
 #endif
+	hugetlb_count_init(mm);
 
 	if (current->mm) {
 		mm->flags = current->mm->flags & MMF_INIT_MASK;
