@@ -1587,17 +1587,23 @@ void sdhci_set_power_noreg(struct sdhci_host *host, unsigned char mode,
 			case MMC_VDD_20_21:
 				pwr = SDHCI_POWER_180;
 				break;
-			case MMC_VDD_29_30:
-			case MMC_VDD_30_31:
-				pwr = SDHCI_POWER_300;
-				break;
-			case MMC_VDD_32_33:
-			case MMC_VDD_33_34:
-				pwr = SDHCI_POWER_330;
-				break;
-			default:
-				WARN(1, "%s: Invalid vdd %#x\n",
-			     mmc_hostname(host->mmc), vdd);
+            case MMC_VDD_29_30:
+            case MMC_VDD_30_31:
+                pwr = SDHCI_POWER_300;
+                break;
+            case MMC_VDD_32_33:
+            case MMC_VDD_33_34:
+            /*
+            * 3.4 ~ 3.6V are valid only for those platforms where it's
+            * known that the voltage range is supported by hardware.
+            */
+            case MMC_VDD_34_35:
+            case MMC_VDD_35_36:
+                pwr = SDHCI_POWER_330;
+                break;
+            default:
+                WARN(1, "%s: Invalid vdd %#x\n",
+                mmc_hostname(host->mmc), vdd);
 				BUG();
 			}
 		}
