@@ -812,29 +812,6 @@ static int account_busy_for_cpu_time(struct rq *rq, struct task_struct *p,
 	return walt_freq_account_wait_time;
 }
 
-static void
-mark_util_change_for_rollover(struct task_struct *p, struct rq *rq)
-{
-	bool new_window = p->ravg.mark_start < rq->window_start;
-	bool p_is_curr_task = (p == rq->curr);
-
-	if (new_window && p_is_curr_task) {
-		int cpu = cpu_of(rq);
-
-		/* If window is rolled over, prevent rasing sugov worker
-		 * unnecessarily in very low load case */
-		if (rq->cluster->cur_freq == rq->cluster->min_freq) {
-			unsigned long util = boosted_freq_policy_util(cpu);
-			unsigned long capacity_curr = capacity_curr_of(cpu);
-
-			if (util < (capacity_curr >> 1))
-				return;
-		}
-
-		sugov_mark_util_change(cpu, WALT_WINDOW_ROLLOVER);
-	}
-}
-
 static u32 empty_windows[NR_CPUS];
 
 /*
@@ -969,7 +946,6 @@ static void update_cpu_busy_time(struct task_struct *p, struct rq *rq,
 		if (!is_idle_task(p) && !exiting_task(p)) {
 			p->ravg.curr_window += delta;
 			p->ravg.curr_window_cpu[cpu] += delta;
-			p->ravg.load_sum += delta;
 		}
 
 		return;
@@ -1538,7 +1514,9 @@ void walt_update_task_ravg(struct task_struct *p, struct rq *rq,
 
 	update_cpu_busy_time(p, rq, event, wallclock, irqtime);
 
+#ifdef CONFIG_SCHED_HISI_TOP_TASK
 	mark_util_change_for_rollover(p, rq);
+#endif
 
 done:
 	raw_spin_unlock_irqrestore(&rq->walt_update_lock, flags);
@@ -1566,12 +1544,6 @@ void walt_mark_task_starting(struct task_struct *p)
 		reset_task_stats(p);
 		return;
 	}
-
-	/*
-	 * Add the new task to top tasks.
-	 * Called in wake_up_new_task(), after task load initialized.
-	 */
-	add_top_task(p, rq);
 
 	wallclock = walt_ktime_clock();
 	p->ravg.mark_start = wallclock;
@@ -1655,89 +1627,6 @@ move_out_cpu_busy_time(struct rq *rq, struct task_struct *p)
 	}
 }
 
-static void
-migrate_cpu_busy_time(struct task_struct *p,
-		      struct rq *src_rq, struct rq *dest_rq)
-{
-	int new_cpu = cpu_of(dest_rq);
-#ifdef CONFIG_SCHED_HISI_MIGRATE_SPREAD_LOAD
-	cpumask_t prev_cpus, curr_cpus;
-	u32 each_load;
-#endif
-	unsigned long flags;
-	int i;
-
-#ifdef CONFIG_SCHED_HISI_DOWNMIGRATE_LOWER_LOAD
-	int src_cpu = cpu_of(src_rq);
-
-	/* For task downmigrate, lower task's prev/curr window to prevent
-	 * little cluster's freq increase too much. */
-	if (capacity_orig_of(src_cpu) > capacity_orig_of(new_cpu)) {
-		u32 task_load = task_load_freq_avg(p);
-
-		if (unlikely(is_new_task(p)))
-			task_load = UINT_MAX;
-
-		p->ravg.curr_window = min(p->ravg.curr_window, task_load);
-		p->ravg.prev_window = min(p->ravg.prev_window, task_load);
-	}
-#endif
-
-	/* Add task's prev/curr window to dest */
-#ifdef CONFIG_SCHED_HISI_MIGRATE_SPREAD_LOAD
-	/* If p has run on dest cluster in prev/curr window, share
-	 * p's load in these cpus. */
-	cpumask_and(&prev_cpus, &p->ravg.prev_cpus, &dest_rq->cluster->cpus);
-	cpumask_set_cpu(new_cpu, &prev_cpus);
-	each_load = p->ravg.prev_window / cpumask_weight(&prev_cpus);
-
-	for_each_cpu(i, &prev_cpus) {
-		struct rq *rq = cpu_rq(i);
-		raw_spin_lock_irqsave(&rq->walt_update_lock, flags);
-		rq->prev_runnable_sum += each_load;
-		raw_spin_unlock_irqrestore(&rq->walt_update_lock, flags);
-
-		p->ravg.prev_window_cpu[i] = each_load;
-	}
-
-	cpumask_and(&curr_cpus, &p->ravg.curr_cpus, &dest_rq->cluster->cpus);
-	cpumask_set_cpu(new_cpu, &curr_cpus);
-	each_load = p->ravg.curr_window / cpumask_weight(&curr_cpus);
-
-	for_each_cpu(i, &curr_cpus) {
-		struct rq *rq = cpu_rq(i);
-		raw_spin_lock_irqsave(&rq->walt_update_lock, flags);
-		rq->curr_runnable_sum += each_load;
-		raw_spin_unlock_irqrestore(&rq->walt_update_lock, flags);
-
-		p->ravg.curr_window_cpu[i] = each_load;
-	}
-#else
-	/* All load move to dest_rq */
-	raw_spin_lock_irqsave(&dest_rq->walt_update_lock, flags);
-	dest_rq->curr_runnable_sum += p->ravg.curr_window;
-	dest_rq->prev_runnable_sum += p->ravg.prev_window;
-
-	p->ravg.curr_window_cpu[new_cpu] = p->ravg.curr_window;
-	p->ravg.prev_window_cpu[new_cpu] = p->ravg.prev_window;
-	raw_spin_unlock_irqrestore(&dest_rq->walt_update_lock, flags);
-#endif
-
-	/* Delete task's prev/curr window from src */
-	for_each_cpu(i, &src_rq->cluster->cpus) {
-		struct rq *rq = cpu_rq(i);
-		if (!p->ravg.curr_window_cpu[i] && !p->ravg.prev_window_cpu[i])
-			continue;
-
-		raw_spin_lock_irqsave(&rq->walt_update_lock, flags);
-		move_out_cpu_busy_time(rq, p);
-		raw_spin_unlock_irqrestore(&rq->walt_update_lock, flags);
-	}
-
-	trace_walt_migration_update_sum(src_rq, p);
-	trace_walt_migration_update_sum(dest_rq, p);
-}
-
 #ifdef CONFIG_HISI_MIGRATION_NOTIFY
 static inline bool
 nearly_same_freq(struct rq *rq, unsigned int cur_freq, unsigned int freq_required)
@@ -1774,39 +1663,6 @@ static inline unsigned int estimate_freq_required(int cpu)
 	return 0;
 }
 #endif
-
-static void
-inter_cluster_migration_fixup(struct task_struct *p,
-			      struct rq *src_rq, struct rq *dest_rq)
-{
-	int src_cpu = cpu_of(src_rq), dest_cpu = cpu_of(dest_rq);
-	unsigned int src_freq_before, dest_freq_before;
-	unsigned int src_freq_after, dest_freq_after;
-	unsigned int flags;
-
-	src_freq_before  = estimate_freq_required(src_cpu);
-	dest_freq_before = estimate_freq_required(dest_cpu);
-
-	migrate_top_task(p, src_rq, dest_rq);
-	migrate_cpu_busy_time(p, src_rq, dest_rq);
-
-	src_freq_after = estimate_freq_required(src_cpu);
-	dest_freq_after = estimate_freq_required(dest_cpu);
-
-	if (src_rq->cluster->cur_freq != src_rq->cluster->min_freq &&
-	    !nearly_same_freq(src_rq, src_freq_before, src_freq_after))
-		sugov_mark_util_change(src_cpu, INTER_CLUSTER_MIGRATION_SRC);
-
-	if (dest_rq->cluster->cur_freq != dest_rq->cluster->max_freq &&
-	    !nearly_same_freq(dest_rq, dest_freq_before, dest_freq_after)) {
-		flags = INTER_CLUSTER_MIGRATION_DST;
-
-		if (top_task_util(dest_rq) > capacity_curr_of(dest_cpu))
-			flags |= ADD_TOP_TASK;
-
-		sugov_mark_util_change(dest_cpu, flags);
-	}
-}
 
 void walt_fixup_busy_time(struct task_struct *p, int new_cpu)
 {
@@ -1848,105 +1704,12 @@ void walt_fixup_busy_time(struct task_struct *p, int new_cpu)
 		fixup_cum_window_demand(dest_rq, p->ravg.demand);
 	}
 
-	if (!group_migrate_task(p, src_rq, dest_rq) &&
-	    !same_freq_domain(new_cpu, src_cpu)) {
-		inter_cluster_migration_fixup(p, src_rq, dest_rq);
-	} else {
-		/* Only need to migrate top task when same cluster */
-		migrate_top_task(p, src_rq, dest_rq);
-	}
-
 #ifdef CONFIG_HISI_ED_TASK
 	migrate_ed_task(p, src_rq, dest_rq);
 #endif
 	if (p->state == TASK_WAKING)
 		double_rq_unlock(src_rq, dest_rq);
 }
-
-static int cpufreq_notifier_policy(struct notifier_block *nb,
-		unsigned long val, void *data)
-{
-	struct cpufreq_policy *policy = (struct cpufreq_policy *)data;
-	struct sched_cluster *cluster = NULL;
-	struct cpumask policy_cluster = *policy->related_cpus;
-	int i, j;
-
-	if (val != CPUFREQ_NOTIFY)
-		return 0;
-
-	for_each_cpu(i, &policy_cluster) {
-		cluster = cpu_rq(i)->cluster;
-		cpumask_andnot(&policy_cluster, &policy_cluster,
-			        &cluster->cpus);
-
-		cluster->min_freq = policy->min;
-		cluster->max_freq = policy->max;
-
-		if (!cluster->freq_init_done) {
-			for_each_cpu(j, &cluster->cpus)
-				cpumask_copy(&cpu_rq(j)->freq_domain_cpumask,
-					      policy->related_cpus);
-			cluster->freq_init_done = true;
-			continue;
-		}
-	}
-
-	return 0;
-}
-
-static int cpufreq_notifier_trans(struct notifier_block *nb,
-		unsigned long val, void *data)
-{
-	struct cpufreq_freqs *freq = (struct cpufreq_freqs *)data;
-	unsigned int cpu = freq->cpu, new_freq = freq->new;
-	struct sched_cluster *cluster;
-	struct cpumask policy_cpus = cpu_rq(cpu)->freq_domain_cpumask;
-	int i;
-
-	if (val != CPUFREQ_POSTCHANGE)
-		return 0;
-
-	BUG_ON(!new_freq);
-
-	for_each_cpu(i, &policy_cpus) {
-		cluster = cpu_rq(i)->cluster;
-
-		cluster->cur_freq = new_freq;
-		cpumask_andnot(&policy_cpus, &policy_cpus, &cluster->cpus);
-	}
-
-	return 0;
-}
-
-static struct notifier_block notifier_policy_block = {
-	.notifier_call = cpufreq_notifier_policy
-};
-
-static struct notifier_block notifier_trans_block = {
-	.notifier_call = cpufreq_notifier_trans
-};
-
-static int register_sched_callback(void)
-{
-	int ret;
-
-	ret = cpufreq_register_notifier(&notifier_policy_block,
-						CPUFREQ_POLICY_NOTIFIER);
-
-	if (!ret)
-		ret = cpufreq_register_notifier(&notifier_trans_block,
-						CPUFREQ_TRANSITION_NOTIFIER);
-
-	return 0;
-}
-
-/*
- * cpufreq callbacks can be registered at core_initcall or later time.
- * Any registration done prior to that is "forgotten" by cpufreq. See
- * initialization of variable init_cpufreq_transition_notifier_list_called
- * for further information.
- */
-core_initcall(register_sched_callback);
 
 void walt_init_new_task_load(struct task_struct *p)
 {
