@@ -782,6 +782,8 @@ static void thermal_zone_device_reset(struct thermal_zone_device *tz)
 
 	tz->temperature = THERMAL_TEMP_INVALID;
 	tz->passive = 0;
+	tz->prev_low_trip = -INT_MAX;
+	tz->prev_high_trip = INT_MAX;
 	list_for_each_entry(pos, &tz->thermal_instances, tz_node)
 		pos->initialized = false;
 }
