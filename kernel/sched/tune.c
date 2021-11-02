@@ -29,7 +29,6 @@ struct target_nrg schedtune_target_nrg;
 #define DYNAMIC_BOOST_SLOTS_COUNT 5
 static DEFINE_MUTEX(boost_slot_mutex);
 static DEFINE_MUTEX(stune_boost_mutex);
-static struct schedtune *getSchedtune(char *st_name);
 static int dynamic_boost(struct schedtune *st, int boost);
 struct boost_slot {
 	struct list_head list;
@@ -1226,27 +1225,6 @@ int reset_schedtune_prefer_idle(char *st_name, int prefer_idle)
 }
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-static struct schedtune *getSchedtune(char *st_name)
-{
-	int idx;
-
-	for (idx = 0; idx < BOOSTGROUPS_COUNT; ++idx) {
-		char name_buf[NAME_MAX + 1];
-		struct schedtune *st = allocated_group[idx];
-
-		if (!st) {
-			pr_warn("SCHEDTUNE: Could not find %s\n", st_name);
-			break;
-		}
-
-		cgroup_name(st->css.cgroup, name_buf, sizeof(name_buf));
-		if (strncmp(name_buf, st_name, strlen(st_name)) == 0)
-			return st;
-	}
-
-	return NULL;
-}
-
 static int dynamic_boost(struct schedtune *st, int boost)
 {
 	int ret;
