@@ -5162,6 +5162,7 @@ clear_sd_overutilized(struct sched_domain *sd)
 static void
 enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 {
+    int update_flags;
 	struct cfs_rq *cfs_rq;
 #ifdef CONFIG_HISI_EAS_SCHED
 	struct sched_domain *sd;
