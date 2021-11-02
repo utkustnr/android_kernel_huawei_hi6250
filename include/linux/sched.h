@@ -1875,7 +1875,6 @@ struct task_struct {
 	struct list_head grp_list;
 #endif
 
-#endif
 #ifdef CONFIG_CGROUP_SCHED
 	struct task_group *sched_task_group;
 #endif

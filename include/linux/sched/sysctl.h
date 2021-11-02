@@ -42,8 +42,6 @@ extern unsigned int sysctl_sched_walt_cpu_overload_irqload;
 #ifdef CONFIG_HISI_RT_CAS
 extern unsigned int sysctl_sched_enable_rt_cas;
 #endif
-#ifdef CONFIG_HISI_RT_ACTIVE_LB
-extern unsigned int sysctl_sched_enable_rt_active_lb;
 
 enum sched_tunable_scaling {
 	SCHED_TUNABLESCALING_NONE,
