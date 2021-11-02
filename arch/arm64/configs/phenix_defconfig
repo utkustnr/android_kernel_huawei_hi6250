@@ -5250,7 +5250,7 @@ CONFIG_SCHEDSTATS=y
 # CONFIG_SCHED_STACK_END_CHECK is not set
 # CONFIG_DEBUG_TIMEKEEPING is not set
 CONFIG_TIMER_STATS=y
-# CONFIG_DEBUG_PREEMPT is not set
+CONFIG_DEBUG_PREEMPT=y
 
 #
 # Lock Debugging (spinlocks, mutexes, etc...)
