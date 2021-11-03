@@ -475,11 +475,6 @@ static struct sugov_tunables *sugov_tunables_alloc(struct sugov_policy *sg_polic
 	}
 	return tunables;
 }
-static void sugov_tunables_free(struct sugov_tunables *tunables)
-{
-	if (!have_governor_per_policy())
-		global_tunables = NULL;
-	kfree(tunables);
 
 static void sugov_clear_global_tunables(void)
 {
