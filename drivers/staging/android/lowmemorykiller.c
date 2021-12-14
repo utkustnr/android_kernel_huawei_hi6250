@@ -402,9 +402,17 @@ __MODULE_PARM_TYPE(adj, "array of short");
 #else
 module_param_array_named(adj, lowmem_adj, short, &lowmem_adj_size, 0644);
 #endif
+<<<<<<< HEAD
 module_param_array_named(minfree, lowmem_minfree, uint, &lowmem_minfree_size,
 			 0644);
 module_param_named(debug_level, lowmem_debug_level, uint, 0644);
+=======
+/*lint -e665 -esym(665,__module_param_call) */
+module_param_array_named(minfree, lowmem_minfree, uint, &lowmem_minfree_size,
+			 S_IRUGO | S_IWUSR);
+/*lint -e665 +esym(665,__module_param_call) */
+module_param_named(debug_level, lowmem_debug_level, uint, S_IRUGO | S_IWUSR);
+>>>>>>> 431ae09ce115 (Revert "Enabling Simple LMK")
 #if defined CONFIG_LOG_JANK
 module_param_named(kill_count, lowmem_kill_count, ulong, S_IRUGO | S_IWUSR);
 module_param_named(free_mem, lowmem_free_mem, ulong, S_IRUGO | S_IWUSR);
