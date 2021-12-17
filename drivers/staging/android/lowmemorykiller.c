@@ -52,9 +52,7 @@
 #include <linux/delay.h>
 #include <linux/fs.h>
 #include <linux/cpuset.h>
-#include <linux/show_mem_notifier.h>
 #include <linux/vmpressure.h>
-#include <linux/zcache.h>
 
 #define CREATE_TRACE_POINTS
 #include "trace/lowmemorykiller.h"
