@@ -2092,7 +2092,7 @@ static __latent_entropy struct task_struct *copy_process(
 bad_fork_cancel_cgroup:
 	spin_unlock(&current->sighand->siglock);
 	write_unlock_irq(&tasklist_lock);
-	cgroup_cancel_fork(p, cgrp_ss_priv);
+	cgroup_cancel_fork(p);
 bad_fork_cgroup_threadgroup_change_end:
 	threadgroup_change_end(current);
 bad_fork_put_pidfd:
