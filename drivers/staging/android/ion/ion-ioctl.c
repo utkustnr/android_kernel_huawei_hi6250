@@ -175,7 +175,7 @@ long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			return PTR_ERR(handle);
 		data.allocation.handle = handle->id;
 		cleanup_handle = handle;
-        pass_to_user(handle);
+		pass_to_user(handle);
 		break;
 	}
 	case ION_IOC_FREE:
