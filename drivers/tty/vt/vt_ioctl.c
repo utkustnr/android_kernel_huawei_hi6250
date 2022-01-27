@@ -717,6 +717,8 @@ int vt_ioctl(struct tty_struct *tty,
 			ret = -ENXIO;
 		else {
 			vsa.console--;
+			vsa.console = array_index_nospec(vsa.console,
+							 MAX_NR_CONSOLES);
 			console_lock();
 			ret = vc_allocate(vsa.console);
 			if (ret == 0) {
