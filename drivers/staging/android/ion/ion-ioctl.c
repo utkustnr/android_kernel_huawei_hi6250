@@ -225,6 +225,9 @@ long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			ret = PTR_ERR(handle);
 		} else {
 			data.handle.handle = handle->id;
+        #ifdef CONFIG_HW_FDLEAK
+            fdleak_report(FDLEAK_WP_DMABUF, 2);
+        #endif
 			handle = pass_to_user(handle);
 			if (IS_ERR(handle)) {
 				ret = PTR_ERR(handle);
