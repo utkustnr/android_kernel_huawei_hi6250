@@ -76,55 +76,103 @@ static const struct partition partition_table_emmc[] =
   {PART_VBMETA_A,                   860*1024,           4*1024,        EMMC_USER_PART},/* PART_VBMETA_A      4M    p58*/
   {PART_MODEMNVM_UPDATE_A,          864*1024,          16*1024,        EMMC_USER_PART},/* modemnvm_update_a 16M    p59*/
   {PART_MODEMNVM_CUST_A,            880*1024,          16*1024,        EMMC_USER_PART},/* modemnvm_cust_a   16M    p60*/
-  {PART_PATCH_A,                    896*1024,          32*1024,        EMMC_USER_PART},/* patch             32M    p61*/
 #ifdef CONFIG_FACTORY_MODE
-  {PART_VENDOR_A,                   928*1024,        1232*1024,        EMMC_USER_PART},/* vendor           760M    p62*/
-  {PART_ODM_A,                     2160*1024,         192*1024,        EMMC_USER_PART},/* odm              192M    p63*/
-  {PART_CUST_A,                    2352*1024,         192*1024,        EMMC_USER_PART},/* cust             192M    p64*/
-  {PART_SYSTEM_A,                  2544*1024,        5848*1024,        EMMC_USER_PART},/* system          5848M    p65*/
-  {PART_PRODUCT_A,                 8392*1024,        1328*1024,        EMMC_USER_PART},/* product         1328M    p66*/
-  {PART_VERSION_A,                 9720*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p67*/
-  {PART_PRELOAD_A,                10296*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p68*/
-  {PART_HIBENCH_IMG,              11440*1024,         128*1024,        EMMC_USER_PART},/* hibench_img      128M    p69*/
-  {PART_HIBENCH_DATA,             11568*1024,         512*1024,        EMMC_USER_PART},/* hibench_data     512M    p70*/
-  {PART_FLASH_AGEING,             12080*1024,         512*1024,        EMMC_USER_PART},/* FLASH_AGEING     512M    p71*/
-  {PART_USERDATA,                 12592*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p72*/
+  {PART_PATCH_A,                    896*1024,          32*1024,        EMMC_USER_PART},/* patch             32M    p61*/
+  {PART_PREAS,                      928*1024,        1216*1024,        EMMC_USER_PART},/* preas           1216M    p62*/
+  {PART_PREAVS,                    2144*1024,          32*1024,        EMMC_USER_PART},/* preavs            32M    p63*/
+  {PART_VENDOR_A,                  2176*1024,        1232*1024,        EMMC_USER_PART},/* vendor          1232M    p64*/
+  {PART_ODM_A,                     3408*1024,         192*1024,        EMMC_USER_PART},/* odm              192M    p65*/
+  {PART_CUST_A,                    3600*1024,         192*1024,        EMMC_USER_PART},/* cust             192M    p66*/
+  {PART_SYSTEM_A,                  3792*1024,        3568*1024,        EMMC_USER_PART},/* system          3568M    p67*/
+  {PART_PRODUCT_A,                 7360*1024,        2360*1024,        EMMC_USER_PART},/* product         2360M    p68*/
+  {PART_VERSION_A,                 9720*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p69*/
+  {PART_PRELOAD_A,                10296*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p70*/
+  {PART_HIBENCH_IMG,              11440*1024,         128*1024,        EMMC_USER_PART},/* hibench_img      128M    p71*/
+  {PART_HIBENCH_DATA,             11568*1024,         512*1024,        EMMC_USER_PART},/* hibench_data     512M    p72*/
+  {PART_FLASH_AGEING,             12080*1024,         512*1024,        EMMC_USER_PART},/* FLASH_AGEING     512M    p73*/
+  {PART_USERDATA,                 12592*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p74*/
 #else
 #ifdef CONFIG_USE_EROFS
-  {PART_VENDOR_A,                   928*1024,         864*1024,        EMMC_USER_PART},/* vendor           864M    p62*/
-  {PART_ODM_A,                     1792*1024,         136*1024,        EMMC_USER_PART},/* odm              136M    p63*/
-  {PART_CUST_A,                    1928*1024,         136*1024,        EMMC_USER_PART},/* cust             136M    p64*/
+#ifdef CONFIG_UPDATE_PRODUCT_EROFS
 #ifdef CONFIG_MARKET_INTERNAL
-  {PART_SYSTEM_A,                  2064*1024,        3352*1024,        EMMC_USER_PART},/* system          3352M    p65*/
-  {PART_PRODUCT_A,                 5416*1024,        1472*1024,        EMMC_USER_PART},/* product         1472M    p66*/
-  {PART_VERSION_A,                 6888*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p67*/
-  {PART_PRELOAD_A,                 7464*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p68*/
-  {PART_USERDATA,                  8608*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p69*/
+  {PART_PATCH_A,                    896*1024,         200*1024,        EMMC_USER_PART},/* patch            200M    p61*/
+  {PART_PREAS,                     1096*1024,         360*1024,        EMMC_USER_PART},/* preas            360M    p62*/
+  {PART_PREAVS,                    1456*1024,          32*1024,        EMMC_USER_PART},/* preavs            32M    p63*/
+  {PART_VENDOR_A,                  1488*1024,        1064*1024,        EMMC_USER_PART},/* vendor          1064M    p64*/
+  {PART_ODM_A,                     2552*1024,         192*1024,        EMMC_USER_PART},/* odm              192M    p65*/
+  {PART_CUST_A,                    2744*1024,         192*1024,        EMMC_USER_PART},/* cust             192M    p66*/
+  {PART_SYSTEM_A,                  2936*1024,        3760*1024,        EMMC_USER_PART},/* system          3760M    p67*/
+  {PART_PRODUCT_A,                 6696*1024,        2104*1024,        EMMC_USER_PART},/* product         2104M    p68*/
+  {PART_VERSION_A,                 8800*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p69*/
+  {PART_PRELOAD_A,                 9376*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p70*/
+  {PART_USERDATA,                 10520*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p71*/
 #else
-  {PART_SYSTEM_A,                  2064*1024,        4096*1024,        EMMC_USER_PART},/* system          4096M    p65*/
-  {PART_PRODUCT_A,                 6160*1024,        1328*1024,        EMMC_USER_PART},/* product         1328M    p66*/
-  {PART_VERSION_A,                 7488*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p67*/
-  {PART_PRELOAD_A,                 8064*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p68*/
-  {PART_USERDATA,                  9208*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p69*/
+  {PART_PATCH_A,                    896*1024,         200*1024,        EMMC_USER_PART},/* patch            200M    p61*/
+  {PART_PREAS,                     1096*1024,        1216*1024,        EMMC_USER_PART},/* preas           1216M    p62*/
+  {PART_PREAVS,                    2312*1024,          32*1024,        EMMC_USER_PART},/* preavs            32M    p63*/
+  {PART_VENDOR_A,                  2344*1024,        1064*1024,        EMMC_USER_PART},/* vendor          1064M    p64*/
+  {PART_ODM_A,                     3408*1024,         192*1024,        EMMC_USER_PART},/* odm              192M    p65*/
+  {PART_CUST_A,                    3600*1024,         192*1024,        EMMC_USER_PART},/* cust             192M    p66*/
+  {PART_SYSTEM_A,                  3792*1024,        3568*1024,        EMMC_USER_PART},/* system          3568M    p67*/
+  {PART_PRODUCT_A,                 7360*1024,        2360*1024,        EMMC_USER_PART},/* product         2360M    p68*/
+  {PART_VERSION_A,                 9720*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p69*/
+  {PART_PRELOAD_A,                10296*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p70*/
+  {PART_USERDATA,                 11440*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p71*/
 #endif
-#else
-  {PART_VENDOR_A,                   928*1024,        1232*1024,        EMMC_USER_PART},/* vendor           760M    p62*/
-  {PART_ODM_A,                     2160*1024,         192*1024,        EMMC_USER_PART},/* odm              192M    p63*/
-  {PART_CUST_A,                    2352*1024,         192*1024,        EMMC_USER_PART},/* cust             192M    p64*/
+#else // CONFIG_UPDATE_PRODUCT_EROFS
 #ifdef CONFIG_MARKET_INTERNAL
-  {PART_SYSTEM_A,                  2544*1024,        4784*1024,        EMMC_USER_PART},/* system          4784M    p65*/
-  {PART_PRODUCT_A,                 7328*1024,        1472*1024,        EMMC_USER_PART},/* product         1472M    p66*/
-  {PART_VERSION_A,                 8800*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p67*/
-  {PART_PRELOAD_A,                 9376*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p68*/
-  {PART_USERDATA,                 10520*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p69*/
+  {PART_PATCH_A,                    896*1024,          32*1024,        EMMC_USER_PART},/* patch             32M    p61*/
+  {PART_PREAS,                      928*1024,         296*1024,        EMMC_USER_PART},/* preas            296M    p62*/
+  {PART_PREAVS,                    1224*1024,          32*1024,        EMMC_USER_PART},/* preavs            32M    p63*/
+  {PART_VENDOR_A,                  1256*1024,         864*1024,        EMMC_USER_PART},/* vendor           864M    p64*/
+  {PART_ODM_A,                     2120*1024,         136*1024,        EMMC_USER_PART},/* odm              136M    p65*/
+  {PART_CUST_A,                    2256*1024,          88*1024,        EMMC_USER_PART},/* cust              88M    p66*/
+  {PART_SYSTEM_A,                  2344*1024,        2544*1024,        EMMC_USER_PART},/* system          2544M    p67*/
+  {PART_PRODUCT_A,                 4888*1024,        2000*1024,        EMMC_USER_PART},/* product         2000M    p68*/
+  {PART_VERSION_A,                 6888*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p69*/
+  {PART_PRELOAD_A,                 7464*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p70*/
+  {PART_USERDATA,                  8608*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p71*/
 #else
-  {PART_SYSTEM_A,                  2544*1024,        5848*1024,        EMMC_USER_PART},/* system          5848M    p65*/
-  {PART_PRODUCT_A,                 8392*1024,        1328*1024,        EMMC_USER_PART},/* product         1328M    p66*/
-  {PART_VERSION_A,                 9720*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p67*/
-  {PART_PRELOAD_A,                10296*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p68*/
-  {PART_USERDATA,                 11440*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p69*/
+  {PART_PATCH_A,                    896*1024,          32*1024,        EMMC_USER_PART},/* patch             32M    p61*/
+  {PART_PREAS,                      928*1024,         976*1024,        EMMC_USER_PART},/* preas            976M    p62*/
+  {PART_PREAVS,                    1904*1024,          32*1024,        EMMC_USER_PART},/* preavs            32M    p63*/
+  {PART_VENDOR_A,                  1936*1024,         864*1024,        EMMC_USER_PART},/* vendor           864M    p64*/
+  {PART_ODM_A,                     2800*1024,         136*1024,        EMMC_USER_PART},/* odm              136M    p65*/
+  {PART_CUST_A,                    2936*1024,          88*1024,        EMMC_USER_PART},/* cust              88M    p66*/
+  {PART_SYSTEM_A,                  3024*1024,        2312*1024,        EMMC_USER_PART},/* system          2312M    p67*/
+  {PART_PRODUCT_A,                 5336*1024,        2152*1024,        EMMC_USER_PART},/* product         2152M    p68*/
+  {PART_VERSION_A,                 7488*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p69*/
+  {PART_PRELOAD_A,                 8064*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p70*/
+  {PART_USERDATA,                  9208*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p71*/
 #endif
+#endif // CONFIG_UPDATE_PRODUCT_EROFS
+#else // CONFIG_USE_EROFS
+#ifdef CONFIG_MARKET_INTERNAL
+  {PART_PATCH_A,                    896*1024,          32*1024,        EMMC_USER_PART},/* patch             32M    p61*/
+  {PART_PREAS,                      928*1024,         360*1024,        EMMC_USER_PART},/* preas            360M    p62*/
+  {PART_PREAVS,                    1288*1024,          32*1024,        EMMC_USER_PART},/* preavs            32M    p63*/
+  {PART_VENDOR_A,                  1320*1024,        1232*1024,        EMMC_USER_PART},/* vendor          1232M    p64*/
+  {PART_ODM_A,                     2552*1024,         192*1024,        EMMC_USER_PART},/* odm              192M    p65*/
+  {PART_CUST_A,                    2744*1024,         192*1024,        EMMC_USER_PART},/* cust             192M    p66*/
+  {PART_SYSTEM_A,                  2936*1024,        3760*1024,        EMMC_USER_PART},/* system          3760M    p67*/
+  {PART_PRODUCT_A,                 6696*1024,        2104*1024,        EMMC_USER_PART},/* product         2104M    p68*/
+  {PART_VERSION_A,                 8800*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p69*/
+  {PART_PRELOAD_A,                 9376*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p70*/
+  {PART_USERDATA,                 10520*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p71*/
+#else
+  {PART_PATCH_A,                    896*1024,          32*1024,        EMMC_USER_PART},/* patch             32M    p61*/
+  {PART_PREAS,                      928*1024,        1216*1024,        EMMC_USER_PART},/* preas           1216M    p62*/
+  {PART_PREAVS,                    2144*1024,          32*1024,        EMMC_USER_PART},/* preavs            32M    p63*/
+  {PART_VENDOR_A,                  2176*1024,        1232*1024,        EMMC_USER_PART},/* vendor          1232M    p64*/
+  {PART_ODM_A,                     3408*1024,         192*1024,        EMMC_USER_PART},/* odm              192M    p65*/
+  {PART_CUST_A,                    3600*1024,         192*1024,        EMMC_USER_PART},/* cust             192M    p66*/
+  {PART_SYSTEM_A,                  3792*1024,        3568*1024,        EMMC_USER_PART},/* system          3568M    p67*/
+  {PART_PRODUCT_A,                 7360*1024,        2360*1024,        EMMC_USER_PART},/* product         2360M    p68*/
+  {PART_VERSION_A,                 9720*1024,         576*1024,        EMMC_USER_PART},/* version          576M    p69*/
+  {PART_PRELOAD_A,                10296*1024,        1144*1024,        EMMC_USER_PART},/* preload_a       1144M    p70*/
+  {PART_USERDATA,                 11440*1024,  (4UL)*1024*1024,        EMMC_USER_PART},/* userdata           4G    p71*/
 #endif
+#endif // CONFIG_USE_EROFS
 #endif
   {"0", 0, 0, 0},                                        /* total 11848M*/
 };
@@ -201,53 +249,101 @@ static const struct partition partition_table_ufs[] =
   {PART_VBMETA_A,                       852*1024,        4*1024,        UFS_PART_3},/* vbmeta_a                    4M    p54*/
   {PART_MODEMNVM_UPDATE_A,              856*1024,       16*1024,        UFS_PART_3},/* modemnvm_update_a          16M    p55*/
   {PART_MODEMNVM_CUST_A,                872*1024,       16*1024,        UFS_PART_3},/* modemnvm_cust_a            16M    p56*/
-  {PART_PATCH_A,                        888*1024,       32*1024,        UFS_PART_3},/* patch                      32M    p57*/
 #ifdef CONFIG_FACTORY_MODE
-  {PART_VENDOR_A,                       920*1024,        1232*1024,        UFS_PART_3},/* vendor               1232M    p58*/
-  {PART_ODM_A,                         2152*1024,         192*1024,        UFS_PART_3},/* odm                   192M    p59*/
-  {PART_CUST_A,                        2344*1024,         192*1024,        UFS_PART_3},/* cust                  192M    p60*/
-  {PART_SYSTEM_A,                      2536*1024,        5848*1024,        UFS_PART_3},/* system               5848M    p61*/
-  {PART_PRODUCT_A,                     8384*1024,        1328*1024,        UFS_PART_3},/* product              1328M    p62*/
-  {PART_VERSION_A,                     9712*1024,         576*1024,        UFS_PART_3},/* version               576M    p63*/
-  {PART_PRELOAD_A,                    10288*1024,        1144*1024,        UFS_PART_3},/* preload_a            1144M    p64*/
-  {PART_HIBENCH_IMG,                  11432*1024,         128*1024,        UFS_PART_3},/* hibench_img           128M    p65*/
-  {PART_HIBENCH_DATA,                 11560*1024,         512*1024,        UFS_PART_3},/* hibench_data          512M    p66*/
-  {PART_FLASH_AGEING,                 12072*1024,         512*1024,        UFS_PART_3},/* FLASH_AGEING          512M    p67*/
-  {PART_USERDATA,                     12584*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p68*/
+  {PART_PATCH_A,                          888*1024,          32*1024,        UFS_PART_3},/* patch                  32M    p57*/
+  {PART_PREAS,                            920*1024,        1216*1024,        UFS_PART_3},/* preas                1216M    p58*/
+  {PART_PREAVS,                          2136*1024,          32*1024,        UFS_PART_3},/* preavs                 32M    p59*/
+  {PART_VENDOR_A,                        2168*1024,        1232*1024,        UFS_PART_3},/* vendor               1232M    p60*/
+  {PART_ODM_A,                           3400*1024,         192*1024,        UFS_PART_3},/* odm                   192M    p61*/
+  {PART_CUST_A,                          3592*1024,         192*1024,        UFS_PART_3},/* cust                  192M    p62*/
+  {PART_SYSTEM_A,                        3784*1024,        3568*1024,        UFS_PART_3},/* system               3568M    p63*/
+  {PART_PRODUCT_A,                       7352*1024,        2360*1024,        UFS_PART_3},/* product              2360M    p64*/
+  {PART_VERSION_A,                       9712*1024,         576*1024,        UFS_PART_3},/* version               576M    p65*/
+  {PART_PRELOAD_A,                      10288*1024,        1144*1024,        UFS_PART_3},/* preload              1144M    p66*/
+  {PART_HIBENCH_IMG,                    11432*1024,         128*1024,        UFS_PART_3},/* hibench_img           128M    p67*/
+  {PART_HIBENCH_DATA,                   11560*1024,         512*1024,        UFS_PART_3},/* hibench_data          512M    p68*/
+  {PART_FLASH_AGEING,                   12072*1024,         512*1024,        UFS_PART_3},/* FLASH_AGEING          512M    p69*/
+  {PART_USERDATA,                       12584*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p70*/
 #else
 #ifdef CONFIG_USE_EROFS
-  {PART_VENDOR_A,                       920*1024,         864*1024,        UFS_PART_3},/* vendor                864M    p58*/
-  {PART_ODM_A,                         1784*1024,         136*1024,        UFS_PART_3},/* odm                   136M    p59*/
-  {PART_CUST_A,                        1920*1024,         136*1024,        UFS_PART_3},/* cust                  136M    p60*/
+#ifdef CONFIG_UPDATE_PRODUCT_EROFS
 #ifdef CONFIG_MARKET_INTERNAL
-  {PART_SYSTEM_A,                      2056*1024,        3352*1024,        UFS_PART_3},/* system               3352M    p61*/
-  {PART_PRODUCT_A,                     5408*1024,        1472*1024,        UFS_PART_3},/* product              1472M    p62*/
-  {PART_VERSION_A,                     6880*1024,         576*1024,        UFS_PART_3},/* version               576M    p63*/
-  {PART_PRELOAD_A,                     7456*1024,        1144*1024,        UFS_PART_3},/* preload_a            1144M    p64*/
-  {PART_USERDATA,                      8600*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p65*/
+  {PART_PATCH_A,                         888*1024,          200*1024,        UFS_PART_3},/* patch                 200M    p57*/
+  {PART_PREAS,                           1088*1024,         360*1024,        UFS_PART_3},/* preas                 360M    p58*/
+  {PART_PREAVS,                          1448*1024,          32*1024,        UFS_PART_3},/* preavs                 32M    p59*/
+  {PART_VENDOR_A,                        1480*1024,        1064*1024,        UFS_PART_3},/* vendor               1064M    p60*/
+  {PART_ODM_A,                           2544*1024,         192*1024,        UFS_PART_3},/* odm                   192M    p61*/
+  {PART_CUST_A,                          2736*1024,         192*1024,        UFS_PART_3},/* cust                  192M    p62*/
+  {PART_SYSTEM_A,                        2928*1024,        3760*1024,        UFS_PART_3},/* system               3760M    p63*/
+  {PART_PRODUCT_A,                       6688*1024,        2104*1024,        UFS_PART_3},/* product              2104M    p64*/
+  {PART_VERSION_A,                       8792*1024,         576*1024,        UFS_PART_3},/* version               576M    p65*/
+  {PART_PRELOAD_A,                       9368*1024,        1144*1024,        UFS_PART_3},/* preload              1144M    p66*/
+  {PART_USERDATA,                       10512*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p67*/
 #else
-  {PART_SYSTEM_A,                      2056*1024,        4096*1024,        UFS_PART_3},/* system               4096M    p61*/
-  {PART_PRODUCT_A,                     6152*1024,        1328*1024,        UFS_PART_3},/* product              1328M    p62*/
-  {PART_VERSION_A,                     7480*1024,         576*1024,        UFS_PART_3},/* version               576M    p63*/
-  {PART_PRELOAD_A,                     8056*1024,        1144*1024,        UFS_PART_3},/* preload_a            1144M    p64*/
-  {PART_USERDATA,                      9200*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p65*/
+  {PART_PATCH_A,                          888*1024,         200*1024,        UFS_PART_3},/* patch                 200M    p57*/
+  {PART_PREAS,                           1088*1024,        1216*1024,        UFS_PART_3},/* preas                1216M    p58*/
+  {PART_PREAVS,                          2304*1024,          32*1024,        UFS_PART_3},/* preavs                 32M    p59*/
+  {PART_VENDOR_A,                        2336*1024,        1064*1024,        UFS_PART_3},/* vendor               1064M    p60*/
+  {PART_ODM_A,                           3400*1024,         192*1024,        UFS_PART_3},/* odm                   192M    p61*/
+  {PART_CUST_A,                          3592*1024,         192*1024,        UFS_PART_3},/* cust                  192M    p62*/
+  {PART_SYSTEM_A,                        3784*1024,        3568*1024,        UFS_PART_3},/* system               3568M    p63*/
+  {PART_PRODUCT_A,                       7352*1024,        2360*1024,        UFS_PART_3},/* product              2360M    p64*/
+  {PART_VERSION_A,                       9712*1024,         576*1024,        UFS_PART_3},/* version               576M    p65*/
+  {PART_PRELOAD_A,                      10288*1024,        1144*1024,        UFS_PART_3},/* preload              1144M    p66*/
+  {PART_USERDATA,                       11432*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p67*/
 #endif
 #else
-  {PART_VENDOR_A,                       920*1024,        1232*1024,        UFS_PART_3},/* vendor               1232M    p58*/
-  {PART_ODM_A,                         2152*1024,         192*1024,        UFS_PART_3},/* odm                   192M    p59*/
-  {PART_CUST_A,                        2344*1024,         192*1024,        UFS_PART_3},/* cust                  192M    p60*/
 #ifdef CONFIG_MARKET_INTERNAL
-  {PART_SYSTEM_A,                      2536*1024,        4784*1024,        UFS_PART_3},/* system               4784M    p61*/
-  {PART_PRODUCT_A,                     7320*1024,        1472*1024,        UFS_PART_3},/* product              1472M    p62*/
-  {PART_VERSION_A,                     8792*1024,         576*1024,        UFS_PART_3},/* version               576M    p63*/
-  {PART_PRELOAD_A,                     9368*1024,        1144*1024,        UFS_PART_3},/* preload_a            1144M    p64*/
-  {PART_USERDATA,                     10512*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p65*/
+  {PART_PATCH_A,                        888*1024,          32*1024,        UFS_PART_3},/* patch                  32M    p57*/
+  {PART_PREAS,                          920*1024,         296*1024,        UFS_PART_3},/* preas                 296M    p58*/
+  {PART_PREAVS,                        1216*1024,          32*1024,        UFS_PART_3},/* preavs                 32M    p59*/
+  {PART_VENDOR_A,                      1248*1024,         864*1024,        UFS_PART_3},/* vendor                864M    p60*/
+  {PART_ODM_A,                         2112*1024,         136*1024,        UFS_PART_3},/* odm                   136M    p61*/
+  {PART_CUST_A,                        2248*1024,          88*1024,        UFS_PART_3},/* cust                   88M    p62*/
+  {PART_SYSTEM_A,                      2336*1024,        2544*1024,        UFS_PART_3},/* system               2544M    p63*/
+  {PART_PRODUCT_A,                     4880*1024,        2000*1024,        UFS_PART_3},/* product              2000M    p64*/
+  {PART_VERSION_A,                     6880*1024,         576*1024,        UFS_PART_3},/* version               576M    p65*/
+  {PART_PRELOAD_A,                     7456*1024,        1144*1024,        UFS_PART_3},/* preload_a            1144M    p66*/
+  {PART_USERDATA,                      8600*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p67*/
 #else
-  {PART_SYSTEM_A,                      2536*1024,        5848*1024,        UFS_PART_3},/* system               5848M    p61*/
-  {PART_PRODUCT_A,                     8384*1024,        1328*1024,        UFS_PART_3},/* product              1328M    p62*/
-  {PART_VERSION_A,                     9712*1024,         576*1024,        UFS_PART_3},/* version               576M    p63*/
-  {PART_PRELOAD_A,                    10288*1024,        1144*1024,        UFS_PART_3},/* preload_a            1144M    p64*/
-  {PART_USERDATA,                     11432*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p65*/
+  {PART_PATCH_A,                        888*1024,          32*1024,        UFS_PART_3},/* patch                  32M    p57*/
+  {PART_PREAS,                          920*1024,         976*1024,        UFS_PART_3},/* preas                 976M    p58*/
+  {PART_PREAVS,                        1896*1024,          32*1024,        UFS_PART_3},/* preavs                 32M    p59*/
+  {PART_VENDOR_A,                      1928*1024,         864*1024,        UFS_PART_3},/* vendor                864M    p60*/
+  {PART_ODM_A,                         2792*1024,         136*1024,        UFS_PART_3},/* odm                   136M    p61*/
+  {PART_CUST_A,                        2928*1024,          88*1024,        UFS_PART_3},/* cust                   88M    p62*/
+  {PART_SYSTEM_A,                      3016*1024,        2312*1024,        UFS_PART_3},/* system               2312M    p63*/
+  {PART_PRODUCT_A,                     5328*1024,        2152*1024,        UFS_PART_3},/* product              2152M    p64*/
+  {PART_VERSION_A,                     7480*1024,         576*1024,        UFS_PART_3},/* version               576M    p65*/
+  {PART_PRELOAD_A,                     8056*1024,        1144*1024,        UFS_PART_3},/* preload_a            1144M    p66*/
+  {PART_USERDATA,                      9200*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p67*/
+#endif
+#endif
+#else
+#ifdef CONFIG_MARKET_INTERNAL
+  {PART_PATCH_A,                         888*1024,           32*1024,        UFS_PART_3},/* patch                  32M    p57*/
+  {PART_PREAS,                            920*1024,         360*1024,        UFS_PART_3},/* preas                 360M    p58*/
+  {PART_PREAVS,                          1280*1024,          32*1024,        UFS_PART_3},/* preavs                 32M    p59*/
+  {PART_VENDOR_A,                        1312*1024,        1232*1024,        UFS_PART_3},/* vendor               1232M    p60*/
+  {PART_ODM_A,                           2544*1024,         192*1024,        UFS_PART_3},/* odm                   192M    p61*/
+  {PART_CUST_A,                          2736*1024,         192*1024,        UFS_PART_3},/* cust                  192M    p62*/
+  {PART_SYSTEM_A,                        2928*1024,        3760*1024,        UFS_PART_3},/* system               3760M    p63*/
+  {PART_PRODUCT_A,                       6688*1024,        2104*1024,        UFS_PART_3},/* product              2104M    p64*/
+  {PART_VERSION_A,                       8792*1024,         576*1024,        UFS_PART_3},/* version               576M    p65*/
+  {PART_PRELOAD_A,                       9368*1024,        1144*1024,        UFS_PART_3},/* preload              1144M    p66*/
+  {PART_USERDATA,                       10512*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p67*/
+#else
+  {PART_PATCH_A,                          888*1024,          32*1024,        UFS_PART_3},/* patch                  32M    p57*/
+  {PART_PREAS,                            920*1024,        1216*1024,        UFS_PART_3},/* preas                1216M    p58*/
+  {PART_PREAVS,                          2136*1024,          32*1024,        UFS_PART_3},/* preavs                 32M    p59*/
+  {PART_VENDOR_A,                        2168*1024,        1232*1024,        UFS_PART_3},/* vendor               1232M    p60*/
+  {PART_ODM_A,                           3400*1024,         192*1024,        UFS_PART_3},/* odm                   192M    p61*/
+  {PART_CUST_A,                          3592*1024,         192*1024,        UFS_PART_3},/* cust                  192M    p62*/
+  {PART_SYSTEM_A,                        3784*1024,        3568*1024,        UFS_PART_3},/* system               3568M    p63*/
+  {PART_PRODUCT_A,                       7352*1024,        2360*1024,        UFS_PART_3},/* product              2360M    p64*/
+  {PART_VERSION_A,                       9712*1024,         576*1024,        UFS_PART_3},/* version               576M    p65*/
+  {PART_PRELOAD_A,                      10288*1024,        1144*1024,        UFS_PART_3},/* preload              1144M    p66*/
+  {PART_USERDATA,                       11432*1024,  (4UL)*1024*1024,        UFS_PART_3},/* userdata                4G    p67*/
 #endif
 #endif
 #endif

@@ -69,6 +69,9 @@
 		EnterModeResult		enter_mode_result;
 		ExitModeResult		exit_mode_result;
 		InformIdentity		inform_id;
+#ifdef FSC_HAVE_CUSTOM_SRC2
+		InformCustSrc2CableVdo	inform_raw_vdo_data;
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 		InformSvids			inform_svids;
 		InformModes			inform_modes;
 		InformAttention		inform_attention;

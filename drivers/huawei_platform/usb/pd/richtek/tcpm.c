@@ -30,7 +30,7 @@ int tcpm_shutdown(struct tcpc_device *tcpc_dev)
 		tcpci_disable_vbus_control(tcpc_dev);
 #endif	/* CONFIG_TCPC_SHUTDOWN_VBUS_DISABLE */
 
-	if (tcpc_dev->ops->deinit && tcpc_dev->pd_port.pd_connected)
+	if (tcpc_dev->ops->deinit)
 		tcpc_dev->ops->deinit(tcpc_dev);
 
 	return 0;
@@ -223,11 +223,11 @@ int tcpm_typec_change_role(
 bool tcpm_inquire_cust_src2_cable_vdo(
         struct tcpc_device *tcpc_dev, uint32_t *vdos, int size)
 {
+	pd_port_t *pd_port;
 	if(!tcpc_dev){
 		return false;
 	}
-	pd_port_t *pd_port = &tcpc_dev->pd_port;
-
+	pd_port = &tcpc_dev->pd_port;
 	if (size < VDO_MAX_SIZE){
 		return false;
 	}

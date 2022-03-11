@@ -179,6 +179,76 @@ do{ \
     } \
 }while(0);
 
+int rfile_check_path(const char *path)
+{
+    unsigned int i, f_num;
+    const char *d_str = "../";
+    const char *f_str[] = {"/mnvm2:0/SC/", "/modem_log/", "/modem_secure/","/mnt/modem/mnvm2:0/SC/","/mnt/modem/modem_secure/"};
+
+    if (path == NULL) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> path is NULL.\n", __FUNCTION__);
+        return -1;
+    }
+
+    if (strstr(path, d_str)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> %s is not allow %s.\n", __FUNCTION__, path, d_str);
+        return -1;
+    }
+
+    f_num = sizeof(f_str) / sizeof(f_str[0]);
+
+    for (i = 0; i < f_num; i++) {
+        if (0 == strncmp(path, f_str[i], strlen(f_str[i]))) {
+            return 0;
+        }
+    }
+
+    bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+            "[rfile]: <%s> %s is not in list.\n", __FUNCTION__, path);
+
+    return -1;
+}
+
+int rfile_check_fp(u32 fp)
+{
+    struct list_head *p = NULL;
+    struct list_head *n = NULL;
+    struct fp_list *tmp = NULL;
+
+    list_for_each_safe(p, n, &(g_stRfileMain.fplist))
+    {
+        tmp = list_entry(p, struct fp_list, stlist);
+        if (tmp->fp == (s32)fp) {
+            return 0;
+        }
+    }
+
+    bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+            "[rfile]: <%s> fp %d is not in list.\n", __FUNCTION__, fp);
+    return -1;
+}
+
+int rfile_check_dp(u32 dp)
+{
+    struct list_head *p = NULL;
+    struct list_head *n = NULL;
+    struct dir_list *tmp = NULL;
+
+    list_for_each_safe(p, n, &(g_stRfileMain.dplist))
+    {
+        tmp = list_entry(p, struct dir_list, stlist);
+        if (tmp->dp == (s32)dp) {
+            return 0;
+        }
+    }
+
+    bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+            "[rfile]: <%s> dp %d is not in list.\n", __FUNCTION__, dp);
+    return -1;
+}
+
 void rfile_MntnDotRecord(u32 line)
 {
     u32 ptr = g_stRfileMntnInfo.stdot.ptr;
@@ -954,6 +1024,12 @@ s32 rfile_AcoreOpenReq(struct bsp_rfile_open_req *pstRfileReq, u32 ulId)
     /* coverity[secure_coding] */
     strncat(pcName, (char*)pstRfileReq->aucData, (unsigned long)ulNameLen); /* [false alarm]: ÆÁ±ÎFortify´íÎó */
 
+    if (rfile_check_path((const char *)pcName)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+            "[rfile]: <%s> path %s rfile_check_path failed.\n", __FUNCTION__, pcName);
+        Rfile_Free(pcName);
+        return BSP_ERROR;
+    }
 #ifdef RFILE_AUTO_MKDIR
     if(ulNameLen > 255)
     {
@@ -1008,6 +1084,11 @@ s32 rfile_AcoreCloseReq(struct bsp_rfile_close_req *pstRfileReq, u32 ulId)
     stRfileCnf.ret = BSP_ERROR;
 
     RFILE_LPM_PRINT_FILEPATH(EN_RFILE_OP_CLOSE, pstRfileReq->fd);
+    if (rfile_check_fp(pstRfileReq->fd)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+            "[rfile]: <%s> fd %d rfile_check_fp failed.\n", __FUNCTION__, pstRfileReq->fd);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.ret = bsp_close(pstRfileReq->fd);
 
@@ -1031,6 +1112,11 @@ s32 rfile_AcoreWriteReq(struct bsp_rfile_write_req *pstRfileReq, u32 ulId)
     stRfileCnf.ret = BSP_ERROR;
 
     RFILE_LPM_PRINT_FILEPATH(EN_RFILE_OP_WRITE, pstRfileReq->fd);
+    if (rfile_check_fp(pstRfileReq->fd)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> fd %d rfile_check_fp failed.\n", __FUNCTION__, pstRfileReq->fd);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.ret = bsp_write(pstRfileReq->fd, (s8*)pstRfileReq->aucData, pstRfileReq->ulSize);
 
@@ -1051,6 +1137,11 @@ s32 rfile_AcoreWriteSyncReq(struct bsp_rfile_write_req *pstRfileReq, u32 ulId)
     stRfileCnf.ret = BSP_ERROR;
 
     RFILE_LPM_PRINT_FILEPATH(EN_RFILE_OP_WRITE_SYNC, pstRfileReq->fd);
+    if (rfile_check_fp(pstRfileReq->fd)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> fd %d rfile_check_fp failed.\n", __FUNCTION__, pstRfileReq->fd);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.ret = bsp_write_sync(pstRfileReq->fd, (s8*)pstRfileReq->aucData, pstRfileReq->ulSize);
 
@@ -1072,6 +1163,11 @@ s32 rfile_AcoreReadReq(struct bsp_rfile_read_req *pstRfileReq, u32 ulId)
     {
         bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
             "![rfile]: <%s> pstRfileCnf->Size %d > RFILE_LEN_MAX.\n", __FUNCTION__, pstRfileReq->ulSize);
+        return BSP_ERROR;
+    }
+    if (rfile_check_fp(pstRfileReq->fd)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> fd %d rfile_check_fp failed.\n", __FUNCTION__, pstRfileReq->fd);
         return BSP_ERROR;
     }
     ulLen = sizeof(struct bsp_rfile_read_cnf) + pstRfileReq->ulSize;
@@ -1111,6 +1207,11 @@ s32 rfile_AcoreSeekReq(struct bsp_rfile_seek_req *pstRfileReq, u32 ulId)
     stRfileCnf.pstlist = pstRfileReq->pstlist;
 
     RFILE_LPM_PRINT_FILEPATH(EN_RFILE_OP_SEEK, pstRfileReq->fd);
+    if (rfile_check_fp(pstRfileReq->fd)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> fd %d rfile_check_fp failed.\n", __FUNCTION__, pstRfileReq->fd);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.ret = bsp_lseek(pstRfileReq->fd, (long)pstRfileReq->offset, pstRfileReq->whence);
 
@@ -1132,6 +1233,11 @@ s32 rfile_AcoreTellReq(struct bsp_rfile_tell_req *pstRfileReq, u32 ulId)
     stRfileCnf.pstlist = pstRfileReq->pstlist;
 
     RFILE_LPM_PRINT_FILEPATH(EN_RFILE_OP_TELL, pstRfileReq->fd);
+    if (rfile_check_fp(pstRfileReq->fd)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> fd %d rfile_check_fp failed.\n", __FUNCTION__, pstRfileReq->fd);
+        return BSP_ERROR;
+    }
 
     ret = (s32)bsp_tell(pstRfileReq->fd);
 
@@ -1177,6 +1283,12 @@ s32 rfile_AcoreRemoveReq(struct bsp_rfile_remove_req *pstRfileReq, u32 ulId)
     strncat(pcPath, (char*)pstRfileReq->aucData, (unsigned long)ulPathLen); /* [false alarm]: ÆÁ±ÎFortify´íÎó */
 
     RFILE_LPM_PRINT_PATH(EN_RFILE_OP_REMOVE, pcPath);
+    if (rfile_check_path((const char *)pcPath)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> path %s rfile_check_path failed.\n", __FUNCTION__, pcPath);
+        Rfile_Free(pcPath);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.ret = bsp_remove((s8*)pcPath);
 
@@ -1226,6 +1338,12 @@ s32 rfile_AcoreMkdirReq(struct bsp_rfile_mkdir_req *pstRfileReq, u32 ulId)
     strncat(pcPath, (char*)pstRfileReq->aucData, (unsigned long)ulPathLen); /* [false alarm]: ÆÁ±ÎFortify´íÎó */
 
     RFILE_LPM_PRINT_PATH(EN_RFILE_OP_MKDIR, pcPath);
+    if (rfile_check_path((const char *)pcPath)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> path %s rfile_check_path failed.\n", __FUNCTION__, pcPath);
+        Rfile_Free(pcPath);
+        return BSP_ERROR;
+    }
 
 #ifdef RFILE_AUTO_MKDIR
 
@@ -1287,6 +1405,12 @@ s32 rfile_AcoreRmdirReq(struct bsp_rfile_rmdir_req *pstRfileReq, u32 ulId)
     strncat(pcPath, (char*)pstRfileReq->aucData, (unsigned long)ulPathLen); /* [false alarm]: ÆÁ±ÎFortify´íÎó */
 
     RFILE_LPM_PRINT_PATH(EN_RFILE_OP_RMDIR, pcPath);
+    if (rfile_check_path((const char *)pcPath)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> path %s rfile_check_path failed.\n", __FUNCTION__, pcPath);
+        Rfile_Free(pcPath);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.ret = bsp_rmdir(pcPath);
 
@@ -1332,6 +1456,12 @@ s32 rfile_AcoreOpendirReq(struct bsp_rfile_opendir_req *pstRfileReq, u32 ulId)
     strncat(pcPath, (char*)pstRfileReq->aucData, (unsigned long)ulPathLen); /* [false alarm]: ÆÁ±ÎFortify´íÎó */
 
     RFILE_LPM_PRINT_PATH(EN_RFILE_OP_OPENDIR, pcPath);
+    if (rfile_check_path((const char *)pcPath)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> path %s rfile_check_path failed.\n", __FUNCTION__, pcPath);
+        Rfile_Free(pcPath);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.dirhandle = bsp_opendir(pcPath);
 
@@ -1362,7 +1492,11 @@ s32 rfile_AcoreReaddirReq(struct bsp_rfile_readdir_req *pstRfileReq, u32 ulId)
     {
         return BSP_ERROR;
     }
-
+    if (rfile_check_dp(pstRfileReq->dir)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> dir %d rfile_check_dp failed.\n", __FUNCTION__, pstRfileReq->dir);
+        return BSP_ERROR;
+    }
     ulLen = sizeof(struct bsp_rfile_readdir_cnf) + pstRfileReq->count;
 
     pstRfileCnf = Rfile_Malloc(ulLen);
@@ -1399,6 +1533,11 @@ s32 rfile_AcoreClosedirReq(struct bsp_rfile_closedir_req *pstRfileReq, u32 ulId)
     stRfileCnf.pstlist = pstRfileReq->pstlist;
 
     RFILE_LPM_PRINT_DIRPATH(EN_RFILE_OP_CLOSEDIR, pstRfileReq->dir);
+    if (rfile_check_dp(pstRfileReq->dir)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> dir %d rfile_check_dp failed.\n", __FUNCTION__, pstRfileReq->dir);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.ret = bsp_closedir(pstRfileReq->dir);
 
@@ -1443,6 +1582,12 @@ s32 rfile_AcoreStatReq(struct bsp_rfile_stat_req *pstRfileReq, u32 ulId)
     strncat(pcPath, (char*)pstRfileReq->aucData, (unsigned long)ulPathLen); /* [false alarm]: ÆÁ±ÎFortify´íÎó */
 
     RFILE_LPM_PRINT_PATH(EN_RFILE_OP_STAT, pcPath);
+    if (rfile_check_path((const char *)pcPath)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> path %s rfile_check_path failed.\n", __FUNCTION__, pcPath);
+        Rfile_Free(pcPath);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.ret = bsp_stat(pcPath, &(stRfileCnf.ststat));    /*lint !e740*/
 
@@ -1511,6 +1656,21 @@ s32 rfile_AcoreRenameReq(struct bsp_rfile_rename_req *pstRfileReq, u32 ulId)
     strncat(newname, (char*)(pstRfileReq->aucData + uloldnamelen ), (unsigned long)ulnewnamelen); /* [false alarm]: ÆÁ±ÎFortify´íÎó */
 
     RFILE_LPM_PRINT_PATH(EN_RFILE_OP_RENAME, newname);
+    if (rfile_check_path((const char *)oldname)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> path %s rfile_check_path failed.\n", __FUNCTION__, oldname);
+        Rfile_Free(oldname);
+        Rfile_Free(newname);
+        return BSP_ERROR;
+    }
+
+    if (rfile_check_path((const char *)newname)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> path %s rfile_check_path failed.\n", __FUNCTION__, newname);
+        Rfile_Free(oldname);
+        Rfile_Free(newname);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.ret = bsp_rename(oldname, newname);
 
@@ -1557,6 +1717,12 @@ s32 rfile_AcoreAccessReq(struct bsp_rfile_access_req *pstRfileReq, u32 ulId)
     strncat(pcPath, (char*)pstRfileReq->aucData, (unsigned long)ulPathLen); /* [false alarm]: ÆÁ±ÎFortify´íÎó */
 
     RFILE_LPM_PRINT_PATH(EN_RFILE_OP_ACCESS, pcPath);
+    if (rfile_check_path((const char *)pcPath)) {
+        bsp_trace(BSP_LOG_LEVEL_ERROR, BSP_MODU_RFILE,
+                "[rfile]: <%s> path %s rfile_check_path failed.\n", __FUNCTION__, pcPath);
+        Rfile_Free(pcPath);
+        return BSP_ERROR;
+    }
 
     stRfileCnf.ret = bsp_access(pcPath, pstRfileReq->mode);
 

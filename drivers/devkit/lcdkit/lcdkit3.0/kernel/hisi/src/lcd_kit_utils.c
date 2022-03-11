@@ -511,6 +511,29 @@ int lcd_kit_rgbw_set_backlight(struct hisi_fb_data_type* hisifd, int bl_level)
 	return ret;
 }
 
+static int lcd_kit_rgbw_pix_gain(struct hisi_fb_data_type *hisifd)
+{
+	uint32_t pix_gain;
+	static uint32_t pix_gain_old = 0;
+	int rgbw_mode;
+	int ret = LCD_KIT_OK;
+
+	if (disp_info->rgbw.pixel_gain_limit_cmds.cmds == NULL) {
+		LCD_KIT_INFO("not support pixel_gain_limit\n");
+		return LCD_KIT_FAIL;
+	}
+	rgbw_mode = hisifd->de_info.ddic_rgbw_mode;
+	pix_gain = (uint32_t)hisifd->de_info.pixel_gain_limit;
+	if ((pix_gain != pix_gain_old) && (rgbw_mode == RGBW_SET4_MODE)) {
+		disp_info->rgbw.pixel_gain_limit_cmds.cmds[0].payload[1] = pix_gain;
+		ret = lcd_kit_dsi_cmds_tx(hisifd, &disp_info->rgbw.pixel_gain_limit_cmds);
+		LCD_KIT_DEBUG("[RGBW] pixel_gain=%d,pix_gain_old=%d!\n",
+			pix_gain, pix_gain_old);
+		pix_gain_old = pix_gain;
+	}
+	return ret;
+}
+
 int lcd_kit_rgbw_set_handle(struct hisi_fb_data_type* hisifd)
 {
 	int ret = LCD_KIT_OK;
@@ -537,6 +560,13 @@ int lcd_kit_rgbw_set_handle(struct hisi_fb_data_type* hisifd)
 		}
 	}
 	old_rgbw_backlight = rgbw_backlight;
+
+	/* set gain */
+	ret = lcd_kit_rgbw_pix_gain(hisifd);
+	if (ret) {
+		LCD_KIT_ERR("[RGBW]set pix_gain fail\n");
+		return LCD_KIT_FAIL;
+	}
 
 	return ret;
 }
@@ -994,6 +1024,7 @@ void lcd_kit_pinfo_init(struct device_node* np, struct hisi_panel_info* pinfo)
 	OF_PROPERTY_READ_U8_DEFAULT(np, "lcd-kit,cinema-mode-support", &pinfo->cinema_mode_support, 0);
 	OF_PROPERTY_READ_U8_DEFAULT(np, "lcd-kit,xcc-support", &pinfo->xcc_support, 0);
 	OF_PROPERTY_READ_U8_DEFAULT(np, "lcd-kit,hiace-support", &pinfo->hiace_support, 0);
+	OF_PROPERTY_READ_U8_DEFAULT(np, "lcd-kit,dither-support", &pinfo->dither_support, 0);
 	OF_PROPERTY_READ_U8_DEFAULT(np, "lcd-kit,panel-ce-support", &pinfo->panel_effect_support, 0);
 	OF_PROPERTY_READ_U8_DEFAULT(np, "lcd-kit,arsr1p-sharpness-support", &pinfo->arsr1p_sharpness_support, 0);
 	OF_PROPERTY_READ_U8_DEFAULT(np, "lcd-kit,prefix-sharp-1D-support", &pinfo->prefix_sharpness1D_support, 0);
@@ -1801,6 +1832,14 @@ int lcd_kit_read_gamma(struct hisi_fb_data_type* hisifd, uint8_t *read_value)
 {
 	int ret = LCD_KIT_OK;
 
+	if (disp_info == NULL) {
+		LCD_KIT_ERR("disp_info null pointer\n");
+		return LCD_KIT_FAIL;
+	}
+	if (disp_info->gamma_cal.cmds.cmds == NULL) {
+		LCD_KIT_ERR("gamma_cal cmds null pointer\n");
+		return LCD_KIT_FAIL;
+	}
 	disp_info->gamma_cal.cmds.cmds->payload[1] = (disp_info->gamma_cal.addr >> 8) & 0xff;
 	disp_info->gamma_cal.cmds.cmds->payload[0] = disp_info->gamma_cal.addr & 0xff;
 	disp_info->gamma_cal.cmds.cmds->dlen = disp_info->gamma_cal.length;

@@ -62,6 +62,7 @@ int bh1726_flag;
 int apds9253_006_ps_flag;
 int ams_tcs3701_ps_flag;
 int ams_tcs3701_rgb_flag;
+int vd6281_als_flag;
 int acc1_first_start_flag;
 int gyro1_first_start_flag;
 

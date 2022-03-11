@@ -35,7 +35,6 @@
 #include "huawei_platform/audio/invert_hs.h"
 #include <sound/soc.h>
 #include "huawei_platform/audio/usb_analog_hs_interface.h"
-
 #include "hs_auto_calib.h"
 
 /*lint -e750 -e838 -e732 -e655 -e64*/
@@ -361,15 +360,18 @@ static void hi64xx_hs_res_detect(struct hi64xx_mbhc_priv *priv)
 	bool hs_res_detect = false;
 	struct hs_res_detect_func *res_detect_func = priv->hs_cfg.res_detect_func;
 
-	hs_res_detect = (NULL != res_detect_func->hs_res_detect
-		&& !priv->hs_plug_status
-		&& HISI_JACK_INVERT != priv->hs_status
-		&& !priv->anc_hs_plug_status);
+	hs_res_detect = ((res_detect_func->hs_res_detect != NULL) &&
+		(res_detect_func->hs_path_enable != NULL) &&
+		(res_detect_func->hs_path_disable != NULL) &&
+		(!priv->hs_plug_status) && (!priv->anc_hs_plug_status) &&
+		(priv->hs_status != HISI_JACK_INVERT));
 	if (hs_res_detect) {
+		hi64xx_irq_mask_btn_irqs(&priv->mbhc_pub);
 		res_detect_func->hs_path_enable(priv->codec);
-		msleep(100);
 		res_detect_func->hs_res_detect(priv->codec);
 		res_detect_func->hs_path_disable(priv->codec);
+		hi64xx_irq_unmask_btn_irqs(&priv->mbhc_pub);
+		pr_info("%s: hs res detect\n", __func__);
 	} else {
 		pr_info("%s : no need enable res detect, hs_plug_status:%d, anc_hs_plug_status:%d\n",
 				__FUNCTION__, priv->hs_plug_status, priv->anc_hs_plug_status);
@@ -905,6 +907,7 @@ static struct usb_analog_hs_dev usb_analog_dev = {
 	},
 };
 
+
 void hi64xx_mbhc_3_pole_voltage_config(struct device_node *node,
 										struct hi64xx_mbhc_config *mbhc_config)
 {
@@ -1246,6 +1249,7 @@ int hi64xx_mbhc_init(struct snd_soc_codec *codec,
 
 	/* mask btn irqs */
 	hi64xx_irq_mask_btn_irqs(&priv->mbhc_pub);
+
 
 	/* enable hsdet */
 	mbhc_func->hs_enable_hsdet(codec, priv->mbhc_config);

@@ -694,13 +694,14 @@ EXPORT_SYMBOL_GPL(smartpakit_ctrl_get_model);
 int smartpakit_set_info(struct smartpa_vendor_info *vendor_info)
 {
 	if (smartpakit_priv == NULL) {
-		hwlog_err("%s: bad param", __func__);
+		hwlog_err("%s: smartpakit_priv is null", __func__);
 		return -EFAULT;
 	}
 
-	if ((vendor_info == NULL) ||(vendor_info->vendor < 0) ||
-		(vendor_info->chip_model == NULL)) {
-		hwlog_err("%s: bad param", __func__);
+	if ((vendor_info == NULL) ||
+	    (vendor_info->vendor >= SMARTPAKIT_CHIP_VENDOR_MAX) ||
+	    (vendor_info->chip_model == NULL)) {
+		hwlog_err("%s: vendor_info %pK error", __func__, vendor_info);
 		return -EINVAL;
 	}
 	hwlog_info("%s: vendor %d,chip_model %s", __func__, vendor_info->vendor,

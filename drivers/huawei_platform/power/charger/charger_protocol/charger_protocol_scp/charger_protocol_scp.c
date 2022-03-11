@@ -543,6 +543,33 @@ static int scp_protocol_get_fw_version_id(int *id)
 	return 0;
 }
 
+static int scp_protocol_get_adp_type(int *type)
+{
+	int value[BYTE_ONE] = {0};
+	struct scp_protocol_dev *l_dev = NULL;
+
+	l_dev = scp_protocol_get_dev();
+	if (!l_dev || !type)
+		return -1;
+
+	if (l_dev->info.adp_b_type1_rd_falg == HAS_READ_FLAG) {
+		*type = l_dev->info.adp_b_type1;
+		hwlog_info("get_adp_type_a: %d\n", *type);
+		return 0;
+	}
+
+	/* reg: 0x8d */
+	if (scp_protocol_reg_read(SCP_PROTOCOL_ADP_B_TYPE1, value, BYTE_ONE))
+		return -1;
+
+	*type = value[0];
+	l_dev->info.adp_b_type1 = value[0];
+	l_dev->info.adp_b_type1_rd_falg = HAS_READ_FLAG;
+
+	hwlog_info("get_adp_type_f: %d\n", *type);
+	return 0;
+}
+
 static int scp_protocol_get_power_drop_info(int *drop_flag, int *drop_ratio)
 {
 	int value[BYTE_ONE] = {0};
@@ -1708,9 +1735,6 @@ static int scp_protocol_set_default_state(void)
 	if (scp_protocol_process_post_exit())
 		return -1;
 
-	/*  set all parameter to default state */
-	ret |= scp_protocol_set_default_param();
-
 	if (ret != 0)
 		hwlog_info("set_default_state fail\n");
 	else
@@ -1830,8 +1854,10 @@ struct adapter_protocol_ops adapter_protocol_scp_ops = {
 	.auth_encrypt_release = scp_protocol_auth_encrypt_release,
 	.set_usbpd_enable = scp_protocol_set_usbpd_enable,
 	.set_default_state = scp_protocol_set_default_state,
+	.set_default_param = scp_protocol_set_default_param,
 	.set_init_data = scp_protocol_set_init_data,
 	.get_protocol_register_state = scp_protocol_get_protocol_register_state,
+	.get_adp_type = scp_protocol_get_adp_type,
 };
 
 static int __init scp_protocol_init(void)

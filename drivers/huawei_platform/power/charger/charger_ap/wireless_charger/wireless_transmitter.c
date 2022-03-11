@@ -105,6 +105,25 @@ bool wireless_tx_get_tx_open_flag(void)
 	return tx_open_flag;
 }
 
+bool wireless_is_in_tx_mode(void)
+{
+	int i;
+	struct wireless_tx_device_info *di = g_wireless_tx_di;
+
+	if (!di || !di->tx_ops || !di->tx_ops->in_tx_mode) {
+		hwlog_err("%s: di null\n", __func__);
+		return false;
+	}
+	/* try 3 times for fault tolerance */
+	for (i = 0; i < WL_TX_MODE_ERR_CNT1; i++) {
+		if (tx_stage > WL_TX_STAGE_CHIP_INIT &&
+			di->tx_ops->in_tx_mode())
+			return true;
+	}
+
+	return false;
+}
+
 bool wltx_need_disable_wired_dc(void)
 {
 	const char *pwr_type = NULL;
@@ -139,6 +158,10 @@ static void wireless_tx_wake_unlock(void)
 }
 static void wireless_tx_set_tx_open_flag(bool enable)
 {
+	struct wireless_tx_device_info *di = g_wireless_tx_di;
+
+	if (di && di->tx_ops && di->tx_ops->set_tx_open_flag)
+		di->tx_ops->set_tx_open_flag(enable);
 	tx_open_flag = enable;
 	hwlog_info("[%s] set tx_open_flag = %d\n", __func__, tx_open_flag);
 #ifdef CONFIG_DIRECT_CHARGER
@@ -297,6 +320,65 @@ static void wireless_tx_enable_tx_mode(struct wireless_tx_device_info *di, bool 
 		hwlog_info("[%s] enable = %d, wired channel state:on\n",__func__, enable);
 	}
 }
+
+static void wireless_tx_set_power_output(bool enable,
+	enum wireless_tx_power_src pwr_src)
+{
+	struct wireless_tx_device_info *di = g_wireless_tx_di;
+
+	if (!di) {
+		hwlog_err("%s: di null\n", __func__);
+		return;
+	}
+	if (pwr_src < PWR_SRC_NULL || pwr_src > PWR_SRC_MAX) {
+		hwlog_err("%s: invalid pwr_src:0x%x\n", __func__, pwr_src);
+		return;
+	}
+	switch (pwr_src) {
+	case PWR_SRC_VBUS:
+		charge_set_adapter_voltage(enable ? ADAPTER_5V : ADAPTER_9V,
+			RESET_ADAPTER_WIRELESS_TX, 0);
+		break;
+	case PWR_SRC_OTG:
+		charge_otg_mode_enable(enable, OTG_CTRL_WIRELESS_TX);
+		wireless_charge_sw_control(
+			enable ? WL_SWITCH_ON : WL_SWITCH_OFF);
+		break;
+	case PWR_SRC_5VBST:
+		gpio_set_value(di->gpio_sw, enable ?
+			di->gpio_sw_valid_val : !di->gpio_sw_valid_val);
+		usleep_range(1000, 1050); /* 1ms */
+		boost_5v_enable(enable, BOOST_CTRL_WLTX);
+		break;
+	case PWR_SRC_SPBST:
+		/* reserved */
+		break;
+	case PWR_SRC_NULL:
+		break;
+	default:
+		hwlog_err("%s: err pwr_src(%s)\n", __func__,
+			g_pwr_src[pwr_src].pwr_src_name);
+		break;
+	}
+}
+
+static void wireless_tx_enable_power_extra(void)
+{
+	struct wireless_tx_device_info *di = g_wireless_tx_di;
+
+	if (!di) {
+		hwlog_err("%s: di null\n", __func__);
+		return;
+	}
+	if (di->pwr_type == WL_TX_PWR_5VBST_OTG &&
+		di->cur_pwr_src == PWR_SRC_OTG) {
+		wireless_tx_set_power_output(false, PWR_SRC_OTG);
+		msleep(WL_TX_VIN_SLEEP_TIME);
+		di->cur_pwr_src = PWR_SRC_5VBST;
+		wireless_tx_set_power_output(true, PWR_SRC_5VBST);
+	}
+}
+
 static void wireless_tx_enable_power(bool enable)
 {
 	enum wireless_tx_power_src pwr_src;
@@ -314,29 +396,7 @@ static void wireless_tx_enable_power(bool enable)
 	hwlog_info("[%s] cur_pwr_sw_scn = %s, before %s power_supply, pwr_src = %s\n",
 		__func__, g_pwr_sw_scn[di->cur_pwr_sw_scn].pwr_sw_scn_name,
 		enable ? "enable" : "disable", g_pwr_src[di->cur_pwr_src].pwr_src_name);
-	switch(pwr_src) {
-	case PWR_SRC_VBUS:
-		charge_set_adapter_voltage
-			(enable ? ADAPTER_5V : ADAPTER_9V, RESET_ADAPTER_WIRELESS_TX, 0);
-		break;
-	case PWR_SRC_OTG:
-		charge_otg_mode_enable(enable, OTG_CTRL_WIRELESS_TX);
-		wireless_charge_sw_control(enable ? WL_SWITCH_ON : WL_SWITCH_OFF);
-		break;
-	case PWR_SRC_5VBST:
-		boost_5v_enable(enable, BOOST_CTRL_WLTX);
-		gpio_set_value(di->gpio_sw,
-			enable ? di->gpio_sw_valid_val : !di->gpio_sw_valid_val);
-		break;
-	case PWR_SRC_SPBST:
-		/*reserved*/
-		break;
-	case PWR_SRC_NULL:
-		break;
-	default:
-		hwlog_err("%s: err pwr_src(%s)\n", __func__, g_pwr_src[pwr_src].pwr_src_name);
-		break;
-	}
+	wireless_tx_set_power_output(enable, pwr_src);
 	if (enable) {
 		di->cur_pwr_src = pwr_src;
 	} else {
@@ -409,6 +469,8 @@ static int wireless_tx_power_supply(struct wireless_tx_device_info *di)
 			return WL_TX_FAIL;
 		}
 		count++;
+		if (count == WL_TX_VIN_RETRY_CNT1)
+			wireless_tx_enable_power_extra();
 		hwlog_info("[%s] tx_vin = %dmV, charger_vbus = %dmV, "
 			"retry times = %d!\n", __func__, tx_vin, charger_vbus, count);
 	} while (count < WL_TX_VIN_RETRY_CNT2);
@@ -534,6 +596,7 @@ static int wireless_tx_ping_rx(struct wireless_tx_device_info *di)
 		ret = di->tx_ops->get_tx_vin(&tx_vin);
 		if (ret) {
 			hwlog_err("[%s] get tx_vin fail\n", __func__);
+			wireless_tx_enable_tx_mode(di, true);
 			tx_vin = 0;
 		} else if (tx_vin < WL_TX_VIN_MIN || tx_vin >= WL_TX_VIN_MAX) {
 			hwlog_err("%s: tx_vin = %umV\n", __func__, tx_vin);

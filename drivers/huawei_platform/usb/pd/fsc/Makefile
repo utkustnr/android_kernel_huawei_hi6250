@@ -20,6 +20,9 @@ ccflags-y += -DFSC_HAVE_DRP
 ccflags-y += -DFSC_HAVE_ACCMODE
 ccflags-y += -DFSC_HAVE_VDM
 ccflags-y += -DFSC_HAVE_DP
+ifdef CONFIG_TYPEC_CAP_CUSTOM_SRC2
+ccflags-y += -DFSC_HAVE_CUSTOM_SRC2
+endif
 
 obj-y     += fusb30x_whole.o
 fusb30x_whole-objs         := Platform_Linux/fusb30x_driver.o \

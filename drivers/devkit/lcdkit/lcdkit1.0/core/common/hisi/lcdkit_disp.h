@@ -364,6 +364,7 @@ static struct pinctrl_cmd_desc lcdkit_pinctrl_finit_cmds[] =
 #define GPIO_LCDKIT_IOVCC_NAME       "gpio_lcdkit_iovcc"
 #define GPIO_LCDKIT_VCI_NAME       "gpio_lcdkit_vci"
 #define GPIO_LCDKIT_VBAT_NAME       "gpio_lcdkit_vbat"
+#define GPIO_LCDKIT_TP_RESET_NAME	"gpio_lcdkit_tp_reset"
 
 
 /*******************************************************************************
@@ -387,6 +388,31 @@ static struct gpio_desc lcdkit_gpio_reset_free_cmds[] =
     },
 };
 
+/*
+* tp lcd reset gpio
+*/
+static struct gpio_desc g_lcdkit_gpio_rst_gesture_low_cmds[] = {
+    /* tp reset */
+    {
+        DTYPE_GPIO_OUTPUT, WAIT_TYPE_MS, 8,
+        GPIO_LCDKIT_TP_RESET_NAME, &lcdkit_info.panel_infos.gpio_tp_reset, 0
+    },
+    /* lcd reset */
+    {
+        DTYPE_GPIO_OUTPUT, WAIT_TYPE_MS, 8,
+        GPIO_LCDKIT_RESET_NAME, &lcdkit_info.panel_infos.gpio_lcd_reset, 0
+    },
+};
+/*
+* tp reset gpio high
+*/
+static struct gpio_desc g_lcdkit_tp_rst_gesture_high_cmds[] = {
+    /* tp reset */
+    {
+        DTYPE_GPIO_OUTPUT, WAIT_TYPE_MS, 1,
+        GPIO_LCDKIT_TP_RESET_NAME, &lcdkit_info.panel_infos.gpio_tp_reset, 1
+    },
+};
 static struct gpio_desc lcdkit_gpio_reset_normal_cmds[] =
 {
     /* reset */
@@ -727,6 +753,24 @@ static struct gpio_desc lcdkit_iovcc_disable_cmds[] =
         DTYPE_GPIO_INPUT, WAIT_TYPE_MS, 0,
         GPIO_LCDKIT_IOVCC_NAME, &lcdkit_info.panel_infos.gpio_lcd_iovcc, 0
     },
+};
+
+static struct gpio_desc lcdkit_iovcc_disable_cmds_1[] = {
+	{
+		DTYPE_GPIO_OUTPUT, WAIT_TYPE_MS, 0,
+		GPIO_LCDKIT_IOVCC_NAME, &lcdkit_info.panel_infos.gpio_lcd_iovcc, 0
+	},
+	{
+		DTYPE_GPIO_INPUT, WAIT_TYPE_MS, 0,
+		GPIO_LCDKIT_IOVCC_NAME, &lcdkit_info.panel_infos.gpio_lcd_iovcc, 0
+	},
+};
+
+static struct gpio_desc lcdkit_vbat_disable_cmds_1[] = {
+	{
+		DTYPE_GPIO_OUTPUT, WAIT_TYPE_MS, 0,
+		GPIO_LCDKIT_VBAT_NAME, &lcdkit_info.panel_infos.gpio_lcd_vbat, 0
+	}
 };
 
 static struct gpio_desc lcdkit_vbat_disable_cmds[] =

@@ -39,6 +39,12 @@
 #define CONFIG_USB_PD_MODE_OPERATION
 #endif	/* CONFIG_USB_PD_ALT_MODE_RTDC */
 
+#ifdef CONFIG_USB_PD_RESET_CABLE
+#ifdef CONFIG_USB_PD_DFP_READY_DISCOVER_ID
+#define CONFIG_PD_DFP_RESET_CABLE
+#endif /* CONFIG_USB_PD_DFP_READY_DISCOVER_ID */
+#endif /* CONFIG_USB_PD_RESET_CABLE */
+
 #define PD_SOP_NR	3
 
 /* Default retry count for transmitting */
@@ -743,6 +749,12 @@ typedef struct __pd_port {
 	uint32_t cable_vdos[VDO_MAX_SIZE];
 	bool power_cable_present;
 
+#ifdef CONFIG_USB_PD_RESET_CABLE
+	bool reset_cable; /* contrl the cable soft reset flow */
+	bool detect_emark; /* flag of emark detect */
+	int vswap_ret; /* record the vcswap result */
+#endif /* CONFIG_USB_PD_RESET_CABLE */
+
 	uint8_t id_vdo_nr;
 	uint32_t id_vdos[VDO_MAX_DATA_SIZE];
 
@@ -1123,6 +1135,10 @@ int pd_send_ctrl_msg(
 
 int pd_send_data_msg(pd_port_t *pd_port,
 	uint8_t sop_type, uint8_t msg, uint8_t cnt, uint32_t *payload);
+
+#ifdef CONFIG_USB_PD_RESET_CABLE
+int pd_send_cable_soft_reset(pd_port_t *pd_port);
+#endif /* CONFIG_USB_PD_RESET_CABLE */
 
 int pd_send_soft_reset(pd_port_t *pd_port, uint8_t state_machine);
 int pd_send_hard_reset(pd_port_t *pd_port);

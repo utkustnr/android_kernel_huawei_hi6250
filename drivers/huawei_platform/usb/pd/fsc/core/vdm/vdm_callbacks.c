@@ -33,7 +33,10 @@
 #include "vdm_callbacks.h"
 #include "vdm_types.h"
 #include "../vendor_info.h"
-
+#ifdef FSC_HAVE_CUSTOM_SRC2
+#include "bitfield_translators.h"
+#include "../TypeC.h"
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 #ifdef FSC_HAVE_DP
 #include "DisplayPort/dp.h"
 #include "DisplayPort/interface_dp.h"
@@ -201,6 +204,26 @@ void fusb30x_pd_dpm_set_hw_dock_svid_exist(FSC_BOOL exist)
 void vdmInformIdentity(FSC_BOOL success, SopType sop, Identity id) {
 
 }
+
+#ifdef FSC_HAVE_CUSTOM_SRC2
+#define PID 0x3B20
+#define PID_MASK 0x0ffff
+#define PID_OFFSET 16
+#define ROW_DATA_LENGTH 3
+void vdmInformRawData(FSC_BOOL success, SopType sop, Identity id, FSC_U32 *raw)
+{
+	// Huawei - Illegal 22k/22k
+	if (success && (id.id_header.usb_vid == USB_VID_SOP) &&
+		(sop == SOP_TYPE_SOP1)) {
+		if (PID == ((raw[ROW_DATA_LENGTH] >> PID_OFFSET) & PID_MASK)) {
+			set_emarker_detect_status(TRUE);
+			platform_double_22k_cable();
+		}
+	}
+
+	FSC_PRINT("FUSB: 0x%x\n", raw[3]);
+}
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 
 void vdmInformSvids(FSC_BOOL success, SopType sop, SvidInfo svid_info) {
     if (success) {

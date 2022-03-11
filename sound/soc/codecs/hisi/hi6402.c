@@ -4754,7 +4754,7 @@ static int hi6402_codec_probe(struct snd_soc_codec *codec)
 	return ret;
 
 utils_init_err_exit:
-	hi64xx_vad_deinit();
+	hi64xx_vad_deinit(codec);
 vad_init_err_exit:
 	hi6402_hifi_config_deinit();
 misc_init_err_exit:
@@ -4778,7 +4778,7 @@ static int hi6402_codec_remove(struct snd_soc_codec *codec)
 	hicodec_debug_uninit(codec);
 #endif
 
-	hi64xx_vad_deinit();
+	hi64xx_vad_deinit(codec);
 	hi6402_hifi_config_deinit();
 	hi64xx_mbhc_deinit(priv->mbhc);
 	hi64xx_resmgr_deinit(priv->resmgr);

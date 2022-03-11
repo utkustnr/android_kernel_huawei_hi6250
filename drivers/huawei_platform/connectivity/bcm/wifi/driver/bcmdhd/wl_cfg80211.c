@@ -14541,14 +14541,17 @@ int wifi_init_proc()
 
 void wifi_exit_proc()
 {
-    WL_DBG(("wifi_exit_proc ok\n"));
+	WL_DBG(("wifi_exit_proc ok\n"));
+	if (wifi_dir) {
 #ifdef WL_TEM_CTRL
-    remove_proc_entry("wifi_tem_stat", wifi_dir);
+		remove_proc_entry("wifi_tem_stat", wifi_dir);
 #endif
 #ifdef WL_TIM_EVENT
-    remove_proc_entry("wifi_tim_stat", wifi_dir);
+		remove_proc_entry("wifi_tim_stat", wifi_dir);
 #endif
-    remove_proc_entry("wifi", 0);
+		remove_proc_entry("wifi", 0);
+		wifi_dir = NULL;
+	}
 }
 #endif
 
@@ -19663,6 +19666,10 @@ wl_enq_event(struct bcm_cfg80211 *cfg, struct net_device *ndev, u32 event,
 	if (data)
 		data_len = ntoh32(msg->datalen);
 	evtq_size = sizeof(struct wl_event_q) + data_len;
+	if (evtq_size < data_len) {
+		WL_ERR(("data_len overflow.\n"));
+		return -ENOMEM;
+	}
 	aflags = (in_atomic()) ? GFP_ATOMIC : GFP_KERNEL;
 	e = kzalloc(evtq_size, aflags);
 	if (unlikely(!e)) {

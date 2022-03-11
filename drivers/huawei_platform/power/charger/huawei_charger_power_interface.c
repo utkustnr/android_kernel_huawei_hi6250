@@ -61,8 +61,12 @@ static const char * const power_if_op_type_table[] = {
 
 static const char * const power_if_sysfs_type_table[] = {
 	[POWER_IF_SYSFS_ENABLE_CHARGER] = "enable_charger",
+	[POWER_IF_SYSFS_VBUS_IIN_LIMIT] = "iin_limit",
+	[POWER_IF_SYSFS_BATT_VTERM_DEC] = "vterm_dec",
 };
 
+extern int coul_set_ndcvolt_dec_apk(unsigned int volt_dec);
+extern int coul_get_ndcvolt_dec_nv(unsigned int *volt_dec);
 
 static const char *power_if_get_op_user_name(unsigned int index)
 {
@@ -185,10 +189,21 @@ static int power_if_operator_get(unsigned int type, unsigned int sysfs_type,
 	case POWER_IF_SYSFS_ENABLE_CHARGER:
 		if (l_ops->get_enable_charger) {
 			ret = l_ops->get_enable_charger(value);
-			hwlog_info("get enable charger = %d\n", *value);
+			hwlog_info("get enable charger=%d\n", *value);
 		}
 		break;
 
+	case POWER_IF_SYSFS_VBUS_IIN_LIMIT:
+		if (l_ops->get_iin_limit) {
+			ret = l_ops->get_iin_limit(value);
+			hwlog_info("get vbus iin_limit=%d\n", *value);
+		}
+		break;
+
+	case POWER_IF_SYSFS_BATT_VTERM_DEC:
+		ret = coul_get_ndcvolt_dec_nv(value);
+		hwlog_info("get battery vterm_dec=%d\n", *value);
+		break;
 	default:
 		break;
 	}
@@ -210,10 +225,19 @@ static int power_if_operator_set(unsigned int type, unsigned int sysfs_type,
 	case POWER_IF_SYSFS_ENABLE_CHARGER:
 		if (l_ops->set_enable_charger) {
 			ret = l_ops->set_enable_charger(value);
-			hwlog_info("set enable charger = %d\n", value);
+			hwlog_info("set enable charger=%d\n", value);
 		}
 		break;
 
+	case POWER_IF_SYSFS_VBUS_IIN_LIMIT:
+		if (l_ops->set_iin_limit) {
+			ret = l_ops->set_iin_limit(value);
+			hwlog_info("set vbus iin_limit=%d\n", value);
+		}
+		break;
+	case POWER_IF_SYSFS_BATT_VTERM_DEC:
+		ret = coul_set_ndcvolt_dec_apk(value);
+		break;
 	default:
 		break;
 	}
@@ -356,6 +380,8 @@ static ssize_t power_if_sysfs_store(struct device *dev,
 
 static struct power_if_sysfs_field_info power_if_sysfs_field_tbl[] = {
 	POWER_IF_SYSFS_FIELD_RW(enable_charger, ENABLE_CHARGER),
+	POWER_IF_SYSFS_FIELD_RW(iin_limit, VBUS_IIN_LIMIT),
+	POWER_IF_SYSFS_FIELD_RW(vterm_dec, BATT_VTERM_DEC),
 };
 
 #define POWER_IF_ATTRS_SIZE  (ARRAY_SIZE(power_if_sysfs_field_tbl) + 1)

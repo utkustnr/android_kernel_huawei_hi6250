@@ -475,7 +475,7 @@ static int f2fs_get_sdp_ece_crypt_info(struct inode *inode, void *fs_data)
 	}
 	pr_sdp_info("f2fs_sdp %s: get sdp cyptinfo %p key %p len %u\n",
 	__func__, crypt_info, crypt_info->ci_key, crypt_info->ci_key_len);
-	crypt_info->ci_hw_enc_flag |= F2FS_XATTR_SDP_ECE_ENABLE_FLAG;
+	crypt_info->ci_hw_enc_flag = F2FS_XATTR_SDP_ECE_ENABLE_FLAG;
 	if (cmpxchg(&inode->i_crypt_info, NULL, crypt_info) == NULL)
 		crypt_info = NULL;
 
@@ -745,7 +745,7 @@ static int f2fs_get_sdp_sece_crypt_info(struct inode *inode, void *fs_data)
 	}
 	pr_sdp_info("f2fs_sdp %s:get sdp cyptinfo %p key %p len %u\n",
 	__func__, crypt_info, crypt_info->ci_key, crypt_info->ci_key_len);
-	crypt_info->ci_hw_enc_flag |= F2FS_XATTR_SDP_SECE_ENABLE_FLAG;
+	crypt_info->ci_hw_enc_flag = F2FS_XATTR_SDP_SECE_ENABLE_FLAG;
 	if (cmpxchg(&inode->i_crypt_info, NULL, crypt_info) == NULL)
 		crypt_info = NULL;
 
@@ -851,11 +851,11 @@ int f2fs_change_to_sdp_crypto(struct inode *inode, void *fs_data)
 	if (F2FS_INODE_IS_CONFIG_SDP_ECE_ENCRYPTION(flag)) {
 		res = f2fs_inode_set_enabled_sdp_ece_encryption_flags(inode,
 			fs_data);
-		ci_info->ci_hw_enc_flag |= F2FS_XATTR_SDP_ECE_ENABLE_FLAG;
+		ci_info->ci_hw_enc_flag = F2FS_XATTR_SDP_ECE_ENABLE_FLAG;
 	} else {
 		res = f2fs_inode_set_enabled_sdp_sece_encryption_flags(inode,
 			fs_data);
-		ci_info->ci_hw_enc_flag |= F2FS_XATTR_SDP_SECE_ENABLE_FLAG;
+		ci_info->ci_hw_enc_flag = F2FS_XATTR_SDP_SECE_ENABLE_FLAG;
 	}
 	if (res) {
 		pr_err("f2fs_sdp %s: set cypt flags failed!need to check!\n",

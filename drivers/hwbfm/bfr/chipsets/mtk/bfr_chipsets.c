@@ -54,7 +54,6 @@ bool bfr_bopd_has_been_enabled(void)
 int bfr_get_full_path_of_rrecord_part(char **path_buf)
 {
     int ret = -1;
-    int i = 0;
     char *rrecord_names = BFR_RRECORD_PART_NAME;
 
     if (unlikely(NULL == path_buf))
@@ -76,7 +75,7 @@ int bfr_get_full_path_of_rrecord_part(char **path_buf)
     ret = bfmr_get_device_full_path(rrecord_names, *path_buf, BFMR_DEV_FULL_PATH_MAX_LEN);
     if (0 != ret)
     {
-        BFMR_PRINT_ERR("get full path for device [%s] failed!\n", rrecord_names[i]);
+        BFMR_PRINT_ERR("get full path for device %s failed!\n", rrecord_names);
     }
 
     return ret;

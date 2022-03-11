@@ -1826,6 +1826,12 @@ void blk_fill_rwbs(char *rwbs, int op, u32 rw, int bytes)
 		rwbs[i++] = 'S';
 	if (rw & REQ_META)
 		rwbs[i++] = 'M';
+	if (rw & REQ_FG)
+		rwbs[i++] = 'H';
+#ifdef CONFIG_ROW_VIP_QUEUE
+	if (rw & REQ_VIP)
+		rwbs[i++] = 'V';
+#endif
 
 	rwbs[i] = '\0';
 }

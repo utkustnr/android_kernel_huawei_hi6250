@@ -146,6 +146,20 @@ struct cc_detect_ops fusb30x_cc_detect_ops = {
 };
 #endif
 
+#ifdef FSC_HAVE_CUSTOM_SRC2
+int fusb302_is_cust_src2_cable(void)
+{
+	if (pd_dpm_smart_holder_without_emark()) {
+		pr_info("%s:this is smart holder without emark\n", __func__);
+		return 1;
+	}
+	return get_emarker_detect_status();
+}
+struct cable_vdo_ops fusb302_cable_vdo_ops = {
+	.is_cust_src2_cable = fusb302_is_cust_src2_cable,
+};
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
+
 static struct cc_check_ops cc_check_ops = {
 	.is_cable_for_direct_charge = is_cable_for_direct_charge,
 };
@@ -250,6 +264,10 @@ static int fusb30x_probe (struct i2c_client* client,
 #ifdef CONFIG_POGO_PIN
 	cc_detect_register_ops(&fusb30x_cc_detect_ops);
 #endif
+#ifdef FSC_HAVE_CUSTOM_SRC2
+	if (pd_dpm_get_is_support_smart_holder())
+		pd_dpm_cable_vdo_ops_register(&fusb302_cable_vdo_ops);
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 #ifdef FSC_DEBUG
     /* Initialize debug sysfs file accessors */
     fusb_Sysfs_Init();
@@ -332,6 +350,7 @@ static void fusb30x_shutdown(struct i2c_client *client)
 		return;
 	}
 
+	core_enable_typec(false);
 	ret = fusb_I2C_WriteData(regControl3, length, &data);
 	if (ret != 0)
 		pr_err("send hardreset failed, ret = %d\n", ret);
@@ -346,8 +365,9 @@ static void fusb30x_shutdown(struct i2c_client *client)
 	Registers.Switches.PDWN2 = 0;
 	/* Commit the switch state */
 	DeviceWrite(regSwitches0, 1, &Registers.Switches.byte[0]);
-
 	fusb_GPIO_Cleanup();
+	/* keep the cc open status 20ms */
+	mdelay(20);
 	ret = fusb_I2C_WriteData(regReset, length, &reset);
 	if (ret != 0)
 		pr_err("device Reset failed, ret = %d\n", ret);

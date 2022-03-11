@@ -687,7 +687,7 @@ static void parse_pen_point(struct ts_pens *pointinfo,u8 *pbuf, struct ts_cmd_no
 	lcm_max_x=elan_ts->elan_chip_data->x_max;
 	lcm_max_y=elan_ts->elan_chip_data->y_max;
 	if (pen_down) {
-		elan_ktf_pen_parse_xy(pbuf, &x, &y, &p);
+		elan_ktf_pen_parse_xy(pbuf, &y, &x, &p);
 		if ((elan_ts->pen_x_resolution>0)&&(elan_ts->pen_y_resolution>0)) {
 			x=x*lcm_max_x/elan_ts->pen_x_resolution;
 			y=y*lcm_max_y/elan_ts->pen_y_resolution;
@@ -1507,48 +1507,104 @@ exit:
 	return ret;
 }
 
+static int wait_int_low(void)
+{
+	int i;
+	for (i = 0; i < PROJECT_ID_POLL; i++) {
+		if (gpio_get_value(elan_ts->int_gpio) == 0) {
+			TS_LOG_INFO("[elan]:int is low!i=%d", i);
+			return NO_ERR;
+		} else {
+			msleep(10); /* IC need */
+		}
+	}
+	TS_LOG_ERR("[elan]:no data,int is always high!");
+	return -EINVAL;
+}
+
 static int elan_project_color(void)
 {
 	int ret=0,i=0;
 	u8 rsp_buf[ELAN_RECV_DATA_LEN]={0};
+	u8 reg_cmd[ELAN_SEND_DATA_LEN] = { 0x04, 0x00, 0x23, 0x00, 0x03, 0x00,
+		0x06, 0x96, 0x80, 0x80, 0x00, 0x00, 0x11 };
 	u8 test_cmd[ELAN_SEND_DATA_LEN] = {0x04,0x00,0x23,0x00,0x03,0x00,0x04,0x55,0x55,0x55,0x55};
 	u8 project_cmd[ELAN_SEND_DATA_LEN] = {0x04,0x00,0x23,0x00,0x03,0x00,0x06,0x59,0x00,0x80,0x80,0x00,0x40};
 	if (!elan_ts) {
 		TS_LOG_ERR("[elan]%s:elan_ts is NULL\n",__func__);
 		return -EINVAL;
 	}
-	ret = elan_i2c_write(test_cmd,sizeof(test_cmd));
-	if (ret) {
-		TS_LOG_ERR("[elan]:set test cmd fail!ret=%d\n",ret);
-		return -EINVAL;
-	}
-	msleep(15);//IC need
-	ret = elan_i2c_write(project_cmd,sizeof(project_cmd));
-	if (ret) {
-		TS_LOG_ERR("[elan]:elan_i2c_write project_cmd fail!ret=%d\n",ret);
-		return -EINVAL;
-	}
-	for (i = 0;i < PROJECT_ID_POLL;i ++) {
-		msleep(10);//IC need
-		if (gpio_get_value(elan_ts->int_gpio) == 0) {
-			TS_LOG_INFO("[elan]:int is low!i=%d",i);
-			break;
-		} else {
-			TS_LOG_INFO("[elan]:int is high!");
+	if (atomic_read(&elan_ts->tp_mode) == TP_NORMAL) {
+		for (i = 0; i < READ_PORJECT_ID_WORDS; i++) {
+			reg_cmd[SEND_CMD_VALID_INDEX] = 0x80 + i;
+			/* 0x80 project id addr index low byte */
+			ret = elan_i2c_write(reg_cmd, sizeof(reg_cmd));
+			if (ret != 0) {
+				TS_LOG_ERR("[elan]:set project id reg cmd fail!ret=%d\n",
+					ret);
+				return -EINVAL;
+			}
+			ret = wait_int_low();
+			if (ret != 0) {
+				TS_LOG_ERR("[elan]:wait_int_low fail!\n");
+				return -EINVAL;
+			}
+			ret = elan_i2c_read(NULL, 0, rsp_buf, ELAN_RECV_DATA_LEN);
+			if (ret != 0) {
+				TS_LOG_ERR("[elan]:i2c read data fail!\n");
+				return -EINVAL;
+			}
+			TS_LOG_INFO("[elan]:project id:%x,%x,%x\n", rsp_buf[0],
+				rsp_buf[7], rsp_buf[8]);
+				/* 0 data length 7 8 valid data */
+			if (i < (READ_PORJECT_ID_WORDS - 1)) {
+				memcpy(elan_ts->project_id + i * 2,
+					rsp_buf + PROJECT_ID_INDEX, 2);
+				/* 2 byte valid */
+			} else {
+				memcpy(elan_ts->color_id, rsp_buf + PROJECT_ID_INDEX,
+					sizeof(elan_ts->color_id));
+			}
 		}
+	} else {
+		ret = elan_i2c_write(test_cmd, sizeof(test_cmd));
+		if (ret != 0) {
+			TS_LOG_ERR("[elan]:set test cmd fail!ret=%d\n", ret);
+			return -EINVAL;
+		}
+		msleep(15); /* IC need */
+		ret = elan_i2c_write(project_cmd, sizeof(project_cmd));
+		if (ret != 0) {
+			TS_LOG_ERR("[elan]:elan_i2c_write project_cmd fail!ret=%d\n",
+				ret);
+			elan_ktf_hw_reset();
+			return -EINVAL;
+		}
+		ret = wait_int_low();
+		if (ret != 0) {
+			TS_LOG_ERR("[elan]:wait_int_low fail!\n");
+			elan_ktf_hw_reset();
+			return -EINVAL;
+		}
+		ret = elan_i2c_read(NULL, 0, rsp_buf, ELAN_RECV_DATA_LEN);
+		if (ret != 0) {
+			TS_LOG_ERR("[elan]:i2c read data fail!\n");
+			elan_ktf_hw_reset();
+			return -EINVAL;
+		}
+		memcpy(elan_ts->project_id, rsp_buf + PROJECT_ID_INDEX,
+			sizeof(elan_ts->project_id) - 1); /* reserved 1 byte */
+		memcpy(elan_ts->color_id, rsp_buf + COLOR_ID_INDEX,
+			sizeof(elan_ts->color_id));
+		elan_ktf_hw_reset();
 	}
-	ret = elan_i2c_read(NULL,0,rsp_buf,ELAN_RECV_DATA_LEN);
-	if (ret) {
-		TS_LOG_ERR("[elan]:i2c read data fail!\n");
-		return -EINVAL;
-	}
-	memcpy(elan_ts->project_id,rsp_buf+PROJECT_ID_INDEX,sizeof(elan_ts->project_id)-1);//reserved 1 byte
-	memcpy(elan_ts->color_id,rsp_buf+COLOR_ID_INDEX,sizeof(elan_ts->color_id));
-	TS_LOG_INFO("[elan]:project_id=%s,color_id=%x\n",elan_ts->project_id,elan_ts->color_id[0]);
-	memcpy(elan_ts->elan_chip_data->module_name,elan_ts->project_id,sizeof(elan_ts->project_id)-1);//reserved 1 byte
-	TS_LOG_INFO("[elan]:module_name=%s\n",elan_ts->elan_chip_data->module_name);
-	cypress_ts_kit_color[0]=rsp_buf[COLOR_ID_INDEX];
-	elan_ktf_hw_reset();
+	elan_ts->project_id[sizeof(elan_ts->project_id) - 1] = '\0';
+	/* 9 bytes valid,reserved 1 byte */
+	memcpy(elan_ts->elan_chip_data->module_name, elan_ts->project_id,
+		sizeof(elan_ts->project_id));
+	TS_LOG_INFO("[elan]:module_name=%s,color_id=%x\n",
+		elan_ts->elan_chip_data->module_name, elan_ts->color_id[0]);
+	cypress_ts_kit_color[0] = elan_ts->color_id[0];
 	return NO_ERR;
 }
 

@@ -105,8 +105,11 @@ int hw_ois_config(hw_ois_t *hw_ois, void *arg)
 		rc = hw_ois->intf->vtbl->ois_i2c_write(hw_ois->intf, arg);
 		break;
 	case CFG_OIS_GET_OIS_NAME:
-		strncpy_s(cdata->cfg.name, sizeof(cdata->cfg.name) - 1, hw_ois->ois_info->ois_name,
+		rc = strncpy_s(cdata->cfg.name, sizeof(cdata->cfg.name) - 1, hw_ois->ois_info->ois_name,
 			sizeof(cdata->cfg.name) - 1);
+		if (rc != 0) {
+			cam_err("%s copy name fail %d\n", __func__, __LINE__);
+		}
 		break;
 	case CFG_OIS_GET_SUPPORT_FLAG:
 		cdata->cfg.ois_sup = hw_ois->ois_info->ois_support;

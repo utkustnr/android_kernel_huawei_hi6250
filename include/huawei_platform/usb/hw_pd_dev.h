@@ -25,7 +25,7 @@
 #define PD_DPM_CC_CHANGE_MSEC                  (1000)
 #define PD_DPM_CC_CHANGE_BUF_SIZE              (10)
 
-#define PD_DPM_CC_DMD_COUNTER_THRESHOLD        (50)
+#define PD_DPM_CC_DMD_COUNTER_THRESHOLD        1
 #define PD_DPM_CC_DMD_INTERVAL                 (24*60*60) /*s*/
 #define PD_DPM_CC_DMD_BUF_SIZE                 (1024)
 
@@ -115,6 +115,7 @@ enum {
     PD_DPM_PE_EVT_PD_STATE,
     PD_DPM_PE_EVT_BC12,
     PD_DPM_PE_ABNORMAL_CC_CHANGE_HANDLER,
+	PD_DPM_PE_CABLE_VDO,
 };
 
 enum pd_typec_attach_type {
@@ -185,6 +186,7 @@ struct pd_dpm_typec_state {
 
 struct pd_dpm_ops {
 	void (*pd_dpm_hard_reset)(void*);
+	void (*pd_dpm_detect_emark_cable)(void *client);
 	bool (*pd_dpm_get_hw_dock_svid_exist)(void*);
 	int (*pd_dpm_notify_direct_charge_status)(void*, bool mode);
 	void (*pd_dpm_set_cc_mode)(int mode);
@@ -241,6 +243,15 @@ struct abnomal_change_info {
 	int dmd_data[PD_DPM_CC_CHANGE_BUF_SIZE];
 };
 
+enum cur_cap {
+	PD_DPM_CURR_1P5A = 0x00,
+	PD_DPM_CURR_3A = 0x01,
+	PD_DPM_CURR_5A = 0x02,
+};
+
+#define CABLE_CUR_CAP_SHIFT  5
+#define CABLE_CUR_CAP_MASK   (BIT(5) | BIT(6))
+
 enum pd_product_type {
 	PD_PDT_PD_ADAPTOR = 0,
 	PD_PDT_PD_POWER_BANK,
@@ -287,6 +298,7 @@ struct pd_dpm_info{
     int last_usb_event;
     struct workqueue_struct *usb_wq;
     struct delayed_work usb_state_update_work;
+    struct delayed_work cc_moisture_flag_restore_work;
 
 #ifdef CONFIG_CONTEXTHUB_PD
     struct pd_dpm_combphy_event last_combphy_notify_event;
@@ -302,6 +314,8 @@ struct pd_dpm_info{
     unsigned long bc12_event;
     struct pd_dpm_vbus_state bc12_sink_vbus_state;
     int cur_usb_event;
+	unsigned int cable_vdo;
+	bool ctc_cable_flag;
 };
 
 struct cc_check_ops {
@@ -314,6 +328,8 @@ struct cable_vdo_ops {
 	int (*is_cust_src2_cable)(void);
 };
 int pd_dpm_cable_vdo_ops_register(struct cable_vdo_ops *);
+extern int pd_dpm_get_is_support_smart_holder(void);
+extern int pd_dpm_smart_holder_without_emark(void);
 #endif
 
 /* for chip layer to get class created by core layer */
@@ -398,4 +414,12 @@ extern void pd_set_product_id_info(unsigned int vid,
 				   unsigned int pid,
 				   unsigned int type);
 extern bool pd_dpm_check_cc_vbus_short(void);
+extern bool pd_dpm_get_cc_moisture_status(void);
+extern enum cur_cap pd_dpm_get_cvdo_cur_cap(void);
+extern int pd_dpm_get_emark_detect_enable(void);
+extern void pd_dpm_detect_emark_cable(void);
+bool pd_dpm_get_ctc_cable_flag(void);
+void pd_dpm_set_source_sink_state(enum charger_event_type type);
+bool pmic_vbus_is_connected(void);
+void pmic_vbus_disconnect_process(void);
 #endif

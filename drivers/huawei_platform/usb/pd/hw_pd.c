@@ -82,6 +82,7 @@ static bool g_pd_cc_orientation = false;
 #ifdef CONFIG_TYPEC_CAP_CUSTOM_SRC2
 static bool g_pd_smart_holder = false;
 int support_smart_holder = 0;
+static unsigned int smart_holder_without_emark;
 #endif
 static struct class *typec_class = NULL;
 static struct device *typec_dev = NULL;
@@ -123,6 +124,10 @@ int support_analog_audio = 1;
 struct mutex typec_state_lock;
 struct mutex typec_wait_lock;
 static int g_pd_product_type = -1;
+static bool g_pd_cc_moisture_status;
+static bool g_pd_cc_moisture_happened;
+static int cc_moisture_status_report;
+static int emark_detect_enable;
 
 void reinit_typec_completion(void);
 void typec_complete(enum pd_wait_typec_complete typec_completion);
@@ -146,6 +151,20 @@ static struct abnomal_change_info abnomal_change[] = {
 	{PD_DPM_UNATTACHED_VBUS_ONLY, true, 0, 0, {0}, {0}, {0}, {0}},
 };
 
+int pd_dpm_get_emark_detect_enable(void)
+{
+	return emark_detect_enable;
+}
+
+static void pd_dpm_cc_moisture_flag_restore(struct work_struct *work)
+{
+	hwlog_err("%s %d,%d\n", __func__,
+		  g_pd_cc_moisture_happened,
+		  g_pd_cc_moisture_status);
+	if (!g_pd_cc_moisture_happened)
+		g_pd_cc_moisture_status = false;
+}
+
 static int pd_dpm_handle_fb_event(struct notifier_block *self,
                 unsigned long event, void *data)
 {
@@ -157,7 +176,16 @@ static int pd_dpm_handle_fb_event(struct notifier_block *self,
                 switch (*blank) {
                 case FB_BLANK_UNBLANK:
                         hwlog_err("%s set pd to drp\n",__func__);
-                        pd_dpm_set_cc_mode(PD_DPM_CC_MODE_DRP);
+			pd_dpm_set_cc_mode(PD_DPM_CC_MODE_DRP);
+
+			if (cc_moisture_status_report == 0)
+				break;
+
+			g_pd_cc_moisture_happened = false;
+			/* delay 2 minute to restore the flag */
+			queue_delayed_work(g_pd_di->usb_wq,
+				&g_pd_di->cc_moisture_flag_restore_work,
+				msecs_to_jiffies(120000));
                         break;
                 case FB_BLANK_POWERDOWN:
                         break;
@@ -187,11 +215,13 @@ static void deinit_fb_notification(void)
         fb_unregister_client(&pd_dpm_handle_fb_notifier);
 }
 #endif
-static void pd_dpm_set_source_sink_state(enum charger_event_type type)
+
+void pd_dpm_set_source_sink_state(enum charger_event_type type)
 {
 	sink_source_type = type;
 	charger_source_sink_event(type);
 }
+
 enum charger_event_type pd_dpm_get_source_sink_state(void)
 {
 	return sink_source_type;
@@ -231,7 +261,25 @@ int pd_dpm_cable_vdo_ops_register(struct cable_vdo_ops *ops)
 	return ret;
 
 }
+int pd_dpm_get_is_support_smart_holder(void)
+{
+	return support_smart_holder;
+}
+
+int pd_dpm_smart_holder_without_emark(void)
+{
+	return smart_holder_without_emark;
+}
+
 #endif
+
+void pd_dpm_detect_emark_cable(void)
+{
+	hwlog_err("%s\n", __func__);
+
+	if (g_ops && g_ops->pd_dpm_detect_emark_cable)
+		g_ops->pd_dpm_detect_emark_cable(g_client);
+}
 
 void pd_dpm_hard_reset(void)
 {
@@ -702,6 +750,14 @@ static int charge_wake_unlock_notifier_call(struct notifier_block *chrg_wake_unl
 	return NOTIFY_OK;
 }
 
+bool pd_dpm_get_ctc_cable_flag(void)
+{
+	if (g_pd_di)
+		return g_pd_di->ctc_cable_flag;
+
+	return false;
+}
+
 bool pd_dpm_get_pd_finish_flag(void)
 {
 	if (g_pd_di)
@@ -785,8 +841,10 @@ void pd_dpm_report_pd_source_vbus(struct pd_dpm_info *di, void *data)
 	mutex_lock(&di->sink_vbus_lock);
 	ignore_bc12_event_when_vbuson= true;
 
-	if (vbus_state->vbus_type & TCP_VBUS_CTRL_PD_DETECT)
+	if (vbus_state->vbus_type & TCP_VBUS_CTRL_PD_DETECT) {
 		di->pd_finish_flag = true;
+		di->ctc_cable_flag = true;
+	}
 
 	if (vbus_state->mv == 0) {
 		hwlog_info("%s : Disable\n", __func__);
@@ -838,6 +896,7 @@ void pd_dpm_report_pd_sink_vbus(struct pd_dpm_info *di, void *data)
 			ignore_bc12_event_when_vbuson = true;
 		}
 		di->pd_finish_flag = true;
+		di->ctc_cable_flag = true;
 	}
 
 	if (di->pd_finish_flag) {
@@ -934,6 +993,11 @@ int pd_dpm_report_bc12(struct notifier_block *usb_nb,
 	struct pd_dpm_info *di = container_of(usb_nb, struct pd_dpm_info, usb_nb);
 
 	hwlog_info("%s : received event (%ld)\n", __func__, event);
+
+	if (pmic_vbus_is_connected()) {
+		pd_dpm_vbus_notifier_call(di, event, data);
+		return NOTIFY_OK;
+	}
 
 	if(CHARGER_TYPE_NONE == event && !di->pd_finish_flag &&
 		!pd_dpm_get_pd_source_vbus())
@@ -1245,6 +1309,11 @@ int pd_dpm_get_cur_usb_event(void)
 	return 0;
 }
 
+bool pd_dpm_get_cc_moisture_status(void)
+{
+	return g_pd_cc_moisture_status;
+}
+
 void pd_dpm_handle_abnomal_change(int event)
 {
 	int i = 0;
@@ -1294,6 +1363,12 @@ void pd_dpm_handle_abnomal_change(int event)
 
 	if (*change_counter >= change_counter_threshold) {
 		hwlog_err("%s change_counter hit\n",__func__);
+
+		if (cc_moisture_status_report) {
+			g_pd_cc_moisture_happened = true;
+			g_pd_cc_moisture_status = true;
+		}
+
 		pd_dpm_set_cc_mode(PD_DPM_CC_MODE_UFP);
 
 		for (i = 0; i < PD_DPM_CC_CHANGE_BUF_SIZE; i++) {
@@ -1337,6 +1412,17 @@ void pd_dpm_ignore_vbus_only_event(bool flag)
 {
 	g_ignore_vbus_only_event = flag;
 }
+
+enum cur_cap pd_dpm_get_cvdo_cur_cap(void)
+{
+	enum cur_cap cap;
+
+	cap = (g_pd_di->cable_vdo & CABLE_CUR_CAP_MASK) >> CABLE_CUR_CAP_SHIFT;
+	hwlog_info("%s, cur_cap = %d\n", __func__, cap);
+
+	return cap;
+}
+
 int pd_dpm_handle_pe_event(unsigned long event, void *data)
 {
 	int usb_event = PD_DPM_USB_TYPEC_NONE;
@@ -1385,6 +1471,7 @@ int pd_dpm_handle_pe_event(unsigned long event, void *data)
 				break;
 
 			case PD_DPM_TYPEC_UNATTACHED:
+				g_pd_di->ctc_cable_flag = false;
 				/*the sequence can not change, would affect sink_vbus command */
 				if (pd_dpm_analog_hs_state == 1) {
 					usb_event = PD_DPM_USB_TYPEC_AUDIO_DETACHED;
@@ -1411,6 +1498,7 @@ int pd_dpm_handle_pe_event(unsigned long event, void *data)
 #endif
 				reinit_typec_completion();
 				pd_set_product_type(PD_DPM_INVALID_VAL);
+				g_pd_di->cable_vdo = 0;
 				break;
 
 			case PD_DPM_TYPEC_ATTACHED_AUDIO:
@@ -1532,6 +1620,7 @@ int pd_dpm_handle_pe_event(unsigned long event, void *data)
 				g_pd_di->pd_finish_flag = false;
 				usb_audio_power_scharger();
 				usb_headset_plug_out();
+				ignore_bc12_event_when_vbuson = false;
 				mutex_unlock(&g_pd_di->sink_vbus_lock);
 			}
 		}
@@ -1567,6 +1656,14 @@ int pd_dpm_handle_pe_event(unsigned long event, void *data)
 	case PD_DPM_PE_EVT_PR_SWAP:
 		break;
 
+	case PD_DPM_PE_CABLE_VDO:
+		if (!data)
+			return 0;
+
+		memcpy(&g_pd_di->cable_vdo, data, sizeof(g_pd_di->cable_vdo));
+		emark_detect_complete();
+		hwlog_info("%s cable_vdo=%u\n", __func__, g_pd_di->cable_vdo);
+		break;
 	default:
 		hwlog_info("%s  unkonw event \r\n", __func__);
 		break;
@@ -1626,12 +1723,32 @@ static int pd_dpm_parse_dt(struct pd_dpm_info *info,
 			hwlog_err("get support_smart_holder fail!\n");
 	}
 	hwlog_info("support_smart_holder = %d!\n", support_smart_holder);
+	if (of_property_read_u32(np, "smart_holder_without_emark",
+		&smart_holder_without_emark))
+		hwlog_err("get smart_holder_without_emark fail\n");
+	hwlog_info("smart_holder_without_emark = %d\n",
+		smart_holder_without_emark);
 #endif
 	if (of_property_read_u32(np, "support_analog_audio", &support_analog_audio)) {
 		hwlog_err("get support_analog_audio fail!\n");
 		support_analog_audio = 1;
 	}
 	hwlog_info("support_analog_audio = %d!\n", support_analog_audio);
+
+	if (of_property_read_u32(np, "cc_moisture_status_report",
+		&cc_moisture_status_report)) {
+		hwlog_err("get cc_moisture_status_report fail\n");
+		cc_moisture_status_report = 0;
+	}
+	hwlog_info("cc_moisture_status_report = %d\n",
+		cc_moisture_status_report);
+	if (of_property_read_u32(np, "emark_detect_enable",
+		&emark_detect_enable)) {
+		hwlog_err("get emark_detect_enable fail!\n");
+		emark_detect_enable = 1;
+	}
+	hwlog_info("emark_detect_enable = %d!\n", emark_detect_enable);
+
 	return 0;
 }
 
@@ -1900,6 +2017,9 @@ static int pd_dpm_probe(struct platform_device *pdev)
 	di->usb_wq = create_workqueue("pd_dpm_usb_wq");
 	INIT_DELAYED_WORK(&di->usb_state_update_work,
 		pd_dpm_usb_update_state);
+        INIT_DELAYED_WORK(&di->cc_moisture_flag_restore_work,
+                pd_dpm_cc_moisture_flag_restore);
+
 
 	platform_set_drvdata(pdev, di);
 

@@ -259,4 +259,8 @@ source "drivers/storage_rofa/Kconfig"
 
 source "drivers/oases/Kconfig"
 
+source "drivers/reclaim_acct/Kconfig"
+
+source "drivers/oae_fw_patch/Kconfig"
+
 endmenu

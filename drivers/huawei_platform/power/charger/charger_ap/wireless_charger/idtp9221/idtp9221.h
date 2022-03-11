@@ -235,14 +235,14 @@
 #define STWLC33_EXEC_CMD_VALUE                (0x04)
 #define STWLC33_SRAM_EXEC_TIME                (100)
 /* ldo drop register */
-#define STWLC33_LDO_DROP0_VAL                 (0x51)
+#define STWLC33_LDO_DROP0_VAL                 0x13
 #define STWLC33_LDO_DROP1_VAL                 (0x32)
 #define STWLC33_LDO_DROP2_VAL                 (0xd)
 #define STWLC33_LDO_DROP3_VAL                 (0x5)
 #define STWLC33_LDO_CUR_TH1_VAL               (0x19)
 #define STWLC33_LDO_CUR_TH2_VAL               (0x32)
 #define STWLC33_LDO_CUR_TH3_VAL               (0x3f)
-#define STWLC33_LDO_DROP0_SC_VAL              (0x13)
+#define STWLC33_LDO_DROP0_SC_VAL              0x2f
 #define STWLC33_LDO_DROP1_SC_VAL              (0x9)
 #define STWLC33_LDO_DROP2_SC_VAL              (0x5)
 #define STWLC33_LDO_DROP3_SC_VAL              (0x5)
@@ -256,12 +256,26 @@
 #define STWLC33_LDO_CUR_TH1_ADDR              (0x00b6)
 #define STWLC33_LDO_CUR_TH2_ADDR              (0x00b7)
 #define STWLC33_LDO_CUR_TH3_ADDR              (0x00b8)
+#define STWLC33_VRECT_IGNORE_CNT              30
+#define STWLC33_VRECT_SLEEP_TIME              50
+#define STWLC33_RX_VRECT_READ_CNT             50
+#define STWLC33_VRECT_INVALID_VAL             2000
+#define STWLC33_VRECT_THRES_VAL               5112
 
 #define STWLC33_TX_ENABLE_VAL                 (0x01)
 #define STWLC33_TX_ENABLE_ADDR                (0x0076)
 #define STWLC33_RAM_VER_ADDR                  (0x000e)
 #define STWLC33_RX_CHIP_TEMP_ADDR             (0x0046)
 #define STWLC33_GET_RX_CHIP_TEMP_RETRY_CNT    (3)
+#define STWLC33_CHIP_RST_VAL                  0x02
+#define STWLC33_CHIP_RST_ADDR                 0x0188
+#define STWLC33_IOUT_CALI_VAL                 0x0e
+#define STWLC33_IOUT_CALI_ADDR                0x018f
+#define STWLC33_IOUT_ADC_VAL_ADDR             0x0192
+#define STWLC33_IOUT_ADC_VAL_LTH              241
+#define STWLC33_IOUT_ADC_VAL_HTH              441
+#define STWLC33_IOUT_ADC_CRITICAL_VAL         341
+#define STWLC33_IOUT_CALI_VAL_ADDR            0x0080
 
 #define IDT9221_OTP_FW_HEAD                   "0x88 0x66"
 #define IDT9221_OTP_FW_VERSION_020BH          "0x88 0x66 0x02 0x0b"
@@ -447,6 +461,8 @@ struct idtp9221_device_info {
 	u16 ept_type;
 	int irq_cnt;
 	int sc_rx_vrmax_gap;
+	int i2c_trans_fail_limit;
+	struct work_struct rx_ready_check_work;
 };
 
 enum wireless_rx_sysfs_type {

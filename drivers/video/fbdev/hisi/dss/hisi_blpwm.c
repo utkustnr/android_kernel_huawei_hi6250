@@ -16,6 +16,7 @@
 #include "backlight/lm36923.h"
 #include "backlight/lm36274.h"
 #include "backlight/lp8556.h"
+#include "backlight/rt8555.h"
 #include <linux/timer.h>
 #include <linux/delay.h>
 #include <linux/device.h>
@@ -150,6 +151,7 @@ static struct bl_info g_bl_info;
 extern struct mutex g_rgbw_lock;
 #define BL_LVL_MAP_SIZE	(2047)
 #define BL_MAX_11BIT (2047)
+#define BL_MAX_10BIT (1023)
 #define BL_MAX_12BIT (4095)
 int bl_lvl_map(int level)
 {
@@ -184,6 +186,11 @@ int hisi_blpwm_bl_callback(int bl_level)
 		return g_bl_info.set_common_backlight(bl_level);
 	}
 	return -1;
+}
+
+int32_t bl_config_max_value(void)
+{
+	return g_bl_info.bl_max;
 }
 
 static void init_bl_info(struct hisi_panel_info *pinfo)
@@ -294,6 +301,7 @@ static void update_backlight(struct hisi_fb_data_type *hisifd, uint32_t backligh
 		bl_level = backlight;
 		switch(g_bl_config.bl_level) {
 			case BL_MAX_12BIT:
+			case BL_MAX_10BIT:
 				bl_level = bl_level * g_bl_config.bl_level / g_bl_info.bl_max;
 				break;
 			case BL_MAX_11BIT:
@@ -558,6 +566,78 @@ static void set_rgbw_boe_hma(struct hisi_fb_data_type *hisifd) {
 	}
 }
 
+static void set_rgbw_jdi_hma_replace(struct hisi_fb_data_type *hisifd)
+{
+	const int RGBW_JDI_RGB_HMA = 500;
+	const int RGBW_JDI_RGBW_HMA = 858;
+	const int RGBW_JDI_PIXEL_MAX_LIMIT = 128;
+	int backlight_indoor = 0;
+	struct hisi_panel_info *pinfo = NULL;
+	if (hisifd == NULL) {
+		HISI_FB_ERR("hisifd is null!\n");
+		return;
+	}
+
+	pinfo = &(hisifd->panel_info);
+
+	if (pinfo == NULL) {
+		HISI_FB_ERR("pinfo is null!\n");
+		return;
+	}
+
+	backlight_indoor = (int)pinfo->bl_max * RGBW_JDI_RGB_HMA / RGBW_JDI_RGBW_HMA;
+	if (backlight_indoor == 0) {
+		HISI_FB_ERR("backlight_indoor_lgd is err!\n");
+		return;
+	}
+
+	if (hisifd->de_info.ddic_rgbw_backlight < backlight_indoor) {
+		hisifd->de_info.pixel_gain_limit = 0;
+	} else {
+		hisifd->de_info.pixel_gain_limit = RGBW_JDI_PIXEL_MAX_LIMIT * (hisifd->de_info.ddic_rgbw_backlight -
+		    backlight_indoor) / backlight_indoor;
+	}
+}
+
+static void set_rgbw_lg_hma_replace(struct hisi_fb_data_type *hisifd)
+{
+	int backlight_indoor_lgd = 0;
+	int RGBW_LG_FGL = RGBW_LG_RGBW_HMA * RGBW_LG_BIT / RGBW_LG_RGB_HMA;
+	struct hisi_panel_info *pinfo = NULL;
+
+	if (hisifd == NULL) {
+		HISI_FB_ERR("hisifd is null!\n");
+		return;
+	}
+
+	pinfo = &(hisifd->panel_info);
+
+	if (pinfo == NULL) {
+		HISI_FB_ERR("pinfo is null!\n");
+		return;
+	}
+
+	backlight_indoor_lgd = (int)pinfo->bl_max * RGBW_LG_RGB_HMA / RGBW_LG_RGBW_HMA;
+	if (backlight_indoor_lgd == 0) {
+		HISI_FB_ERR("backlight_indoor_lgd is err!\n");
+		return;
+	}
+	if (hisifd->de_info.ddic_rgbw_backlight < backlight_indoor_lgd) {
+		hisifd->de_info.frame_gain_limit = RGBW_LG_BIT;
+		hisifd->de_info.color_distortion_allowance = RGBW_LG_CDA;
+		hisifd->de_info.pixel_gain_limit = 0;
+		hisifd->de_info.pwm_duty_gain = RGBW_LG_BIT;
+	} else {
+		hisifd->de_info.frame_gain_limit = RGBW_LG_BIT;
+		hisifd->de_info.color_distortion_allowance = (hisifd->de_info.ddic_rgbw_backlight -
+		    backlight_indoor_lgd) * RGBW_LG_CDA_OUTDOOR / backlight_indoor_lgd + RGBW_LG_CDA;
+		hisifd->de_info.pixel_gain_limit = (RGBW_LG_FGL - RGBW_LG_BIT) *
+		    (hisifd->de_info.ddic_rgbw_backlight - backlight_indoor_lgd) / ((int)pinfo->bl_max - backlight_indoor_lgd);
+		hisifd->de_info.pwm_duty_gain = RGBW_LG_BIT;
+	}
+}
+
+
 static int calc_backlight(struct hisi_fb_data_type *hisifd, int32_t pwm_duty) {
 	int32_t backlight = 0;
 	int32_t delta_pwm_duty = 0;
@@ -641,6 +721,25 @@ static int calc_backlight(struct hisi_fb_data_type *hisifd, int32_t pwm_duty) {
 					}
 					set_rgbw_boe_hma(hisifd);
 					break;
+				case JDI_TD4336_RT8555_HMA_PANEL_ID:
+				case SHARP_TD4336_RT8555_HMA_PANEL_ID:
+					if (g_bl_info.blpwm_input_precision > 0) {
+						backlight = ((int32_t)hisifd->panel_info.bl_max) * g_bl_info.cabc_pwm_in /
+						    g_bl_info.blpwm_input_precision;
+					} else {
+						backlight = g_bl_info.ap_brightness;
+					}
+					set_rgbw_jdi_hma_replace(hisifd);
+					break;
+				case LG_NT36772A_RT8555_HMA_PANEL_ID:
+					if (g_bl_info.blpwm_input_precision > 0) {
+						backlight = MIN(g_bl_info.ap_brightness * RGBW_LG_RGBW_HMA / RGBW_LG_RGB_HMA,
+						    (int32_t)hisifd->panel_info.bl_max);
+					} else {
+						backlight = g_bl_info.ap_brightness;
+					}
+					set_rgbw_lg_hma_replace(hisifd);
+					break;
 				default:
 					backlight = g_bl_info.ap_brightness;
 					break;
@@ -655,8 +754,14 @@ static int calc_backlight(struct hisi_fb_data_type *hisifd, int32_t pwm_duty) {
 	return backlight;
 }
 
-static int get_smooth_backlight(int32_t backlight) {
+static int get_smooth_backlight(int32_t backlight, int32_t ddic_panel_id) {
 	int i = 0,  j = 0, sum_backlight = 0;
+
+	if (ddic_panel_id == JDI_TD4336_RT8555_HMA_PANEL_ID ||
+			ddic_panel_id == SHARP_TD4336_RT8555_HMA_PANEL_ID ||
+			ddic_panel_id == LG_NT36772A_RT8555_HMA_PANEL_ID) {
+		return backlight;
+	}
 
 	backlight_buf[f_count % BACKLIGHT_FILTER_NUMBER] = backlight;
 	f_count ++;
@@ -762,7 +867,7 @@ static void get_rgbw_pwmduty_to_update_backlight(struct hisi_fb_data_type *hisif
 		HISI_FB_DEBUG("cabc_rgbw backlight = %d", backlight);
 
 		//smooth filter for backlight
-		backlight = get_smooth_backlight(backlight);
+		backlight = get_smooth_backlight(backlight, hisifd->de_info.ddic_panel_id);
 
 		HISI_FB_DEBUG("cabc_rgbw  panel_id =%d last_ap_brightness =%d ap_brightness =%d current_duty =%d temp_duty =%d backlight =%d \n",
 				hisifd->de_info.ddic_panel_id,g_bl_info.last_ap_brightness,g_bl_info.ap_brightness,g_bl_info.cabc_pwm_in,temp_current_pwm_duty,backlight);
@@ -1130,12 +1235,16 @@ int hisi_blpwm_set_backlight(struct hisi_fb_data_type *hisifd, uint32_t bl_level
 		up(&g_bl_info.bl_semaphore);
 		return 0;
 	} else if (BLPWM_AND_CABC_MODE == g_bl_info.bl_ic_ctrl_mode) {
-		lp8556_set_backlight_init(bl_level);
+		if (is_rt8555_used())
+			rt8555_set_backlight_init(bl_level);
+		else
+			lp8556_set_backlight_init(bl_level);
 	}
 	 else if (COMMON_IC_MODE == g_bl_info.bl_ic_ctrl_mode) {
 		int return_value = -1;
 		switch(g_bl_config.bl_level) {
 			case BL_MAX_12BIT:
+			case BL_MAX_10BIT:
 				bl_level = bl_level * g_bl_config.bl_level / g_bl_info.bl_max;
 				break;
 			case BL_MAX_11BIT:

@@ -62,7 +62,6 @@ s16 fingersense_data[FINGERSENSE_DATA_NSAMPLES] = { 0 };
 als_run_stop_para_t als_ud_data_upload;
 uint8_t sem_als_ud_rgbl_block_flag = 0;
 int als_ud_rgbl_block = 0;
-struct semaphore sem_als_ud_rgbl_block;
 
 static struct type_record type_record;
 static struct wake_lock wlock;
@@ -2076,19 +2075,17 @@ static int inputhub_process_motion_report(const pkt_header_t* head)
 }
 
 /*
- * 处理屏下环境光传感器上传的run-stop 参数
- * 注意，阻塞节点要防止线程无法被休眠
+ * Handle parameters uploaded by ALS_UD
+ * Caution: ensure that the thread can sleep in the block node
  */
 static int inputhub_process_als_ud_report(const pkt_header_t* head)
 {
 	memcpy(&als_ud_data_upload, (head + 1), sizeof(als_ud_data_upload));
-	hwlog_info("inputhub_process_als_ud_report para is %d %d %d\n", \
+	hwlog_info("inputhub_process_als_ud_report para is %llu %u %u\n", \
 		als_ud_data_upload.sample_start_time, als_ud_data_upload.sample_interval, als_ud_data_upload.integ_time);
 	if (sem_als_ud_rgbl_block_flag == 1) {
-		down(&sem_als_ud_rgbl_block);
 		als_ud_rgbl_block = 1;
 		sem_als_ud_rgbl_block_flag = 0;
-		up(&sem_als_ud_rgbl_block);
 		wake_up_als_ud_block();
 	}
 	return 0;

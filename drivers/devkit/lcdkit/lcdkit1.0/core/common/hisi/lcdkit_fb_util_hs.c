@@ -1078,6 +1078,7 @@ ssize_t lcd_comform_mode_store(struct device* dev,
         dpe_update_g_comform_discount(0);
         HISI_FB_ERR("fb%d, panel power off!\n", hisifd->index);
         ret = -EINVAL;
+        LCDKIT_DEBUG("ret = %d\n", ret);
         goto err_out;
     }
 
@@ -1085,6 +1086,7 @@ ssize_t lcd_comform_mode_store(struct device* dev,
     {
         hisifb_activate_vsync(hisifd);
         ret = pdata->lcd_comform_mode_store(hisifd->pdev, buf, count);
+        LCDKIT_DEBUG("ret = %d\n", ret);
         hisifb_deactivate_vsync(hisifd);
     }
 
@@ -1194,6 +1196,7 @@ ssize_t lcd_cinema_mode_store(struct device* dev,
     {
         HISI_FB_ERR("fb%d, panel power off!\n", hisifd->index);
         ret = -EINVAL;
+	LCDKIT_DEBUG("ret = %d\n", ret);
         goto err_out;
     }
 
@@ -1201,6 +1204,7 @@ ssize_t lcd_cinema_mode_store(struct device* dev,
     {
         hisifb_activate_vsync(hisifd);
         ret = pdata->lcd_cinema_mode_store(hisifd->pdev, buf, count);
+	LCDKIT_DEBUG("ret = %d\n", ret);
         hisifb_deactivate_vsync(hisifd);
     }
 
@@ -1362,6 +1366,7 @@ ssize_t led_rg_lcd_color_temperature_store(struct device* dev,
     {
         LCDKIT_ERR("fb%d, panel power off!\n", hisifd->index);
         ret = -EINVAL;
+	LCDKIT_DEBUG("ret = %d\n", ret);
         goto err_out;
     }
 
@@ -1369,6 +1374,7 @@ ssize_t led_rg_lcd_color_temperature_store(struct device* dev,
     {
         hisifb_activate_vsync(hisifd);
         ret = pdata->led_rg_lcd_color_temperature_store(hisifd->pdev, buf, count);
+	LCDKIT_DEBUG("ret = %d\n", ret);
         hisifb_deactivate_vsync(hisifd);
     }
 
@@ -1488,6 +1494,7 @@ ssize_t lcd_ce_mode_store(struct device* dev,
     {
         hisifb_activate_vsync(hisifd);
         ret = pdata->lcd_ce_mode_store(hisifd->pdev, buf, count);
+	LCDKIT_DEBUG("ret = %d\n", ret);
         hisifb_deactivate_vsync(hisifd);
     }
 
@@ -2044,6 +2051,7 @@ ssize_t lcd_acm_state_store(struct device* dev,
     {
         LCDKIT_ERR("fb%d, panel power off!\n", hisifd->index);
         ret = -EINVAL;
+	LCDKIT_DEBUG("ret = %d\n", ret);
         goto err_out;
     }
 
@@ -2051,6 +2059,7 @@ ssize_t lcd_acm_state_store(struct device* dev,
     {
         hisifb_activate_vsync(hisifd);
         ret = pdata->lcd_acm_state_store(hisifd->pdev, buf, count);
+	LCDKIT_DEBUG("ret = %d\n", ret);
         hisifb_deactivate_vsync(hisifd);
     }
 
@@ -2176,6 +2185,7 @@ ssize_t lcd_gmp_state_store(struct device* dev,
     {
         LCDKIT_ERR("fb%d, panel power off!\n", hisifd->index);
         ret = -EINVAL;
+	LCDKIT_DEBUG("ret = %d\n", ret);
         goto err_out;
     }
 
@@ -2183,6 +2193,7 @@ ssize_t lcd_gmp_state_store(struct device* dev,
     {
         hisifb_activate_vsync(hisifd);
         ret = pdata->lcd_gmp_state_store(hisifd->pdev, buf, count);
+	LCDKIT_DEBUG("ret = %d\n", ret);
         hisifb_deactivate_vsync(hisifd);
     }
 
@@ -2284,6 +2295,7 @@ ssize_t sbl_ctrl_store(struct device* dev,
     if (hisifd->sbl_ctrl_fnc)
     {
         ret = hisifd->sbl_ctrl_fnc(fbi, val);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -2390,6 +2402,7 @@ ssize_t lcd_color_temperature_store(struct device* dev,
     {
         LCDKIT_ERR("fb%d, panel power off!\n", hisifd->index);
         ret = -EINVAL;
+        LCDKIT_DEBUG("ret = %d\n", ret);
         goto err_out;
     }
 
@@ -2397,6 +2410,7 @@ ssize_t lcd_color_temperature_store(struct device* dev,
     {
         hisifb_activate_vsync(hisifd);
         ret = pdata->lcd_color_temperature_store(hisifd->pdev, buf, count);
+        LCDKIT_DEBUG("ret = %d\n", ret);
         hisifb_deactivate_vsync(hisifd);
     }
     else
@@ -2666,6 +2680,7 @@ ssize_t mipi_dsi_bit_clk_upt_store(struct device* dev,
     {
         HISI_FB_ERR("fb%d, panel power off!\n", hisifd->index);
         ret = -EINVAL;
+	LCDKIT_DEBUG("ret = %d\n", ret);
         goto err_out;
     }
 
@@ -2673,6 +2688,7 @@ ssize_t mipi_dsi_bit_clk_upt_store(struct device* dev,
     {
         hisifb_activate_vsync(hisifd);
         ret = pdata->mipi_dsi_bit_clk_upt_store(hisifd->pdev, buf, count);
+	LCDKIT_DEBUG("ret = %d\n", ret);
         hisifb_deactivate_vsync(hisifd);
     }
 
@@ -2912,6 +2928,7 @@ ssize_t alpm_setting_store(struct device* dev,
 	if (pdata->amoled_alpm_setting_store) {
 		hisifb_activate_vsync(hisifd);
 		ret = pdata->amoled_alpm_setting_store(hisifd->pdev, buf, count);
+		LCDKIT_DEBUG("ret = %d\n", ret);
 		hisifb_deactivate_vsync(hisifd);
 	}
 

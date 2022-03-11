@@ -212,6 +212,7 @@ enum lcd_kit_event {
 	EVENT_LATER_TS,
 	EVENT_VDD,
 	EVENT_AOD,
+	EVENT_BIAS,
 };
 
 enum bl_order {
@@ -598,6 +599,7 @@ struct lcd_kit_common_info {
 	/**********************effect******************/
 	int bl_level_max;
 	int bl_level_min;
+	int backlight_bias_integrated;
 	u32 ul_does_lcd_poweron_tp;
 	/*default max nit*/
 	u32 bl_max_nit;
@@ -654,6 +656,8 @@ struct lcd_kit_power_desc {
 	struct lcd_kit_array_data tp_rst;
 	struct lcd_kit_array_data lcd_vdd;
 	struct lcd_kit_array_data lcd_aod;
+	struct lcd_kit_array_data lcd_power_down_vsp;
+	struct lcd_kit_array_data lcd_power_down_vsn;
 };
 
 struct lcd_kit_power_seq {
@@ -668,6 +672,7 @@ struct lcd_kit_power_seq {
 /*function declare*/
 int lcd_kit_adapt_register(struct lcd_kit_adapt_ops* ops);
 struct lcd_kit_adapt_ops* lcd_kit_get_adapt_ops(void);
+int lcd_kit_reset_power_ctrl(int enable);
 void lcd_kit_delay(int wait, int waittype, bool allow_sleep);
 int lcd_dsm_client_record(struct dsm_client *lcd_dclient, char *record_buf,
 	int lcd_dsm_error_no, int rec_num_limit, int *cur_rec_time);

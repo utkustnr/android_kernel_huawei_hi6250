@@ -7632,12 +7632,22 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 #endif
 
 #ifdef SUPPORT_2G_VHT
-	if ((ret = dhd_wl_ioctl_cmd(dhd, WLC_DOWN,(char *)&wl_down, sizeof(wl_down), TRUE, 0)) < 0) {
-		DHD_ERROR(("%s WLC_DOWN set failed %d\n", __FUNCTION__, ret));
-	}
-	bcm_mkiovar("vht_features", (char *)&vht_features, 4, iovbuf, sizeof(iovbuf));
-	if ((ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0)) < 0) {
-		DHD_ERROR(("%s vht_features set failed %d\n", __FUNCTION__, ret));
+	if (true != g_abs_enabled) {
+		ret = dhd_wl_ioctl_cmd(dhd, WLC_DOWN, (char *)&wl_down,
+			sizeof(wl_down), TRUE, 0);
+		if (ret  < 0) {
+			DHD_ERROR(("%s WLC_DOWN set failed %d\n",
+				__func__, ret));
+		}
+
+		bcm_mkiovar("vht_features", (char *)&vht_features, 4,
+			iovbuf, sizeof(iovbuf));
+		ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf,
+			sizeof(iovbuf), TRUE, 0);
+		if (ret < 0) {
+			DHD_ERROR(("%s vht_features set failed %d\n",
+				__func__, ret));
+		}
 	}
 #endif /* SUPPORT_2G_VHT */
 
@@ -10004,7 +10014,8 @@ int dhd_dev_get_feature_set(struct net_device *dev)
 		feature_set |= WIFI_FEATURE_PNO;
 		feature_set |= WIFI_FEATURE_BATCH_SCAN;
 #ifdef GSCAN_SUPPORT
-		feature_set |= WIFI_FEATURE_GSCAN;
+		/* modify wifi GTS test fail problem */
+		/* feature_set |= WIFI_FEATURE_GSCAN; */
 		feature_set |= WIFI_FEATURE_HAL_EPNO;
 #endif /* GSCAN_SUPPORT */
 	}

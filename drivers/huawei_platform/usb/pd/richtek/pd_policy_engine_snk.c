@@ -36,6 +36,12 @@ void pe_snk_startup_entry(pd_port_t *pd_port, pd_event_t *pd_event)
 	pd_port->state_machine = PE_STATE_MACHINE_SINK;
 	pd_reset_protocol_layer(pd_port);
 
+#ifdef CONFIG_USB_PD_RESET_CABLE
+	pd_port->reset_cable = false;
+	pd_port->detect_emark = false;
+	pd_port->vswap_ret = 0;
+#endif /* CONFIG_USB_PD_RESET_CABLE */
+
 	switch (pd_event->event_type) {
 	case PD_EVT_HW_MSG:	/* CC attached */
 		pd_put_pe_event(pd_port, PD_PE_RESET_PRL_COMPLETED);
@@ -52,7 +58,7 @@ void pe_snk_startup_entry(pd_port_t *pd_port, pd_event_t *pd_event)
 			PE_INFO("rx_cap_on\r\n");
 			rx_cap = PD_RX_CAP_PE_SEND_WAIT_CAP;
 		}
-		
+
 #ifdef CONFIG_USB_PD_IGNORE_PS_RDY_AFTER_PR_SWAP
 		pd_port->msg_id_pr_swap_last = msg_id_last;
 #endif	/* CONFIG_USB_PD_IGNORE_PS_RDY_AFTER_PR_SWAP */

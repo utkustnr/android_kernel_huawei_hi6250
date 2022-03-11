@@ -1244,8 +1244,18 @@ void pd_dpm_dfp_inform_cable_vdo(pd_port_t *pd_port, pd_event_t *pd_event)
 {
 	const int size = sizeof(uint32_t) * VDO_MAX_SIZE;
 
-	if (pd_event->pd_msg)
+	if (pd_event->pd_msg) {
 		memcpy(pd_port->cable_vdos, pd_event->pd_msg->payload, size);
+
+#ifdef CONFIG_USB_PD_RESET_CABLE
+		if (pd_port->detect_emark) {
+			pd_port->detect_emark = false;
+			/* payload 4 is the cur limit cable vdo */
+			pd_dpm_handle_pe_event(PD_DPM_PE_CABLE_VDO,
+				(void *)(&(pd_event->pd_msg->payload[4])));
+		}
+#endif /* CONFIG_USB_PD_RESET_CABLE */
+	}
 
 	vdm_put_dpm_notified_event(pd_port);
 }
@@ -1677,12 +1687,34 @@ static inline int pd_dpm_ready_attempt_discover_cable(
 
 #ifdef CONFIG_USB_PD_DISCOVER_CABLE_REQUEST_VCONN
 			if (!pd_port->vconn_source) {
+#ifdef CONFIG_PD_DFP_RESET_CABLE
+				if (!pd_port->detect_emark) {
+					PD_ERR("detect_emark false\n");
+					return 0;
+				}
+
+				if (pd_port->vswap_ret == PD_CTRL_REJECT) {
+					PD_ERR("vswap reject return\n");
+					return 0;
+				}
+#endif /* CONFIG_PD_DFP_RESET_CABLE */
+
 				pd_port->vconn_return = true;
 				pd_put_dpm_pd_request_event(pd_port,
 					PD_DPM_PD_REQUEST_VCONN_SWAP);
 				return 1;
 			}
 #endif	/* CONFIG_USB_PD_DISCOVER_CABLE_REQUEST_VCONN */
+
+#ifdef CONFIG_PD_DFP_RESET_CABLE
+			if (pd_port->reset_cable) {
+				pd_port->reset_cable = false;
+				pd_put_dpm_pd_request_event(
+					pd_port,
+					PD_DPM_PD_REQUEST_CBL_SOFTRESET);
+				return 1;
+			}
+#endif /* CONFIG_PD_DFP_RESET_CABLE */
 
 			pd_restart_timer(pd_port, PD_TIMER_DISCOVER_ID);
 			return 1;
@@ -1829,6 +1861,15 @@ int pd_dpm_notify_pe_hardreset(pd_port_t *pd_port)
 	return 0;
 }
 
+static inline void pd_dpm_update_pe_ready(pd_port_t *pd_port)
+{
+	if (!pd_port->pe_ready) {
+		pd_port->pe_ready = true;
+		PD_ERR("PE_READY\n");
+		pd_update_connect_state(pd_port, PD_CONNECT_PE_READY);
+	}
+}
+
 int pd_dpm_notify_pe_ready(pd_port_t *pd_port, pd_event_t *pd_event)
 {
 	int ret = 0;
@@ -1875,10 +1916,7 @@ int pd_dpm_notify_pe_ready(pd_port_t *pd_port, pd_event_t *pd_event)
 	if (ret != 0)
 		return ret;
 
-	if (!pd_port->pe_ready) {
-		pd_port->pe_ready = true;
-		pd_update_connect_state(pd_port, PD_CONNECT_PE_READY);
-	}
+	pd_dpm_update_pe_ready(pd_port);
 
 	return 0;
 }
@@ -1887,9 +1925,13 @@ int pd_dpm_notify_pe_ready(pd_port_t *pd_port, pd_event_t *pd_event)
 int pd_dpm_notify_dfp_delay_done(
 	pd_port_t *pd_port, pd_event_t *pd_event)
 {
+	int ret;
+
 	if (pd_port->data_role == PD_ROLE_DFP) {
 		pd_port->dpm_dfp_flow_delay_done = true;
-		pd_dpm_notify_pe_dfp_ready(pd_port, pd_event);
+		ret = pd_dpm_notify_pe_dfp_ready(pd_port, pd_event);
+		if (ret == 0)
+			pd_dpm_update_pe_ready(pd_port);
 	}
 
 	return 0;

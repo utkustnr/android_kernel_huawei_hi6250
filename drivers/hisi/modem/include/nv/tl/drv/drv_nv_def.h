@@ -1536,6 +1536,25 @@ typedef enum
 
 /*end 18022\ 18023*/
 
+typedef struct 
+{
+	u16 efuse_bit;                      /*efuse值一共多少bit。0--31*/
+    u16 reseved;                        /* reseved */
+    RF_NV_MIPI_16CMD        init;       /*读取efuse前的init指令*/
+    RF_NV_MIPI_16CMD        cfg;        /*每次读取efusebit值时的配置指令*/
+	RF_NV_MIPIDEV_CMD_STRU  read_cmd;   /*读取efuse值的地址命令*/
+	RF_NV_MIPIDEV_CMD_STRU  write_cmd;  /*写入efuse值的地址命令*/
+} RF_NV_EFUSE_CFG;
+
+#define RF_EFUSE_DEV_NUM  8  /*支持efuse特性的rf前端设备个数*/
+
+typedef struct
+{
+	u16 en_flag;   /*特性开关*/
+	u16 reseved;
+	RF_NV_EFUSE_CFG rfdev[RF_EFUSE_DEV_NUM];
+} RF_NV_EFUSE_ALLDEV_CFG;
+
 typedef struct
 {
     u32 mipi_clk[16];

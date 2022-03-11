@@ -167,6 +167,37 @@ struct lcd_kit_power_seq *lcd_kit_get_power_seq(void)
 	return &g_lcd_kit_power_seq;
 }
 
+static int lcd_kit_set_bias_ctrl(int enable)
+{
+	int ret = LCD_KIT_OK;
+	struct lcd_kit_bias_ops *bias_ops = NULL;
+
+	bias_ops = lcd_kit_get_bias_ops();
+	if (!bias_ops) {
+		LCD_KIT_ERR("can not register adapt_ops!\n");
+		return LCD_KIT_FAIL;
+	}
+
+	if (enable) {
+		if (bias_ops->set_bias_voltage)
+			/* buf[2]:set voltage value */
+			ret = bias_ops->set_bias_voltage(
+				power_hdl->lcd_vsp.buf[2],
+				power_hdl->lcd_vsn.buf[2]);
+		if (ret)
+			LCD_KIT_ERR("set_bias failed\n");
+	} else {
+		if (bias_ops->set_bias_power_down)
+			/* buf[2]:set voltage value */
+			ret = bias_ops->set_bias_power_down(
+				power_hdl->lcd_power_down_vsp.buf[2],
+				power_hdl->lcd_power_down_vsn.buf[2]);
+		if (ret)
+			LCD_KIT_ERR("power_down_set_bias failed!\n");
+	}
+	return ret;
+}
+
 static int lcd_kit_vci_power_ctrl(int enable)
 {
 	int ret = LCD_KIT_OK;
@@ -455,7 +486,10 @@ int lcd_kit_set_bias_voltage(void)
 {
 	struct lcd_kit_bias_ops *bias_ops = NULL;
 	int ret = LCD_KIT_OK;
-
+	if (common_info->backlight_bias_integrated) {
+		LCD_KIT_INFO("This setting is not required for bias\n");
+		return LCD_KIT_OK;
+	}
 	bias_ops = lcd_kit_get_bias_ops();
 	if (!bias_ops) {
 		LCD_KIT_ERR("can not get bias_ops!\n");
@@ -523,7 +557,7 @@ static int lcd_kit_reset_power_off(void)
 	return ret;
 }
 
-static int lcd_kit_reset_power_ctrl(int enable)
+int lcd_kit_reset_power_ctrl(int enable)
 {
 	if (enable) {
 		return lcd_kit_reset_power_on();
@@ -867,6 +901,7 @@ static int lcd_kit_event_should_send(uint32_t event, uint32_t data)
 		case EVENT_IOVCC:
 		case EVENT_VSP:
 		case EVENT_VSN:
+		case EVENT_BIAS:
 		case EVENT_RESET:
 		case EVENT_VDD:
 		return (lcd_kit_get_pt_mode()||((uint32_t)lcd_kit_gesture_mode() && (common_info->ul_does_lcd_poweron_tp)));
@@ -910,8 +945,6 @@ int lcd_kit_event_handler(void* hld, uint32_t event, uint32_t data, uint32_t del
 		case EVENT_VSN:
 		{
 			ret = lcd_kit_vsn_power_ctrl(data);
-			/*set bias voltage*/
-			lcd_kit_set_bias_voltage();
 			break;
 		}
 		case EVENT_RESET:
@@ -947,10 +980,12 @@ int lcd_kit_event_handler(void* hld, uint32_t event, uint32_t data, uint32_t del
 			LCD_KIT_INFO("none event\n");
 			break;
 		}
+		case EVENT_BIAS:
+			lcd_kit_set_bias_ctrl(data);
+			break;
 		default:
 		{
-			LCD_KIT_ERR("event not exist\n");
-			ret = LCD_KIT_FAIL;
+			LCD_KIT_INFO("event not exist\n");
 			break;
 		}
 	}
@@ -2021,6 +2056,9 @@ static void lcd_kit_panel_parse_effect(struct device_node* np)
 	OF_PROPERTY_READ_U32_DEFAULT(np, "lcd-kit,panel-bl-max", &common_info->bl_level_max, 0);
 	/*bl min level*/
 	OF_PROPERTY_READ_U32_DEFAULT(np, "lcd-kit,panel-bl-min", &common_info->bl_level_min, 0);
+	/* backlight bias */
+	OF_PROPERTY_READ_U32_DEFAULT(np, "lcd-kit,backlight-bias-integrated",
+		&common_info->backlight_bias_integrated, 0);
 	/*bl max nit*/
 	OF_PROPERTY_READ_U32_DEFAULT(np, "lcd-kit,panel-bl-max-nit", &common_info->bl_max_nit, 0);
 	OF_PROPERTY_READ_U32_DEFAULT(np, "lcd-kit,panel-getblmaxnit-type",  &common_info->blmaxnit.get_blmaxnit_type, 0);
@@ -2243,6 +2281,14 @@ static void lcd_kit_parse_power(struct device_node* np)
 	if (power_hdl->lcd_aod.buf == NULL)
 		lcd_kit_parse_array_data(np, "lcd-kit,lcd-aod",
 			&power_hdl->lcd_aod);
+
+	/* bias */
+	if (power_hdl->lcd_power_down_vsp.buf == NULL)
+		lcd_kit_parse_array_data(np, "lcd-kit,lcd-power-down-vsp",
+			&power_hdl->lcd_power_down_vsp);
+	if (power_hdl->lcd_power_down_vsn.buf == NULL)
+		lcd_kit_parse_array_data(np, "lcd-kit,lcd-power-down-vsn",
+			&power_hdl->lcd_power_down_vsn);
 }
 
 static int lcd_kit_panel_parse_dt(struct device_node* np)

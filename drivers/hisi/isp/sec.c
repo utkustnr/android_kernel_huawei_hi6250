@@ -184,6 +184,7 @@ struct hisi_atfisp_s {
     int isp_cpu_reset;
     int is_heap_flag;
     int sec_verify;
+    int isp_ion_smmuerr;
     int ispmem_reserved;
     unsigned int trusted_mem_size;
     unsigned int mapping_items;
@@ -1164,6 +1165,12 @@ static int hisi_atf_getdts(struct platform_device *pdev)
     }
     pr_info("sec-verify.0x%x of_property_read_u32.%d\n", dev->sec_verify, ret);
 
+    if ((ret = of_property_read_u32(np, "use-ion-smmuerr", (unsigned int *)(&dev->isp_ion_smmuerr))) < 0 ) {
+        pr_err("[%s] Failed: use-ion-smmuerr of_property_read_u32.%d\n", __func__, ret);
+        return -EINVAL;
+    }
+    pr_info("use-ion-smmuerr.0x%x of_property_read_u32.%d\n", dev->isp_ion_smmuerr, ret);
+
     if ((ret = of_property_read_u32(np, "mapping-items", (unsigned int *)(&dev->mapping_items))) < 0 ) {
         pr_err("[%s] Failed: mapping-num of_property_read_u32.%d\n", __func__, ret);
         return -EINVAL;
@@ -1997,10 +2004,11 @@ static void free_secmem_ion(struct work_struct *work)
     pr_info("[%s] +\n", __func__);
 
     atomic_set(&dev->secisp_stop_kthread_status, 0);
-    if((ret = smmu_err_addr_free()) < 0){
-        pr_err("[%s] smmu_err_addr_free ERR\n", __func__);
+    if(dev->isp_ion_smmuerr) {
+        if((ret = smmu_err_addr_free()) < 0){
+            pr_err("[%s] smmu_err_addr_free ERR\n", __func__);
+        }
     }
-
     if(hisi_secmem_ion == NULL){
         pr_err("[%s] hisi_secmem_ion is NULL\n", __func__);
         mutex_unlock(&dev->sec_mem_mutex);
@@ -2188,11 +2196,13 @@ static int secisp_work_fn(void *data)
             continue;
         }
 
-        if ((ret = smmu_err_addr_init()) < 0) {
-            pr_err("[%s] Failed : set_share_pararms.%d\n", __func__, ret);
-            dev->secisp_wake = 0;
-            mutex_unlock(&dev->pwrlock);
-            continue;
+        if (dev->isp_ion_smmuerr) {
+            if ((ret = smmu_err_addr_init()) < 0) {
+                pr_err("[%s] Failed : set_share_pararms.%d\n", __func__, ret);
+                dev->secisp_wake = 0;
+                mutex_unlock(&dev->pwrlock);
+                continue;
+            }
         }
 
         if ((ret = do_secisp_device_enable()) < 0) {

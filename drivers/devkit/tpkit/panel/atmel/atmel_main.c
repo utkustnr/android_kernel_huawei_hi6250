@@ -4229,7 +4229,7 @@ static void mxt_stop(struct mxt_data *data, bool suspend)
 {
 	int ret = 0;
 
-	if ((data == NULL) || (!data->suspended) || (data->in_bootloader)) {
+	if ((data == NULL) || (data->suspended) || (data->in_bootloader)) {
 		TS_LOG_DEBUG("mxt_stop exit\n");
 		return;
 	}

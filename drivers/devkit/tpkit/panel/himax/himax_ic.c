@@ -1949,19 +1949,27 @@ static int himax_irq_bottom_half(struct ts_cmd_node *in_cmd,struct ts_cmd_node *
 
 #endif
 bypass_checksum_failed_packet:
-		m = HX_TOUCH_INFO_POINT_CNT + 2;
-		EN_NoiseFilter = ((buf[m]) >> 3);//HX_TOUCH_INFO_POINT_CNT: 52 ;
-		EN_NoiseFilter = EN_NoiseFilter & 0x01;
+	m = HX_TOUCH_INFO_POINT_CNT + 2;
+	/* HX_TOUCH_INFO_POINT_CNT: 52 */
+	EN_NoiseFilter = ((buf[m]) >> 3);
+	EN_NoiseFilter = EN_NoiseFilter & 0x01;
 
+	if ((HX_TOUCH_INFO_POINT_CNT >= 0) &&
+		(sizeof(buf) > HX_TOUCH_INFO_POINT_CNT)) {
 		if (buf[HX_TOUCH_INFO_POINT_CNT] == 0xff)
 			hx_real_point_num = 0;
 		else
-			hx_real_point_num = buf[HX_TOUCH_INFO_POINT_CNT] & 0x0f;//only use low 4 bits.
+			/* only use low 4 bits */
+			hx_real_point_num = buf[HX_TOUCH_INFO_POINT_CNT] & 0x0f;
+	} else {
+		TS_LOG_ERR("%s: invalid HX_TOUCH_INFO_POINT_CNT = %d\n",
+			__func__, HX_TOUCH_INFO_POINT_CNT);
+	}
+	/*Touch Point information*/
+	himax_parse_coords(hx_touch_info_size, hx_real_point_num,
+		info, hx_touching, buf);
 
-		/*Touch Point information*/
-		himax_parse_coords(hx_touch_info_size,hx_real_point_num,info,hx_touching,buf);
-
-		Last_EN_NoiseFilter = EN_NoiseFilter;
+	Last_EN_NoiseFilter = EN_NoiseFilter;
 
 	iCount = 0;//I2C communication ok, checksum ok;
 	atomic_set(&g_himax_ts_data->irq_complete, 1);

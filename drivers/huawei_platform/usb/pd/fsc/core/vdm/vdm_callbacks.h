@@ -49,6 +49,9 @@ FSC_BOOL	vdmModeExitRequest			(FSC_U16 svid, FSC_U32 mode_index);
 FSC_BOOL	vdmEnterModeResult			(FSC_BOOL success, FSC_U16 svid, FSC_U32 mode_index);
 void		vdmExitModeResult			(FSC_BOOL success, FSC_U16 svid, FSC_U32 mode_index);
 void		vdmInformIdentity			(FSC_BOOL success, SopType sop, Identity id);
+#ifdef FSC_HAVE_CUSTOM_SRC2
+void vdmInformRawData(FSC_BOOL success, SopType sop, Identity id, FSC_U32 *raw);
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 void		vdmInformSvids				(FSC_BOOL success, SopType sop, SvidInfo svid_info);
 void		vdmInformModes				(FSC_BOOL success, SopType sop, ModesInfo modes_info);
 void		vdmInformAttention			(FSC_U16 svid, FSC_U8 mode_index);

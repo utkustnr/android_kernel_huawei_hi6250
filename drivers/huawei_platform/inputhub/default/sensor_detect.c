@@ -112,6 +112,7 @@ extern int  ams_tmd3702_ps_flag;
 extern int apds9253_rgb_flag;
 extern int vishay_vcnl36658_als_flag;
 extern int vishay_vcnl36658_ps_flag;
+extern int vd6281_als_flag;
 extern int ams_tof_flag;
 extern int sharp_tof_flag;
 extern int apds9253_006_ps_flag;
@@ -256,6 +257,7 @@ struct ps_platform_data ps_data = {
 	.pwave_screenon_value = 0,
 	.threshold_screenon_value = 0,
 	.digital_offset_max = 0,
+	.is_always_on = 0,
 };
 
 struct airpress_platform_data airpress_data = {
@@ -1139,6 +1141,10 @@ void read_als_data_from_dts(struct device_node *dn)
 	if (!strncmp(chip_info, "huawei,liteon_ltr2568", sizeof("huawei,liteon_ltr2568"))) {
 		ltr2568_als_flag = 1;
 	}
+	if (!strncmp(chip_info, "huawei,st_vd6281", sizeof("huawei,st_vd6281"))) {
+		vd6281_als_flag= 1;
+		hwlog_info("%s:st_vd6281 i2c_address suc,%d \n", __func__, temp);
+	}
 	if (!strncmp(chip_info, "huawei,A", sizeof("huawei,A"))) {
 		tsl2591_flag= 1;
 		hwlog_info("%s:A i2c_address suc,%d \n", __func__, temp);
@@ -1499,6 +1505,10 @@ static void read_ps_data_from_dts(struct device_node *dn)
 	else
 	      ps_support_abs_threshold=temp;
 
+	if (of_property_read_u32(dn, "is_always_on", &temp))
+		hwlog_err("%s:read is_always_on fail\n", __func__);
+	else
+		ps_data.is_always_on = (uint8_t) temp;
 	read_sensorlist_info(dn, PS);
 }
 

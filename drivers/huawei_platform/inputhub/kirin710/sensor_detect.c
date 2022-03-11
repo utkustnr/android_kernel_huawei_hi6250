@@ -183,6 +183,7 @@ struct als_platform_data als_data = {
 	.als_phone_type = 0,
 	.als_phone_version = 0,
 	.als_gain_dynamic = 0,
+	.is_bllevel_supported = 0,
 };
 
 struct ps_platform_data ps_data = {
@@ -250,6 +251,7 @@ struct sar_platform_data sar_pdata = {
 	.cfg = DEF_SENSOR_COM_SETTING,
 	.poll_interval = 200,
 	.calibrate_type = 5,
+	.gpio_int = 0,
 };
 
 struct adux_sar_add_data_t adux_sar_add_data;
@@ -351,6 +353,12 @@ struct sar_sensor_detect adi_sar_detect = {
 };
 
 struct sar_sensor_detect cypress_sar_detect = {
+	.cfg = DEF_SENSOR_COM_SETTING,
+	.detect_flag = 0,
+	.chip_id = 0,
+};
+
+struct sar_sensor_detect g_abov_sar_detect = {
 	.cfg = DEF_SENSOR_COM_SETTING,
 	.detect_flag = 0,
 	.chip_id = 0,
@@ -993,6 +1001,11 @@ void read_als_data_from_dts(struct device_node *dn)
 		//hwlog_err("%s:read als file_id fail\n", __func__);
 	else
 		dyn_req->file_list[dyn_req->file_count] = (uint16_t) temp;
+
+	if (of_property_read_u32(dn, "is_bllevel_supported", &temp))
+		hwlog_err("%s:read als is_cali_supported fail\n", __func__);
+	else
+		als_data.is_bllevel_supported = (int)temp;
 	dyn_req->file_count++;
 	read_sensorlist_info(dn, ALS);
 	ret = of_property_read_u32(dn, "phone_color_num", &temp);
@@ -1337,6 +1350,35 @@ static void read_handpress_data_from_dts(struct device_node *dn)
 	hwlog_info("get handpress dev from temp=%d; ++sensorlist[0]:%d\n", temp, sensorlist[0] - 1);
 }
 
+static void read_abov_sar_data_from_dts(struct device_node *dn)
+{
+	uint16_t abov_phone_type = 0;
+	uint16_t *calibrate_thred = NULL;
+
+	read_chip_info(dn, CAP_PROX);
+	if (of_property_read_u16(dn, "phone_type", &abov_phone_type)) {
+		sar_pdata.sar_datas.abov_data.phone_type = 0;
+		hwlog_err("%s:read phone_type fail\n", __func__);
+	} else {
+		sar_pdata.sar_datas.abov_data.phone_type = abov_phone_type;
+		hwlog_info("%s:read phone_type:0x%x\n", __func__,
+			sar_pdata.sar_datas.abov_data.phone_type);
+	}
+
+	calibrate_thred = sar_pdata.sar_datas.abov_data.calibrate_thred;
+	if (of_property_read_u16_array(dn, "calibrate_thred", calibrate_thred,
+		CAP_CALIBRATE_THRESHOLE_LEN)) {
+		hwlog_err("%s:read calibrate_thred fail\n", __func__);
+		*calibrate_thred = 0;
+		*(calibrate_thred + 1) = 0;
+		*(calibrate_thred + 2) = 0;
+		*(calibrate_thred + 3) = 0;
+	}
+	hwlog_info("calibrate_thred:%u %u %u %u\n", *calibrate_thred,
+		*(calibrate_thred + 1), *(calibrate_thred + 2),
+		*(calibrate_thred + 3));
+}
+
 static void read_capprox_data_from_dts(struct device_node *dn)
 {
 	uint16_t threshold_to_ap = 0;
@@ -1362,6 +1404,14 @@ static void read_capprox_data_from_dts(struct device_node *dn)
 	else
 		sar_pdata.gpio_int = (GPIO_NUM_TYPE) temp;
 
+	if (of_property_read_u32(dn, "gpio_int_sh", &temp))
+		hwlog_err("%s:read gpio_int_sh fail\n", __func__);
+	else
+		sar_pdata.gpio_int_sh = (GPIO_NUM_TYPE)temp;
+	if (of_property_read_u32(dn, "reg", &temp))
+		hwlog_err("%s:read cap_prox reg fail\n", __func__);
+	else
+		sar_pdata.cfg.i2c_address = (uint8_t)temp;
 	if (of_property_read_u32(dn, "poll_interval", &temp))
 		hwlog_err("%s:read poll_interval fail\n", __func__);
 	else
@@ -1503,6 +1553,9 @@ static void read_capprox_data_from_dts(struct device_node *dn)
 			*(calibrate_thred+3) = 0;
 		}
 		hwlog_info("calibrate_thred:%u %u %u %u\n", *calibrate_thred, *(calibrate_thred+1), *(calibrate_thred+2), *(calibrate_thred+3));
+	} else if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,abov-a96t3x6",
+		strlen("huawei,abov-a96t3x6"))) {
+		read_abov_sar_data_from_dts(dn);
 	}
 	read_sensorlist_info(dn, CAP_PROX);
 }
@@ -3067,6 +3120,15 @@ static void read_cap_prox_info(struct device_node *dn)
 		cypress_sar_detect.chip_id = (uint8_t)register_add;
 		cypress_sar_detect.chip_id_value[0] = (uint8_t)wia[0];
 		cypress_sar_detect.chip_id_value[1] = (uint8_t)wia[1];
+	} else if (!strncmp(chip_info, "huawei,abov-a96t3x6",
+		strlen("huawei,abov-a96t3x6"))) {
+		hwlog_info("sar sensor from dts is abov-a96t3x6\n");
+		g_abov_sar_detect.detect_flag = 1;
+		g_abov_sar_detect.cfg.bus_num = (uint8_t)i2c_bus_num;
+		g_abov_sar_detect.cfg.i2c_address = (uint8_t)i2c_address;
+		g_abov_sar_detect.chip_id = (uint8_t)register_add;
+		g_abov_sar_detect.chip_id_value[0] = (uint8_t)wia[0];
+		g_abov_sar_detect.chip_id_value[1] = (uint8_t)wia[1];
 	}
 }
 
@@ -3349,7 +3411,7 @@ int sensor_set_cfg_data(void)
 
 static bool need_download_fw(uint8_t tag)
 {
-	return ((TAG_KEY == tag) || (TAG_TOF == tag));
+	return ((tag == TAG_KEY) || (tag == TAG_TOF) || (tag == TAG_CAP_PROX));
 }
 
 int sensor_set_fw_load(void)

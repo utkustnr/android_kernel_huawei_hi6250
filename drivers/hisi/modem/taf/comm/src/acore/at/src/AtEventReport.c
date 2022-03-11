@@ -2550,6 +2550,7 @@ TAF_VOID At_CsIncomingEvtOfIncomeStateIndProc(
         +CLIP: <number>,<type>
         其它部分[,<subaddr>,<satype>[,[<alpha>][,<CLI validity>]]]不用上报
         */
+        AT_ERR_LOG("At_CsIncomingEvtOfIncomeStateIndProc:+CLIP:");
         usLength += (TAF_UINT16)At_sprintf(AT_CMD_MAX_LEN,
                                            (TAF_CHAR *)pgucAtSndCodeAddr,
                                            (TAF_CHAR *)pgucAtSndCodeAddr + usLength,

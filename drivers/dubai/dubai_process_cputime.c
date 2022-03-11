@@ -395,6 +395,8 @@ static int dubai_set_proc_decompose_list(int count, const struct dubai_decompose
 			goto exit;
 		}
 		memcpy(&entry->decompose, data, sizeof(struct dubai_decompose_info));
+		entry->decompose.comm[TASK_COMM_LEN - 1] = '\0';
+		entry->decompose.prefix[PREFIX_LEN - 1] = '\0';
 		entry->tgid = -1;
 		list_add_tail(&entry->node, &dubai_proc_decompose_list);
 		atomic_inc(&decompose_count_target);
@@ -923,6 +925,8 @@ int dubai_get_proc_name(void __user *argp)
 	}
 
 	process = (struct process_name *)transmit->data;
+	process->comm[TASK_COMM_LEN - 1] = '\0';
+	process->name[NAME_LEN - 1] = '\0';
 	dubai_get_process_name(process);
 	if (copy_to_user(argp, transmit, size))
 		ret = -EFAULT;

@@ -46,6 +46,10 @@
 #include "hisi_freq_ctl.h"
 #endif
 
+#ifdef CONFIG_ROW_VIP_QUEUE
+extern int get_task_qos(struct task_struct *task);
+#endif
+
 EXPORT_TRACEPOINT_SYMBOL_GPL(block_bio_remap);
 EXPORT_TRACEPOINT_SYMBOL_GPL(block_rq_remap);
 EXPORT_TRACEPOINT_SYMBOL_GPL(block_bio_complete);
@@ -888,6 +892,7 @@ blk_init_allocated_queue(struct request_queue *q, request_fn_proc *rfn,
 
 fail:
 	blk_free_flush_queue(q->fq);
+	q->fq = NULL;
 	wbt_exit(q->rq_wb);
 	q->rq_wb = NULL;
 	return NULL;
@@ -1759,6 +1764,15 @@ get_rq:
 	if (sync)
 		rw_flags = (unsigned int)rw_flags | REQ_SYNC;
 
+#ifdef CONFIG_ROW_VIP_QUEUE
+	if (blk_queue_qos_on(bdev_get_queue(bio->bi_bdev))) {
+		int qos = get_task_qos(current);
+
+		if ((qos >= BLKIO_QOS_HIGH) ||
+			(bio->bi_opf & (REQ_META | REQ_PRIO)))
+			rw_flags |= (REQ_FG | REQ_VIP);
+	}
+#endif
 	/*
 	 * Add in META/PRIO flags, if set, before we get to the IO scheduler
 	 */

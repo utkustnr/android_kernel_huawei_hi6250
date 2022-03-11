@@ -53,6 +53,18 @@ struct pr_ops;
  */
 #define BLKCG_MAX_POLS		2
 
+#ifdef CONFIG_ROW_VIP_QUEUE
+
+#ifndef BLKIO_QOS_HIGH
+#define BLKIO_QOS_HIGH         VALUE_QOS_HIGH
+#endif
+
+#ifndef BBLKIO_QOS_DEFAULT
+#define BLKIO_QOS_DEFAULT      VALUE_QOS_NORMAL
+#endif
+
+#endif
+
 typedef void (rq_end_io_fn)(struct request *, int);
 
 #define BLK_RL_SYNCFULL		(1U << 0)
@@ -560,7 +572,7 @@ struct blk_queue_cust {
 	atomic_t flush_work_trigger;
 	atomic_t write_after_flush;
 	struct list_head flush_queue_node;
-	unsigned char flush_optimise;
+	unsigned char flush_optimize;
 	/*
 	* MQ tag used statistic
 	*/
@@ -839,6 +851,10 @@ struct request_queue {
 #define QUEUE_FLAG_FLUSH_NQ    25	/* flush not queueuable */
 #define QUEUE_FLAG_DAX         26	/* device supports DAX */
 
+#ifdef CONFIG_ROW_VIP_QUEUE
+#define QUEUE_FLAG_QOS         27
+#endif
+
 #define QUEUE_FLAG_DEFAULT	((1 << QUEUE_FLAG_IO_STAT) |		\
 				 (1 << QUEUE_FLAG_STACKABLE)	|	\
 				 (1 << QUEUE_FLAG_SAME_COMP)	|	\
@@ -980,6 +996,10 @@ static inline void queue_throtl_dec_inflight(struct request_queue *q,
 	(test_bit(QUEUE_FLAG_SECERASE, &(q)->queue_flags))
 #define blk_queue_dax(q)	test_bit(QUEUE_FLAG_DAX, &(q)->queue_flags)
 
+#ifdef CONFIG_ROW_VIP_QUEUE
+#define blk_queue_qos_on(q)    test_bit(QUEUE_FLAG_QOS, &(q)->queue_flags)
+#endif
+
 #define blk_noretry_request(rq) \
 	((rq)->cmd_flags & (REQ_FAILFAST_DEV|REQ_FAILFAST_TRANSPORT| \
 			     REQ_FAILFAST_DRIVER))
@@ -1023,6 +1043,13 @@ static inline bool rq_is_sync(struct request *rq)
 {
 	return rw_is_sync(req_op(rq), rq->cmd_flags);
 }
+
+#ifdef CONFIG_ROW_VIP_QUEUE
+static inline bool rq_is_vip(struct request *rq)
+{
+	return rq->cmd_flags & REQ_VIP;
+}
+#endif
 
 static inline bool blk_rl_full(struct request_list *rl, bool sync)
 {

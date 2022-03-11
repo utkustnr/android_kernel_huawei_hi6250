@@ -1672,8 +1672,8 @@ void hw_detach_dhd_pub_t(void) {
 }
 
 int hw_set_filter_enable(int on) {
-    if (NULL != hw_dhd_pub_t) {
-        if (on && hw_dhd_pub_t->up && (hw_dhd_pub_t->op_mode & DHD_FLAG_STA_MODE)) {
+    if ((hw_dhd_pub_t != NULL) && hw_dhd_pub_t->up) {
+        if (on && (hw_dhd_pub_t->op_mode & DHD_FLAG_STA_MODE)) {
             return net_hw_set_filter_enable(hw_dhd_pub_t, on);
         } else if (!on) {
             return net_hw_set_filter_enable(hw_dhd_pub_t, on);

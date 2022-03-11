@@ -17,6 +17,7 @@
 #include "lcdkit_fb_util.h"
 #endif
 #include "lcdkit_tp.h"
+#include <huawei_platform/inputhub/sensor_feima_ext.h>
 
 
 extern struct ts_kit_platform_data g_ts_kit_platform_data;
@@ -29,6 +30,15 @@ char read_temp[20]={0};
 int g_max_backlight_from_app = MAX_BACKLIGHT_FROM_APP;
 int g_min_backlight_from_app = MIN_BACKLIGHT_FROM_APP;
 struct timer_list backlight_second_timer;
+
+#define SET_SCHED_PRIO 60
+/* chrt -p pid(android.hardware.graphics.composer@2.2-service) */
+#define RESTORE_SCHED_PRIO 2
+
+#define _FIRST_VBAT_DELAY_US 80
+#define _VBAT_DISABLE_DELAY_US 10
+#define _VBAT_ENABLE_DELAY_US 300
+#define _VBAT_DELAY_TIMES 50
 
 /* for backlight print count when power on*/
 #define BACKLIGHT_PRINT_TIMES	10
@@ -272,7 +282,8 @@ static __maybe_unused int lcdkit_enter_ulps(struct hisi_fb_data_type* hisifd)
 static bool lcdkit_get_proxmity_enable(void)
 {
 	g_lcd_prox_enable = tp_get_prox_status();
-	LCDKIT_INFO("The g_lcd_prox_enable is %d when lcd off!\n", g_lcd_prox_enable);
+	LCDKIT_INFO("[Proximity_feature] The g_lcd_prox_enable is %d when lcd off!\n",
+		g_lcd_prox_enable);
 	return g_lcd_prox_enable;
 }
 
@@ -536,8 +547,8 @@ void lcdkit_backlight_bias_ic_power_on(void)
             }
             if(lcdkit_info.panel_infos.lcd_bl_gpio_ctrl_mode)
             {
-                if(lcdkit_info.panel_infos.lcd_suspend_bl_disable)
-                {
+				if ((lcdkit_info.panel_infos.lcd_suspend_bl_disable)
+					&& (!(tmp->bl_ic_en_gpio_disable))) {
                     gpio_cmds_tx(lcdkit_bl_request_cmds,ARRAY_SIZE(lcdkit_bl_request_cmds));
                     gpio_cmds_tx(lcdkit_bl_enable_cmds,ARRAY_SIZE(lcdkit_bl_enable_cmds));
                 }
@@ -564,8 +575,8 @@ void lcdkit_backlight_ic_power_on(void)
             }
             if(lcdkit_info.panel_infos.lcd_bl_gpio_ctrl_mode)
             {
-                if(lcdkit_info.panel_infos.lcd_suspend_bl_disable)
-                {
+				if ((lcdkit_info.panel_infos.lcd_suspend_bl_disable)
+					&& (!(tmp->bl_ic_en_gpio_disable))) {
                      gpio_cmds_tx(lcdkit_bl_request_cmds,ARRAY_SIZE(lcdkit_bl_request_cmds));
                      gpio_cmds_tx(lcdkit_bl_enable_cmds,ARRAY_SIZE(lcdkit_bl_enable_cmds));
                 }
@@ -591,8 +602,8 @@ static void lcdkit_backlight_ic_power_off(void)
         lcdkit_backlight_ic_disable_device();
         if(lcdkit_info.panel_infos.lcd_bl_gpio_ctrl_mode)
         {
-            if(lcdkit_info.panel_infos.lcd_suspend_bl_disable)
-            {
+			if ((lcdkit_info.panel_infos.lcd_suspend_bl_disable)
+				&& (!(tmp->bl_ic_en_gpio_disable))) {
                 gpio_cmds_tx(lcdkit_bl_disable_cmds, ARRAY_SIZE(lcdkit_bl_disable_cmds));
                 gpio_cmds_tx(lcdkit_bl_free_cmds, ARRAY_SIZE(lcdkit_bl_free_cmds));
             }
@@ -1017,6 +1028,153 @@ static int lcdkit_check_reg_on(struct hisi_fb_data_type* hisifd)
 #endif
 }
 
+static void lcdkit_set_thp_proximity_sem(bool sem_lock)
+{
+	if (!lcdkit_info.panel_infos.thp_proximity_support)
+		return;
+	if (sem_lock == TRUE)
+		down(&lcdkit_info.panel_infos.thp_second_poweroff_sem);
+	else
+		up(&lcdkit_info.panel_infos.thp_second_poweroff_sem);
+}
+
+/*
+ * name: lcdkit_set_thp_proximity_state
+ * function: set panel power state
+ */
+static void lcdkit_set_thp_proximity_state(int power_state)
+{
+	if (!lcdkit_info.panel_infos.thp_proximity_support)
+		return;
+	lcdkit_info.panel_infos.panel_power_state = power_state;
+}
+
+/*
+ * name: lcdkit_reset_power_proc
+ * function: lcd reset power down
+ */
+static void lcdkit_reset_power_proc(struct platform_device *pdev)
+{
+	LCDKIT_INFO("lcd reset power down!\n");
+	gpio_cmds_tx(lcdkit_gpio_reset_low_cmds,
+		ARRAY_SIZE(lcdkit_gpio_reset_low_cmds));
+	msleep(lcdkit_info.panel_infos.delay_af_rst_off);
+	gpio_cmds_tx(lcdkit_gpio_reset_free_cmds,
+		ARRAY_SIZE(lcdkit_gpio_reset_free_cmds));
+	pinctrl_cmds_tx(pdev, lcdkit_pinctrl_low_cmds,
+		ARRAY_SIZE(lcdkit_pinctrl_low_cmds));
+}
+
+/*
+ * name: lcdkit_bias_power_proc
+ * function: lcd vsp&vsn power down
+ */
+static void lcdkit_bias_power_proc(struct platform_device *pdev)
+{
+	LCDKIT_INFO("bias power down!\n");
+	if (lcdkit_bias_is_gpio_ctrl_power()) {
+		lcdkit_pull_down_boost();
+		gpio_cmds_tx(lcdkit_bias_disable_cmds,
+			ARRAY_SIZE(lcdkit_bias_disable_cmds));
+		gpio_cmds_tx(lcdkit_bias_free_cmds,
+			ARRAY_SIZE(lcdkit_bias_free_cmds));
+	} else if (lcdkit_bias_is_ic_ctrl_power()) {
+		gpio_cmds_tx(lcdkit_bias_disable_cmds,
+			ARRAY_SIZE(lcdkit_bias_disable_cmds));
+		gpio_cmds_tx(lcdkit_bias_free_cmds,
+			ARRAY_SIZE(lcdkit_bias_free_cmds));
+	} else if (lcdkit_bias_is_regulator_ctrl_power()) {
+		vcc_cmds_tx(pdev, lcdkit_scharger_bias_disable_cmds,
+			ARRAY_SIZE(lcdkit_scharger_bias_disable_cmds));
+	}
+}
+
+/*
+ * name: lcdkit_iovcc_power_proc
+ * function: lcd iovcc power down
+ */
+static void lcdkit_iovcc_power_proc(struct platform_device *pdev)
+{
+	LCDKIT_INFO("iovcc power down!\n");
+	if (lcdkit_iovcc_is_regulator_ctrl_power()) {
+		vcc_cmds_tx(pdev, lcdkit_io_vcc_disable_cmds,
+			ARRAY_SIZE(lcdkit_io_vcc_disable_cmds));
+	} else if (lcdkit_iovcc_is_gpio_ctrl_power()) {
+		gpio_cmds_tx(lcdkit_iovcc_disable_cmds,
+			ARRAY_SIZE(lcdkit_iovcc_disable_cmds));
+		gpio_cmds_tx(lcdkit_iovcc_free_cmds,
+			ARRAY_SIZE(lcdkit_iovcc_free_cmds));
+	}
+	msleep(lcdkit_info.panel_infos.delay_af_iovcc_off);
+}
+
+/*
+ * name: lcdkit_proximity_poweroff
+ * function: panel power off  for proximity disable
+ */
+int lcdkit_proximity_poweroff(void)
+{
+	struct hisi_fb_data_type *hisifd = NULL;
+	struct hisi_panel_info *pinfo = NULL;
+	struct platform_device *pdev = NULL;
+
+	LCDKIT_INFO("[Proximity_feature] lcdkit_proximity_poweroff enter!\n");
+	if (!lcdkit_info.panel_infos.thp_proximity_support)
+		return -EINVAL;
+	lcdkit_get_pdev(&pdev);
+	if (pdev == NULL)
+		return -EINVAL;
+	hisifd = platform_get_drvdata(pdev);
+	if (hisifd == NULL)
+		return -EINVAL;
+	pinfo = &(hisifd->panel_info);
+	down(&lcdkit_info.panel_infos.thp_second_poweroff_sem);
+	if (lcdkit_info.panel_infos.panel_power_state == POWER_ON ||
+		g_tskit_pt_station_flag) {
+		LCDKIT_INFO("[Proximity_feature] power on state exit!\n");
+		up(&lcdkit_info.panel_infos.thp_second_poweroff_sem);
+		return -EINVAL;
+	}
+	if (lcdkit_info.panel_infos.panel_power_state == POWER_TS_SUSPEND) {
+		LCDKIT_INFO("[Proximity_feature] power off suspend state exit!\n");
+		up(&lcdkit_info.panel_infos.thp_second_poweroff_sem);
+		return 0;
+	}
+	if (g_lcd_prox_enable == FALSE) {
+		LCDKIT_INFO("[Proximity_feature] power have been off exit!\n");
+		up(&lcdkit_info.panel_infos.thp_second_poweroff_sem);
+		return -EINVAL;
+	}
+	g_lcd_prox_enable = FALSE;
+	/* lcd reset gpio low */
+	lcdkit_reset_power_proc(pdev);
+	/* vsp&vsn disable */
+	lcdkit_bias_power_proc(pdev);
+	/* lcd iovcc disable */
+	lcdkit_iovcc_power_proc(pdev);
+	if (pinfo->bl_ic_ctrl_mode == COMMON_IC_MODE)
+		lcdkit_backlight_ic_power_off();
+	up(&lcdkit_info.panel_infos.thp_second_poweroff_sem);
+	LCDKIT_INFO("[Proximity_feature] lcdkit_proximity_poweroff exit\n");
+	return 0;
+}
+
+static void lcdkit_set_schedprio(int prio)
+{
+	int ret;
+	struct sched_param parm;
+	/* set high prio */
+	memset(&parm, 0, sizeof(struct sched_param));
+	parm.sched_priority = prio;
+	ret = sched_setscheduler(current,
+			SCHED_FIFO | SCHED_RESET_ON_FORK, &parm);
+	if (ret)
+		LCDKIT_ERR("set thread schedule priority failed:%d.\n",
+			parm.sched_priority);
+	else
+		LCDKIT_INFO("set prio = %d\n", prio);
+}
+
 /*
 *name:lcdkit_on
 *function:power on panel
@@ -1076,14 +1234,21 @@ static int lcdkit_on(struct platform_device* pdev)
         }
     }
 
-    if (pinfo->lcd_init_step == LCD_INIT_POWER_ON)
-    {
+	if (pinfo->lcd_init_step == LCD_INIT_POWER_ON) {
+		lcdkit_set_thp_proximity_sem(TRUE);
+		lcdkit_set_thp_proximity_state(POWER_ON);
       if(CHECKED_ERROR == mipi_lcdkit_btb_check()) {
         LCDKIT_ERR("btb checked failed!");
       }
       if (lcdkit_info.panel_infos.panel_display_on_new_seq)
         lcdkit_display_on_new_seq_set_delay_time();
       LOG_JANK_D(JLID_KERNEL_LCD_POWER_ON, "%s", "LCD_POWER_ON");
+		if (lcdkit_info.panel_infos.lcd_poweron_after_bl == 1) {
+			/* set sched prio for boe hx8279d */
+			lcdkit_set_schedprio(SET_SCHED_PRIO);
+			if (pinfo->bl_ic_ctrl_mode == COMMON_IC_MODE)
+				lcdkit_backlight_ic_power_on();
+		}
       if ((!lcdkit_is_enter_sleep_mode()) && (!g_lcd_prox_enable))
       {
         if(pinfo->bl_ic_ctrl_mode == COMMON_IC_MODE)
@@ -1231,15 +1396,16 @@ static int lcdkit_on(struct platform_device* pdev)
                 //The function for novatck ic, reset must low to up for quit deep sleep
                 gpio_cmds_tx(lcdkit_gpio_reset_low_cmds, \
                         ARRAY_SIZE(lcdkit_gpio_reset_low_cmds));
-                msleep(lcdkit_info.panel_infos.delay_af_rst_off);
+                mdelay(lcdkit_info.panel_infos.reset_L);
                 gpio_cmds_tx(lcdkit_gpio_reset_high_cmds, \
                         ARRAY_SIZE(lcdkit_gpio_reset_high_cmds));
             }
       }
-      if(pinfo->bl_ic_ctrl_mode == COMMON_IC_MODE)
-      {
-	        lcdkit_backlight_ic_power_on();
-      }
+		if (pinfo->bl_ic_ctrl_mode == COMMON_IC_MODE &&
+			lcdkit_info.panel_infos.lcd_poweron_after_bl != 1)
+			lcdkit_backlight_ic_power_on();
+
+      lcdkit_set_thp_proximity_sem(FALSE);
       pinfo->lcd_init_step = LCD_INIT_MIPI_LP_SEND_SEQUENCE;
     }
     else if (pinfo->lcd_init_step == LCD_INIT_MIPI_LP_SEND_SEQUENCE)
@@ -1265,9 +1431,24 @@ lp_sequence_restart:
                 mdelay(lcdkit_info.panel_infos.delay_af_tp_reset);
             }
         }
+
+        if (ts_kit_gesture_func == true) {
+            if (lcdkit_info.panel_infos.tddi_tp_gesture_sequence_flag) {
+                 // gesture need sequence
+                gpio_cmds_tx(g_lcdkit_gpio_rst_gesture_low_cmds, \
+                    ARRAY_SIZE(g_lcdkit_gpio_rst_gesture_low_cmds));
+            }
+        }
         // lcd gpio normal
         if (lcdkit_info.panel_infos.second_reset)
         {
+            if (ts_kit_gesture_func == true) {
+                if (lcdkit_info.panel_infos.tddi_tp_gesture_sequence_flag) {
+                    gpio_cmds_tx(g_lcdkit_tp_rst_gesture_high_cmds, \
+                        ARRAY_SIZE(g_lcdkit_tp_rst_gesture_high_cmds));
+                }
+            }
+
             if(lcdkit_info.panel_infos.reset_pull_high_flag == 1)
             {
                 //the second reset just pull high
@@ -1348,6 +1529,8 @@ lp_sequence_restart:
         else
         {
             lcdkit_info.lcdkit_on_cmd(hisifd, &lcdkit_info.panel_infos.display_on_cmds);
+			if (lcdkit_info.panel_infos.lcd_poweron_after_bl == 1)
+				lcdkit_set_schedprio(RESTORE_SCHED_PRIO);
 
             if (lcdkit_info.panel_infos.dsi1_snd_cmd_panel_support) {
                 mdelay(lcdkit_info.panel_infos.delay_af_display_on);
@@ -1440,8 +1623,13 @@ lp_sequence_restart:
         LCDKIT_ERR("failed to init lcd!\n");
     }
 
-    // backlight on
-    hisi_lcd_backlight_on(pdev);
+	if (lcdkit_info.panel_infos.lcd_poweron_after_bl == 1) {
+		if (pinfo->lcd_init_step != LCD_INIT_MIPI_LP_SEND_SEQUENCE)
+			hisi_lcd_backlight_on(pdev);
+	} else {
+		// backlight on
+		hisi_lcd_backlight_on(pdev);
+	}
 
     if (lcdkit_is_oled_panel())
     {
@@ -1467,6 +1655,105 @@ static void lcdkit_remove_shield_backlight(void)
 		del_timer(&backlight_second_timer);
 		lcdkit_info.panel_infos.bl_is_start_second_timer = false;
 		LCDKIT_INFO("panel powerOff, clear backlight shield timer.\n");
+	}
+}
+
+static void vbat_powerdown_pwm(void)
+{
+	int disable_delay = _VBAT_DISABLE_DELAY_US;
+	int enable_delay = _VBAT_ENABLE_DELAY_US;
+	int first_vbat_delay = _FIRST_VBAT_DELAY_US;
+	int times = _VBAT_DELAY_TIMES;
+	int i = 0;
+
+	if (lcdkit_info.panel_infos.lcd_poweron_after_bl == 0 ||
+		!lcdkit_vbat_is_gpio_ctrl_power()) {
+		LCDKIT_ERR("error do nothing\n");
+		return;
+	}
+
+	if (!strncmp(lcdkit_info.panel_infos.panel_name,
+		"BOE_HX8279D NEW 10p1 VIDEO IPS 1200 x 1920",
+		strlen(lcdkit_info.panel_infos.panel_name))) {
+		LCDKIT_INFO("new hx ic vabat off!\n");
+		gpio_cmds_tx(lcdkit_vbat_disable_cmds,
+			ARRAY_SIZE(lcdkit_vbat_disable_cmds));
+	} else {
+		LCDKIT_INFO("first delay:%d disable:%d enable:%d times:%d\n",
+			first_vbat_delay, disable_delay, enable_delay, times);
+		gpio_cmds_tx(lcdkit_vbat_disable_cmds_1,
+			ARRAY_SIZE(lcdkit_vbat_disable_cmds_1));
+		udelay(first_vbat_delay);
+		for (i = 0; i < times; i++) {
+			gpio_cmds_tx(lcdkit_vbat_enable_cmds,
+				ARRAY_SIZE(lcdkit_vbat_enable_cmds));
+			udelay(enable_delay);
+			gpio_cmds_tx(lcdkit_vbat_disable_cmds_1,
+				ARRAY_SIZE(lcdkit_vbat_disable_cmds_1));
+			udelay(disable_delay);
+		}
+	}
+
+	LCDKIT_INFO("delay_af_vbat_off:%d vbat off done\n",
+		lcdkit_info.panel_infos.delay_af_vbat_off);
+
+	gpio_cmds_tx(lcdkit_vbat_free_cmds,
+		ARRAY_SIZE(lcdkit_vbat_free_cmds));
+	if (lcdkit_info.panel_infos.delay_af_vbat_off > 0)
+		msleep(lcdkit_info.panel_infos.delay_af_vbat_off);
+}
+
+static void lcdkit_iovcc_vbat_off(struct platform_device *pdev)
+{
+	if (lcdkit_info.panel_infos.lcd_poweron_after_bl == 1) {
+		// 3.1v for boe hx8279d
+		if (!g_lcdkit_pri_info.power_off_simult_support) {
+			// lcd vcc disable
+			if (lcdkit_iovcc_is_regulator_ctrl_power()) {
+				vcc_cmds_tx(pdev, lcdkit_io_vcc_disable_cmds,
+					ARRAY_SIZE(lcdkit_io_vcc_disable_cmds));
+			} else if (lcdkit_iovcc_is_gpio_ctrl_power()) {
+				gpio_cmds_tx(lcdkit_iovcc_disable_cmds_1,
+					ARRAY_SIZE(lcdkit_iovcc_disable_cmds_1));
+				gpio_cmds_tx(lcdkit_iovcc_free_cmds,
+					ARRAY_SIZE(lcdkit_iovcc_free_cmds));
+			}
+		}
+
+		udelay(lcdkit_info.panel_infos.delay_af_iovcc_off);
+		LCDKIT_INFO("delay_af_iovcc_off: %d\n",
+			lcdkit_info.panel_infos.delay_af_iovcc_off);
+		// 3.3v for boe hx8279d
+		if (!lcdkit_info.panel_infos.rst_after_vbat_flag)
+			vbat_powerdown_pwm();
+	} else {
+		if (!lcdkit_info.panel_infos.rst_after_vbat_flag) {
+			if (lcdkit_vbat_is_gpio_ctrl_power()) {
+				gpio_cmds_tx(lcdkit_vbat_disable_cmds,
+					ARRAY_SIZE(lcdkit_vbat_disable_cmds));
+				gpio_cmds_tx(lcdkit_vbat_free_cmds,
+					ARRAY_SIZE(lcdkit_vbat_free_cmds));
+			}
+			msleep(lcdkit_info.panel_infos.delay_af_vbat_off);
+		}
+
+		if (!g_lcdkit_pri_info.power_off_simult_support) {
+			// lcd vcc disable
+			if (lcdkit_iovcc_is_regulator_ctrl_power()) {
+				vcc_cmds_tx(pdev, lcdkit_io_vcc_disable_cmds,
+					ARRAY_SIZE(lcdkit_io_vcc_disable_cmds));
+			} else if (lcdkit_iovcc_is_gpio_ctrl_power()) {
+				gpio_cmds_tx(lcdkit_iovcc_disable_cmds,
+					ARRAY_SIZE(lcdkit_iovcc_disable_cmds));
+				gpio_cmds_tx(lcdkit_iovcc_free_cmds,
+					ARRAY_SIZE(lcdkit_iovcc_free_cmds));
+			}
+		}
+
+		if (lcdkit_info.panel_infos.delay_af_iovcc_off > 0)
+			msleep(lcdkit_info.panel_infos.delay_af_iovcc_off);
+		else
+			LCDKIT_INFO("No delay after iovcc off !\n");
 	}
 }
 
@@ -1513,7 +1800,7 @@ static int lcdkit_off(struct platform_device* pdev)
     }
 
     pinfo = &(hisifd->panel_info);
-
+    lcdkit_set_thp_proximity_sem(TRUE);
     if (pinfo->lcd_uninit_step == LCD_UNINIT_MIPI_HS_SEND_SEQUENCE)
     {
         if(lcdkit_info.panel_infos.mipi_check_support){
@@ -1523,6 +1810,8 @@ static int lcdkit_off(struct platform_device* pdev)
 		if (g_tskit_ic_type) {
 			lcdkit_notifier_call_chain(LCDKIT_TS_EARLY_SUSPEND, NULL);
 		}
+		if (lcdkit_info.panel_infos.lcd_poweron_after_bl == 1)
+			lcdkit_set_schedprio(SET_SCHED_PRIO);
         // backlight off
         hisi_lcd_backlight_off(pdev);
 	if ( g_tskit_ic_type && lcdkit_info.panel_infos.tp_before_lcdsleep) {
@@ -1558,6 +1847,7 @@ static int lcdkit_off(struct platform_device* pdev)
         }
 
         pinfo->lcd_uninit_step = LCD_UNINIT_MIPI_LP_SEND_SEQUENCE;
+        lcdkit_set_thp_proximity_state(POWER_TS_SUSPEND);
     }
     else if (pinfo->lcd_uninit_step == LCD_UNINIT_MIPI_LP_SEND_SEQUENCE)
     {
@@ -1570,7 +1860,7 @@ static int lcdkit_off(struct platform_device* pdev)
     else if (pinfo->lcd_uninit_step == LCD_UNINIT_POWER_OFF)
     {
     msleep(5);
-
+    lcdkit_set_thp_proximity_state(POWER_OFF);
     if ((!lcdkit_get_proxmity_enable()) && (!lcdkit_is_enter_sleep_mode()))
     {
         //if(g_ts_kit_platform_data.chip_data->is_parade_solution)
@@ -1678,36 +1968,7 @@ static int lcdkit_off(struct platform_device* pdev)
                             ARRAY_SIZE(lcdkit_pinctrl_low_cmds));
         }
         msleep(lcdkit_info.panel_infos.delay_af_rst_off);
-        if(!lcdkit_info.panel_infos.rst_after_vbat_flag)
-        {
-            if ( lcdkit_vbat_is_gpio_ctrl_power())
-            {
-                gpio_cmds_tx(lcdkit_vbat_disable_cmds, \
-                        ARRAY_SIZE(lcdkit_vbat_disable_cmds));
-                gpio_cmds_tx(lcdkit_vbat_free_cmds, ARRAY_SIZE(lcdkit_vbat_free_cmds));
-            }
-            msleep(lcdkit_info.panel_infos.delay_af_vbat_off);
-        }
-		if (!g_lcdkit_pri_info.power_off_simult_support) {
-			//lcd vcc disable
-			if (lcdkit_iovcc_is_regulator_ctrl_power())
-			{
-				vcc_cmds_tx(pdev, lcdkit_io_vcc_disable_cmds,
-						ARRAY_SIZE(lcdkit_io_vcc_disable_cmds));
-			}
-			else if ( lcdkit_iovcc_is_gpio_ctrl_power())
-			{
-				gpio_cmds_tx(lcdkit_iovcc_disable_cmds, \
-						ARRAY_SIZE(lcdkit_iovcc_disable_cmds));
-				gpio_cmds_tx(lcdkit_iovcc_free_cmds, ARRAY_SIZE(lcdkit_iovcc_free_cmds));
-			}
-		}
-
-        if (lcdkit_info.panel_infos.delay_af_iovcc_off > 0) {
-                msleep(lcdkit_info.panel_infos.delay_af_iovcc_off);
-        } else {
-                LCDKIT_INFO("No delay after iovcc off !\n");
-        }
+		lcdkit_iovcc_vbat_off(pdev);
 
         if ( HYBRID ==  g_tskit_ic_type || AMOLED == g_tskit_ic_type )
         {
@@ -1746,6 +2007,21 @@ static int lcdkit_off(struct platform_device* pdev)
                     ARRAY_SIZE(lcdkit_gpio_reset_low_cmds));
         }
 
+        if (ts_kit_gesture_func == true) {
+            if (lcdkit_info.panel_infos.tddi_tp_gesture_sequence_flag) {
+                 /* notify early suspend */
+                lcdkit_notifier_call_chain(LCDKIT_TS_BEFORE_SUSPEND, \
+                    &data_for_notify_early_suspend);
+                 /* notify suspend */
+                lcdkit_notifier_call_chain(LCDKIT_TS_SUSPEND_DEVICE, \
+                    &data_for_notify_suspend);
+
+                if (pinfo->bl_ic_ctrl_mode == COMMON_IC_MODE) {
+                    lcdkit_backlight_ic_power_off();
+                }
+            }
+        }
+
             // lcd reset gpio free
             gpio_cmds_tx(lcdkit_gpio_reset_free_cmds, \
                 ARRAY_SIZE(lcdkit_gpio_reset_free_cmds));
@@ -1767,14 +2043,15 @@ static int lcdkit_off(struct platform_device* pdev)
             g_last_fps_scence = 0;
             pinfo->fps_updt_panel_only = 0;
         }
+		if (lcdkit_info.panel_infos.lcd_poweron_after_bl == 1)
+			lcdkit_set_schedprio(RESTORE_SCHED_PRIO);
     }
     else
     {
         LCDKIT_ERR("failed to uninit lcd!\n");
     }
 
-    //if(lcdkit_is_oled_panel())
-    //  amoled_irq_disable();
+    lcdkit_set_thp_proximity_sem(FALSE);
     LCDKIT_INFO("fb%d, -!\n", hisifd->index);
     return 0;
 }
@@ -1872,6 +2149,7 @@ static int lcdkit_set_backlight(struct platform_device* pdev, uint32_t bl_level)
     static uint32_t last_bl = 0;
     static int count = 0;
     struct hisi_panel_info* pinfo = NULL;
+    static uint32_t mipi_level;
 
     if (NULL == pdev)
     {
@@ -2065,6 +2343,7 @@ static int lcdkit_set_backlight(struct platform_device* pdev, uint32_t bl_level)
                    hisifd->index, hisifd->panel_info.bl_set_type);
     }
 
+    save_light_to_sensorhub(mipi_level, bl_level);
     LCDKIT_DEBUG("fb%d, -.\n", hisifd->index);
 
     return ret;
@@ -3213,6 +3492,8 @@ static int __init lcdkit_probe(struct platform_device* pdev)
     /*init sem*/
     sema_init(&lcdkit_info.panel_infos.bl_sem, 1);
     sema_init(&lcdkit_info.panel_infos.lcdkit_cmd_sem, 1);
+    sema_init(&lcdkit_info.panel_infos.thp_second_poweroff_sem, 1);
+    lcdkit_info.panel_infos.panel_power_state = POWER_ON;
     pdev->id = 1;
 
     if (runmode_is_factory())

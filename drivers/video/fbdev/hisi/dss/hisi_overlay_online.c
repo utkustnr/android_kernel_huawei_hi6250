@@ -462,8 +462,6 @@ static void hisifb_mask_layer_backlight_config(struct hisi_fb_data_type *hisifd,
 	dss_overlay_t *pov_req, bool *masklayer_maxbacklight_flag)
 {
 	struct hisi_fb_panel_data *pdata = NULL;
-	static bool need_max_bl_delay = true;
-	static bool need_min_bl_delay = true;
 	int mask_delay_time_before_fp = 0;
 	int mask_delay_time_after_fp = 0;
 	int vsync_delay_th = 0;
@@ -490,7 +488,8 @@ static void hisifb_mask_layer_backlight_config(struct hisi_fb_data_type *hisifd,
 	vsync_delay_time_fp = pdata->panel_info->vsync_delay_time_fp;
 
 	if ((pov_req->mask_layer_exist) && !(pov_req_prev->mask_layer_exist) && (pdata->lcd_set_backlight_by_type_func)) {
-		HISI_FB_INFO("max backlight %d %d, need_max_bl_delay=%d mask_delay_time_before_fp =%d.\n", pov_req_prev->mask_layer_exist, pov_req->mask_layer_exist, need_max_bl_delay,mask_delay_time_before_fp);
+		HISI_FB_INFO("max backlight %d %d, mask_delay_time_before_fp =%d.\n",
+                        pov_req_prev->mask_layer_exist, pov_req->mask_layer_exist, mask_delay_time_before_fp);
 
 		time_after_last_te = ktime_to_ns(ktime_get()) - ktime_to_ns(hisifd->te_timestamp);
 
@@ -502,35 +501,47 @@ static void hisifb_mask_layer_backlight_config(struct hisi_fb_data_type *hisifd,
 		}
 
 		if ((time_after_last_te - time_after_last_te /one_te_interval * one_te_interval) > delay_threshold) {
-			HISI_FB_INFO("isr_te_vsync:frame_no = %d, interval = %d us\n", hisifd->ov_req.frame_no, (time_after_last_te - time_after_last_te /one_te_interval * one_te_interval)/1000);
+			HISI_FB_INFO("isr_te_vsync:frame_no = %d, interval = %d us\n", hisifd->ov_req.frame_no,
+                                (time_after_last_te - time_after_last_te /one_te_interval * one_te_interval)/1000);
 			usleep_range(6000,6000);
 		}
 
 		pdata->lcd_set_backlight_by_type_func(hisifd->pdev, 1);
-		if (need_max_bl_delay) {
-			usleep_range(mask_delay_time_before_fp, mask_delay_time_before_fp);
-			need_max_bl_delay = false;
-		}
-		need_min_bl_delay = true;
+		usleep_range(mask_delay_time_before_fp, mask_delay_time_before_fp);
 		*masklayer_maxbacklight_flag = true;
 	}
 
 	if ((pov_req_prev->mask_layer_exist) && !(pov_req->mask_layer_exist) && (pdata->lcd_set_backlight_by_type_func)) {
-		HISI_FB_INFO("min backlight %d %d, need_min_bl_delay=%d mask_delay_time_after_fp =%d .\n", pov_req_prev->mask_layer_exist, pov_req->mask_layer_exist, need_min_bl_delay,mask_delay_time_after_fp);
+		HISI_FB_INFO("min backlight %d %d, mask_delay_time_after_fp =%d .\n",
+                        pov_req_prev->mask_layer_exist, pov_req->mask_layer_exist, mask_delay_time_after_fp);
 
 		time_after_last_te = ktime_to_ns(ktime_get()) - ktime_to_ns(hisifd->te_timestamp);
 		if ((time_after_last_te - time_after_last_te /one_te_interval * one_te_interval) > delay_threshold) {
-			HISI_FB_INFO("isr_te_vsync:frame_no = %d, interval = %d us\n", hisifd->ov_req.frame_no, (time_after_last_te - time_after_last_te /one_te_interval * one_te_interval)/1000);
+			HISI_FB_INFO("isr_te_vsync:frame_no = %d, interval = %d us\n", hisifd->ov_req.frame_no,
+                                (time_after_last_te - time_after_last_te /one_te_interval * one_te_interval)/1000);
 			usleep_range(6000,6000);
 		}
 
 		pdata->lcd_set_backlight_by_type_func(hisifd->pdev, 2);
-		if (need_min_bl_delay) {
-			usleep_range(mask_delay_time_after_fp, mask_delay_time_after_fp);
-			need_min_bl_delay = false;
-		}
-		need_max_bl_delay = true;
+		usleep_range(mask_delay_time_after_fp, mask_delay_time_after_fp);
 		*masklayer_maxbacklight_flag = false;
+	}
+}
+
+static void hisifb_dc_backlight_config(struct hisi_fb_data_type *hisifd) {
+	if (hisifd->de_info.amoled_param.DC_Brightness_Dimming_Enable_Real !=
+		hisifd->de_info.amoled_param.DC_Brightness_Dimming_Enable &&
+		hisifd->dirty_region_updt_enable == 0 &&
+		dc_switch_xcc_updated) {
+		hisifd->de_info.amoled_param.DC_Brightness_Dimming_Enable_Real =
+			hisifd->de_info.amoled_param.DC_Brightness_Dimming_Enable;
+		hisifd->de_info.blc_enable = blc_enable_delayed;
+		hisifd->de_info.blc_delta = delta_bl_delayed;
+		down(&hisifd->brightness_esd_sem);
+		hisifb_set_backlight(hisifd, hisifd->bl_level, true);
+		up(&hisifd->brightness_esd_sem);
+		usleep_range(hisifd->de_info.amoled_param.DC_Backlight_Delayus,
+			hisifd->de_info.amoled_param.DC_Backlight_Delayus);
 	}
 }
 
@@ -830,6 +841,8 @@ int hisi_ov_online_play(struct hisi_fb_data_type *hisifd, void __user *argp)
 	hisi_drm_layer_online_config(hisifd, pov_req_prev, pov_req);
 
 	hisifb_mask_layer_backlight_config(hisifd, pov_req_prev, pov_req, &masklayer_maxbacklight_flag);
+
+	hisifb_dc_backlight_config(hisifd);
 
 	wait_pdp_isr_vactive0_end_handle(hisifd);
 

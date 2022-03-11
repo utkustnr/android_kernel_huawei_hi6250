@@ -794,6 +794,20 @@ static irqreturn_t pn547_dev_irq_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+// hide bank card number
+uint16_t nfc_check_number(const char *string, uint16_t len)
+{
+	uint16_t i;
+	if (string == NULL)
+		return 0;
+	for (i = 0; i < len; i++) {
+		if (string[i] > '9' || string[i] < '0') // '9' & '0' means char must between 1-9
+			return 0;
+	}
+	return 1; // 1 means success
+}
+// end
+
 static ssize_t pn547_dev_read(struct file *filp, char __user *buf,
 		size_t count, loff_t *offset)
 {
@@ -804,6 +818,8 @@ static ssize_t pn547_dev_read(struct file *filp, char __user *buf,
 	int i;
 	int retry;
 	bool isSuccess = false;
+	uint16_t buffer_count;
+	uint16_t tmp_length;
 
 	if (count > MAX_BUFFER_SIZE) {
 		count = MAX_BUFFER_SIZE;
@@ -847,6 +863,19 @@ static ssize_t pn547_dev_read(struct file *filp, char __user *buf,
 			snprintf(&tmpStr[i * 2], 3, "%02X", tmp[i]);
 		}
 
+		// hide bank card number,'6'&'2' means card number head
+		buffer_count = count * 2 + 1; // 2 means ascii length of char, 1 means '\0'
+		tmp_length = sizeof(tmp) * 2 + 1; // 2 means ascii length of char, 1 means '\0'
+		if (buffer_count > MIN_NCI_CMD_LEN_WITH_BANKCARD_NUM) {
+			for (i = NCI_CMD_HEAD_OFFSET; i < buffer_count - BANKCARD_NUM_LEN; i += BANKCARD_NUM_HEAD_LEN) {
+				if ((*(tmpStr + i) == '6') && (*(tmpStr + i + 1) == '2') &&
+					((i + BANKCARD_NUM_OVERRIDE_OFFSET) < tmp_length) &&
+					nfc_check_number(tmpStr + i + BANKCARD_NUM_HEAD_LEN, BANKCARD_NUM_VALUE_LEN)) {
+					memcpy(tmpStr + i + BANKCARD_NUM_OVERRIDE_OFFSET, "XXXXXXXX", BANKCARD_NUM_OVERRIDE_LEN);
+				}
+			}
+		}
+		// end
 		hwlog_info("%s : retry = %d, ret = %d, count = %3d > %s\n", __func__, retry, ret, (int)count, tmpStr);
 
 		if (ret == (int)count) {

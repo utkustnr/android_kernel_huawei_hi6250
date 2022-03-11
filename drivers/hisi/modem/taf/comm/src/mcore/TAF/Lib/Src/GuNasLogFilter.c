@@ -148,6 +148,9 @@ VOS_CHAR*                                       g_apcATFileterTable[]=
         "AT^CRLA"           ,
         "\r\n^CRLA:"        ,
         "\r\n^USIMICCID:"   ,
+        "\r\nRING"          ,
+        "\r\n+CRING"        ,
+        "\r\nIRING"         ,
 
         /* ∂Ã–≈œ‡πÿ */
         "AT+CMGS"           ,

@@ -67,6 +67,7 @@ static u8 *spi_sync_tx_buf = NULL;
 static u8 *spi_sync_rx_buf = NULL;
 static u8 is_fw_update;
 static bool g_thp_prox_enable;
+static bool onetime_poweroff_done;
 static struct hw_comm_pmic_cfg_t tp_pmic_ldo_set;
 
 #if defined (CONFIG_TEE_TUI)
@@ -606,6 +607,18 @@ static void thp_set_irq_status(struct thp_core_data *cd, int status)
 	mutex_unlock(&cd->irq_mutex);
 };
 
+/*
+ * This function is called for recording the system time when tp
+ * receive the suspend cmd from lcd driver for proximity feature.
+ */
+static void thp_prox_suspend_record_time(struct thp_core_data *cd)
+{
+	do_gettimeofday(&cd->tp_suspend_record_tv);
+	THP_LOG_INFO("[Proximity_feature] TP early suspend at %ld secs %ld microseconds\n",
+		cd->tp_suspend_record_tv.tv_sec,
+		cd->tp_suspend_record_tv.tv_usec);
+}
+
 static int thp_suspend(struct thp_core_data *cd)
 {
 	if (cd->suspended) {
@@ -614,12 +627,18 @@ static int thp_suspend(struct thp_core_data *cd)
 	}
 
 	cd->suspended = true;
-	if (cd->need_work_in_suspend) {
-		THP_LOG_INFO("[Proximity_feature] %s: Enter prximity mode, no need suspend!\n",
-			__func__);
-		return 0;
+	/*
+	 * to avoid easy_wakeup_info.sleep_mode being changed during suspend,
+	 * assign cd->sleep_mode to easy_wakeup_info.sleep_mode once
+	 */
+	cd->easy_wakeup_info.sleep_mode = cd->sleep_mode;
+	if (cd->proximity_support == PROX_SUPPORT) {
+		if (cd->need_work_in_suspend) {
+			THP_LOG_INFO("[Proximity_feature] %s: Enter prximity mode, no need suspend!\n",
+				__func__);
+			return 0;
+		}
 	}
-
 	if (cd->easy_wakeup_info.sleep_mode == TS_GESTURE_MODE &&
 		cd->support_gesture_mode) {
 		cd->thp_dev->ops->suspend(cd->thp_dev);
@@ -655,6 +674,8 @@ static int thp_resume(struct thp_core_data *cd)
 
 	if (cd->proximity_support == PROX_SUPPORT) {
 		g_thp_prox_enable = cd->prox_cache_enable;
+		onetime_poweroff_done = false;
+		cd->early_suspended = false;
 		THP_LOG_INFO("[Proximity_feature] %s: update g_thp_prox_enable to %d!\n",
 			__func__, g_thp_prox_enable);
 	}
@@ -696,18 +717,22 @@ static int thp_lcdkit_notifier_callback(struct notifier_block* self,
 			THP_LOG_INFO("%s: early suspend\n", __func__);
 			thp_set_status(THP_STATUS_POWER, THP_SUSPEND);
 		} else {
-			THP_LOG_INFO("%s: early suspend! g_thp_prox_enable = %d\n", __func__, g_thp_prox_enable);
+			thp_prox_suspend_record_time(cd);
+			THP_LOG_INFO("%s:early suspend!g_thp_prox_enable=%d\n",
+				__func__, g_thp_prox_enable);
 			cd->need_work_in_suspend = g_thp_prox_enable;
 			cd->prox_cache_enable = g_thp_prox_enable;
+			cd->early_suspended = true;
 			if (cd->need_work_in_suspend)
-				thp_set_status(THP_STATUS_AFE_PROXIMITY, THP_PROX_ENTER);
+				thp_set_status(THP_STATUS_AFE_PROXIMITY,
+					THP_PROX_ENTER);
 			else
 				thp_set_status(THP_STATUS_POWER, THP_SUSPEND);
 		}
 		break;
 
 	case LCDKIT_TS_SUSPEND_DEVICE:
-		THP_LOG_DEBUG("%s: suspend\n", __func__);
+		THP_LOG_INFO("%s: suspend\n", __func__);
 		thp_clean_fingers();
 		break;
 
@@ -1811,6 +1836,7 @@ static struct thp_ic_name thp_ic_table[] = {
 	{"77", "novatech"},
 	{"86", "synaptics"},
 	{"88", "novatech"},
+	{ "91", "synaptics" },
 };
 
 static int thp_projectid_to_vender_name(char *project_id,
@@ -2186,6 +2212,7 @@ static int thp_core_init(struct thp_core_data *cd)
 	cd->prox_cache_enable = false;
 	cd->need_work_in_suspend = false;
 	g_thp_prox_enable = false;
+	onetime_poweroff_done = false;
 
 #if defined(CONFIG_HUAWEI_DSM)
 	if (cd->ic_name)
@@ -2745,13 +2772,95 @@ int is_tp_detected(void)
 	int ret = TP_DETECT_SUCC;
 	struct thp_core_data *cd = thp_get_core_data();
 
+	if (!cd) {
+		THP_LOG_ERR("%s: thp_core_data is not inited\n", __func__);
+		return TP_DETECT_FAIL;
+	}
 	if (!atomic_read(&cd->register_flag))
 		ret = TP_DETECT_FAIL;
 
-	THP_LOG_INFO("[Proximity_feature] %s : Check if tp is in place, ret = %d\n", __func__, ret);
+	THP_LOG_INFO("[Proximity_feature] %s : Check if tp is in place, ret = %d\n",
+		__func__, ret);
 	return ret;
 }
 
+/*
+ * Here to count the period of time which is from suspend to a new
+ * disable status, if the period is less than 1000ms then call lcdkit
+ * power off, otherwise bypass the additional power off.
+ */
+static bool thp_prox_timeout_check(struct thp_core_data *cd)
+{
+	long delta_time;
+	struct timeval tv;
+
+	memset(&tv, 0, sizeof(tv));
+	do_gettimeofday(&tv);
+	THP_LOG_INFO("[Proximity_feature] check time at %ld seconds %ld microseconds\n",
+		tv.tv_sec, tv.tv_usec);
+	/* multiply 1000000 to transfor second to us */
+	delta_time = (tv.tv_sec - cd->tp_suspend_record_tv.tv_sec) * 1000000 +
+		tv.tv_usec - cd->tp_suspend_record_tv.tv_usec;
+	/* divide 1000 to transfor sec to us to ms */
+	delta_time /= 1000;
+	THP_LOG_INFO("[Proximity_feature] delta_time = %ld ms\n", delta_time);
+	if (delta_time >= AFTER_SUSPEND_TIME)
+		return true;
+	else
+		return false;
+}
+
+/*
+ * After lcd driver complete the additional power down,calling this function
+ * do something for matching current power status. Such as updating the
+ * proximity switch status, sending the screen_off cmd to tp daemon, pulling
+ * down the gpios and so on.
+ */
+static void thp_prox_add_suspend(struct thp_core_data *cd, bool enable)
+{
+	THP_LOG_INFO("[Proximity_feature] %s call enter\n", __func__);
+	/* update the control status based on proximity switch */
+	cd->need_work_in_suspend = enable;
+	/* notify daemon to do screen off cmd */
+	thp_set_status(THP_STATUS_POWER, THP_SUSPEND);
+	/* notify daemon to do proximity off cmd */
+	thp_set_status(THP_STATUS_AFE_PROXIMITY, THP_PROX_EXIT);
+	/* pull down the gpio pin */
+	gpio_set_value(cd->thp_dev->gpios->rst_gpio, 0);
+	gpio_set_value(cd->thp_dev->gpios->cs_gpio, 0);
+	/* disable the irq */
+	if (cd->open_count)
+		thp_set_irq_status(cd, THP_IRQ_DISABLE);
+	cd->work_status = SUSPEND_DONE;
+	/* clean the fingers */
+	thp_clean_fingers();
+	THP_LOG_INFO("[Proximity_feature] %s call exit\n", __func__);
+}
+
+/*
+ * In this function, increasing some judgements, only meet these
+ * conditions then the additional power off will be called.
+ */
+static void thp_prox_add_poweroff(struct thp_core_data *cd, bool enable)
+{
+	if ((enable == false) && (onetime_poweroff_done == false)) {
+		onetime_poweroff_done = true;
+		if (thp_prox_timeout_check(cd)) {
+			THP_LOG_INFO("[Proximity_feature] timeout, bypass poweroff\n");
+			return;
+		}
+#ifdef CONFIG_LCDKIT_DRIVER
+		if (!lcdkit_proximity_poweroff())
+			thp_prox_add_suspend(cd, enable);
+#endif
+	}
+}
+
+/*
+ * This function receive the proximity switch status and save it for
+ *  controlling power operation or cmds transferring to daemon
+ * (proximity_on or scrren_off).
+ */
 int thp_set_prox_switch_status(bool enable)
 {
 #ifdef CONFIG_INPUTHUB_20
@@ -2759,6 +2868,11 @@ int thp_set_prox_switch_status(bool enable)
 	int report_value[PROX_VALUE_LEN] = {0};
 #endif
 	struct thp_core_data *cd = thp_get_core_data();
+
+	if (!cd) {
+		THP_LOG_ERR("%s: thp_core_data is not inited\n", __func__);
+		return 0;
+	}
 	if (!atomic_read(&cd->register_flag))
 		return 0;
 
@@ -2771,15 +2885,17 @@ int thp_set_prox_switch_status(bool enable)
 		THP_LOG_INFO("[Proximity_feature] %s: default report [far] event!\n",
 			__func__);
 #endif
-		thp_set_status(THP_STATUS_TOUCH_APPROACH, !!enable);
-		if (cd->suspended == false) {
+		thp_set_status(THP_STATUS_TOUCH_APPROACH, enable);
+		if (cd->early_suspended == false) {
 			g_thp_prox_enable = enable;
-			THP_LOG_INFO("[Proximity_feature] %s :(1) Update g_thp_prox_enable to %d in screen on!\n",
+			THP_LOG_INFO("[Proximity_feature] %s: 1.Update g_thp_prox_enable to %d in screen on!\n",
 				__func__, g_thp_prox_enable);
 		} else {
 			cd->prox_cache_enable = enable;
-			THP_LOG_INFO("[Proximity_feature] %s :(2) Update prox_cache_enable to %d in screen off!\n",
+			THP_LOG_INFO("[Proximity_feature] %s: 2.Update prox_cache_enable to %d in screen off!\n",
 				__func__, cd->prox_cache_enable);
+			/* When disable proximity after suspend, call power off once */
+			thp_prox_add_poweroff(cd, enable);
 		}
 		return 0;
 	}
@@ -2788,10 +2904,18 @@ int thp_set_prox_switch_status(bool enable)
 	return 0;
 }
 
+/*
+ * This function is supplied for lcd driver to get the current proximity status
+ * when lcdkit go to power off, and use this status to contorl power.
+ */
 bool thp_get_prox_switch_status(void)
 {
 	struct thp_core_data *cd = thp_get_core_data();
 
+	if (!cd) {
+		THP_LOG_ERR("%s: thp_core_data is not inited\n", __func__);
+		return 0;
+	}
 	if (cd->proximity_support == PROX_SUPPORT) {
 		THP_LOG_INFO("[Proximity_feature] %s: need_work_in_suspend = %d!\n",
 			__func__, cd->need_work_in_suspend);

@@ -2012,7 +2012,11 @@ static int focal_suspend(void)
 				focal_power_off();
 			} else {
 				/*goto sleep mode*/
-				focal_sleep_mode_in();
+				if (g_focal_dev_data->ic_type != FOCAL_FT8201) {
+					focal_sleep_mode_in();
+				} else {
+					gpio_direction_output(reset_gpio, 0);
+				}
 			}
 			focal_pinctrl_select_suspend();
 			break;
@@ -2120,15 +2124,21 @@ static int focal_resume(void)
 				gpio_direction_output(reset_gpio, 1);
 			} else {
 				/*exit sleep mode*/
-				ret = focal_gpio_reset();
-				if(NO_ERR != ret){
-					TS_LOG_ERR("%s, %d: have error\n", __func__, __LINE__);
+				if (g_focal_dev_data->ic_type != FOCAL_FT8201) {
+					ret = focal_gpio_reset();
+					if(NO_ERR != ret)
+						TS_LOG_ERR("%s, %d: have error\n", __func__, __LINE__);
+				} else {
+					/* ft8201 is incell ic,lcd sequence just need set reset gpio high */
+					gpio_direction_output(reset_gpio, 1);
 				}
 			}
 			break;
 		case TS_GESTURE_MODE:
-			focal_put_device_outof_easy_wakeup();
-			ret = focal_gpio_reset();
+			if (g_focal_dev_data->ic_type != FOCAL_FT8201) {
+				focal_put_device_outof_easy_wakeup();
+				ret = focal_gpio_reset();
+			}
 			if(NO_ERR != ret){
 				TS_LOG_DEBUG("%s: have error\n", __func__);
 			}
@@ -2233,6 +2243,8 @@ static int focal_after_resume(void *feature_info)
 	/*ft8201 lcd and tp need 300ms for fw load time,lcd set 35ms,tp need 265ms*/
 	if(FOCAL_FT8201 == g_focal_dev_data->ic_type){
 		msleep(FTS_SLEEP_TIME_265);
+		if (g_focal_pdata->focal_device_data->easy_wakeup_info.sleep_mode == TS_GESTURE_MODE)
+			focal_put_device_outof_easy_wakeup();
 	}
 
 	if (TS_BUS_SPI == g_focal_dev_data->ts_platform_data->bops->btype) {

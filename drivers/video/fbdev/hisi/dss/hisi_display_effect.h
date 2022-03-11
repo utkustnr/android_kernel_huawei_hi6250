@@ -83,7 +83,9 @@
 #define LG_NT36772A_RGBW_ID          8
 #define LG_NT36772A_RGBW_ID_HMA          12
 #define BOE_HX83112E_RGBW_ID_HMA          13
-
+extern const int JDI_TD4336_RT8555_RGBW_ID;
+extern const int SHARP_TD4336_RT8555_RGBW_ID;
+extern const int LG_NT36772A_RT8555_RGBW_ID;
 /*
 *1542 = gamma_r + gamma_g + gamma_b = (257 + 257 + 257) * sizeof(u16);
 *1542 = degamma_r + degamma_g + degamma_b = (257 + 257 +257) * sizeof(u16);
@@ -156,6 +158,11 @@ typedef struct dss_display_effect_metadata {
 	int count;
 	struct mutex ctrl_lock;
 } dss_display_effect_metadata_t;
+
+typedef struct dss_display_effect_xcc {
+	uint32_t xcc_enable;
+	int xcc_table[12];
+} dss_display_effect_xcc_t;
 
 typedef struct display_engine_info {
 	bool is_ready;
@@ -366,6 +373,7 @@ int hisi_effect_lcp_info_set(struct hisi_fb_data_type *hisifd, struct lcp_info *
 int hisi_effect_gmp_info_set(struct hisi_fb_data_type *hisifd, struct lcp_info *lcp_src);
 int hisi_effect_igm_info_set(struct hisi_fb_data_type *hisifd, struct lcp_info *lcp_src);
 int hisi_effect_xcc_info_set(struct hisi_fb_data_type *hisifd, struct lcp_info *lcp_src);
+int hisi_effect_xcc_info_set_kernel(struct hisi_fb_data_type *hisifd, struct dss_display_effect_xcc *lcp_src);
 
 int hisi_effect_gamma_info_set(struct hisi_fb_data_type *hisifd, struct gamma_info *gamma);
 

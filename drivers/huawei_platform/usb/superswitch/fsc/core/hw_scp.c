@@ -665,7 +665,7 @@ static int FUSB3601_fcp_get_adapter_output_vol(int *vol)
   Return:        0: success
                 -1: fail
 ***************************************************************************/
-static int FUSB3601_fcp_set_adapter_output_vol(int *output_vol)
+static int FUSB3601_fcp_set_adapter_output_vol(int output_vol)
 {
     int val = 0;
     int vol = 0;
@@ -680,20 +680,34 @@ static int FUSB3601_fcp_set_adapter_output_vol(int *output_vol)
     }
     hwlog_info("%s: id out reg[0x4] = %d.\n", __func__, val);
 
-    /*get adapter max output vol value*/
-    ret = FUSB3601_fcp_get_adapter_output_vol(&vol);
-    if(ret < 0)
-    {
-        hwlog_err("%s: fcp get adapter output vol err.\n", __func__);
-        return -1;
-    }
+	switch (output_vol) {
+	case FCP_OUTPUT_VOL_5V:
+		ret = FUSB3601_accp_adapter_reg_read(&vol,
+			FCP_SLAVE_REG_DISCRETE_OUT_V(0));
+		if (ret < 0) {
+			hwlog_err("%s get output_vol error\n", __func__);
+			return -1;
+		}
+		break;
+	case FCP_OUTPUT_VOL_9V:
+		/* get adapter max output vol value */
+		ret = FUSB3601_fcp_get_adapter_output_vol(&vol);
+		if (ret < 0) {
+			hwlog_err("%s: fcp get adapter output vol err\n",
+				__func__);
+			return -1;
+		}
+		if (vol > (FCP_OUTPUT_VOL_9V * FCP_VOL_STEP)) {
+			vol = FCP_OUTPUT_VOL_9V * FCP_VOL_STEP;
+			hwlog_info("limit adap to 9V, while support 12V\n");
+		}
+		break;
+	default:
+		hwlog_err("input val is invalid\n");
+		return -1;
+	}
 
-    /* PLK only support 5V/9V */
-    if(vol > FCP_OUTPUT_VOL_9V * FCP_VOL_STEP)
-    {
-        vol = FCP_OUTPUT_VOL_9V * FCP_VOL_STEP;
-    }
-    *output_vol = vol/FCP_VOL_STEP;
+	hwlog_info("%s: output_vol=%d\n", __func__, vol);
 
     /*retry if write fail */
     ret |= FUSB3601_accp_adapter_reg_write(vol, FCP_SLAVE_REG_VOUT_CONFIG);

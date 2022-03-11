@@ -37,6 +37,7 @@
 #define WL_TX_VIN_MIN                                 (4500) /* mV */
 #define WL_TX_VIN_MAX                                 (5800) /* mV */
 #define WL_TX_VIN_RETRY_CNT                           (25)
+#define WL_TX_VIN_RETRY_CNT1                          10
 #define WL_TX_VIN_RETRY_CNT2                          (250)
 #define WL_TX_VIN_SLEEP_TIME                          (20)
 #define WL_TX_IIN_SAMPLE_LEN                          (10)
@@ -49,6 +50,7 @@
 #define WL_TX_IIN_LOW                                 (300) /* mA */
 #define WL_TX_IIN_LOW_CNT                             (30*60*1000) /* 30min */
 #define WL_TX_MODE_ERR_CNT                            (10)
+#define WL_TX_MODE_ERR_CNT1                           3
 #define WL_TX_MODE_ERR_CNT2                           (20)
 #define WL_TX_5VBST_MIN_FOP                           (138) /* kHz */
 
@@ -149,6 +151,7 @@ struct wireless_tx_device_ops {
 	int (*get_tx_ping_interval)(u16 *);
 	bool (*check_rx_disconnect)(void);
 	bool (*in_tx_mode)(void);
+	int (*set_tx_open_flag)(bool);
 };
 
 struct wireless_tx_device_info {
@@ -182,8 +185,14 @@ extern void wireless_tx_restart_check(enum wireless_tx_pwr_sw_scene);
 extern int wireless_tx_get_tx_iin_limit(enum huawei_usb_charger_type);
 extern bool wltx_need_disable_wired_dc(void);
 #ifdef CONFIG_WIRELESS_CHARGER
-extern bool wireless_tx_get_tx_open_flag(void);
+bool wireless_is_in_tx_mode(void);
+bool wireless_tx_get_tx_open_flag(void);
 #else
+static inline bool wireless_is_in_tx_mode(void)
+{
+	return false;
+}
+
 static inline bool wireless_tx_get_tx_open_flag(void)
 {
 	return false;

@@ -71,6 +71,14 @@ struct ion_secsg_heap {
 	size_t heap_size;
 	/* heap allocated size*/
 	unsigned long alloc_size;
+	/* heap alloc cma size */
+	unsigned long cma_alloc_size;
+	/* worker to asynchronously do cma alloc fill pool */
+	struct work_struct pre_alloc_work;
+	/* pre alloc attr */
+	u32 pre_alloc_attr;
+	/* pre alloc mutex */
+	struct mutex pre_alloc_mutex;
 	/* heap flag */
 	u64 flag;
 	u64 per_alloc_sz;
@@ -133,6 +141,7 @@ int __secsg_alloc_scatter(struct ion_secsg_heap *secsg_heap,
 			  struct ion_buffer *buffer, unsigned long size);
 void __secsg_free_scatter(struct ion_secsg_heap *secsg_heap,
 			  struct ion_buffer *buffer);
+void secsg_pre_alloc_wk_func(struct work_struct *work);
 int secsg_map_iommu(struct ion_secsg_heap *secsg_heap,
 		    struct ion_buffer *buffer,
 		    struct ion_iommu_map *map_data);

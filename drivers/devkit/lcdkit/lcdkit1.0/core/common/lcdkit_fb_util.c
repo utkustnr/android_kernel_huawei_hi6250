@@ -156,6 +156,7 @@ static ssize_t lcdkit_lcd_cabc_mode_store(struct device* dev,
     if(lcdkit_info->panel_infos.cabc_support)
     {
         ret = lcd_cabc_mode_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -214,6 +215,7 @@ static ssize_t lcdkit_lcd_inversion_mode_store(struct device* dev,
     if(lcdkit_info->panel_infos.inversion_support)
     {
         ret = lcd_inversion_mode_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
     return count;
 
@@ -270,6 +272,7 @@ static ssize_t lcdkit_lcd_scan_mode_store(struct device* dev,
     if(lcdkit_info->panel_infos.scan_support)
     {
         ret = lcd_scan_mode_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -355,6 +358,7 @@ static ssize_t lcdkit_lcd_gram_check_store(struct device* dev,
     if(lcdkit_info->panel_infos.checksum_support)
     {
         ret = lcd_gram_check_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -405,6 +409,7 @@ static ssize_t lcdkit_dynamic_sram_check_store(struct device* dev,
     if(lcdkit_info->panel_infos.dynamic_sram_check_support)
     {
         ret = lcd_dynamic_sram_check_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -461,6 +466,7 @@ static ssize_t lcdkit_ic_color_enhancement_mode_store(struct device* dev,
     if(lcdkit_info->panel_infos.ic_color_enhancement_support)
     {
         ret = lcd_ic_color_enhancement_mode_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -517,6 +523,7 @@ static ssize_t lcdkit_sleep_ctrl_store(struct device* dev,
     if(lcdkit_info->panel_infos.PT_test_support)
     {
         ret = lcd_sleep_ctrl_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -562,6 +569,7 @@ static ssize_t lcdkit_lp2hs_mipi_check_store(struct device* dev,
     if(lcdkit_info->panel_infos.lp2hs_mipi_check_support)
     {
         ret = lcd_lp2hs_mipi_check_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -671,6 +679,7 @@ static ssize_t lcdkit_lcd_hkadc_debug_store(struct device* dev,
     if (lcdkit_info->lcdkit_hkadc_debug_store && lcdkit_info->panel_infos.hkadc_support)
     {
         ret = lcdkit_info->lcdkit_hkadc_debug_store(buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -691,6 +700,7 @@ static ssize_t  lcdkit_lcd_voltage_enable_store(struct device* dev,
     }
 
     ret = lcd_voltage_mode_enable_store(dev, lcdkit_info, buf);
+    LCDKIT_DEBUG("ret = %d\n", ret);
 
     return count;
 }
@@ -764,6 +774,7 @@ static ssize_t lcdkit_amoled_acl_ctrl_store(struct device* dev,
     if(lcdkit_info->panel_infos.acl_ctrl_support)
     {
         ret = lcd_acl_ctrl_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -814,6 +825,7 @@ static ssize_t lcdkit_amoled_vr_mode_store(struct device* dev,
     if(lcdkit_info->panel_infos.vr_support)
     {
         ret = lcd_amoled_vr_mode_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -865,6 +877,7 @@ static ssize_t lcdkit_amoled_hbm_ctrl_store(struct device* dev,
     if(lcdkit_info->panel_infos.hbm_ctrl_support)
     {
         ret = lcd_hbm_ctrl_store(dev, lcdkit_info, buf);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
 
     return count;
@@ -916,6 +929,7 @@ static ssize_t lcdkit_lcd_support_mode_store(struct device* dev,
     }
 
     ret = lcd_support_mode_store(dev, lcdkit_info, buf);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -930,6 +944,7 @@ static ssize_t lcdkit_comform_mode_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_comform_mode_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -944,6 +959,7 @@ static ssize_t lcdkit_cinema_mode_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_cinema_mode_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -982,6 +998,7 @@ static ssize_t lcdkit_led_rg_lcd_color_temperature_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = led_rg_lcd_color_temperature_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -996,6 +1013,7 @@ static ssize_t lcdkit_lcd_ce_mode_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_ce_mode_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 
 }
@@ -1011,6 +1029,7 @@ static ssize_t lcdkit_effect_al_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = effect_al_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 
 }
@@ -1052,6 +1071,7 @@ static ssize_t lcdkit_effect_sre_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_effect_sre_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 
 }
@@ -1073,6 +1093,7 @@ static ssize_t lcdkit_effect_bl_enable_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = effect_bl_enable_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 
 }
@@ -1088,6 +1109,7 @@ static ssize_t lcdkit_effect_metadata_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = effect_metadata_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 
 }
@@ -1103,6 +1125,7 @@ static ssize_t lcdkit_gamma_dynamic_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = gamma_dynamic_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 
 }
@@ -1117,6 +1140,7 @@ static ssize_t lcdkit_2d_sharpness_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_2d_sharpness_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -1131,6 +1155,7 @@ static ssize_t lcdkit_acm_state_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_acm_state_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -1146,6 +1171,7 @@ static ssize_t lcdkit_lcd_gmp_state_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_gmp_state_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -1160,6 +1186,7 @@ static ssize_t lcdkit_sbl_ctrl_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = sbl_ctrl_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -1174,6 +1201,7 @@ static ssize_t lcdkit_color_temperature_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_color_temperature_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -1194,6 +1222,7 @@ static ssize_t  lcdkit_lcd_frame_update_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_frame_update_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -1208,6 +1237,7 @@ static ssize_t lcdkit_mipi_dsi_bit_clk_upt_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = mipi_dsi_bit_clk_upt_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -1222,6 +1252,7 @@ static ssize_t lcdkit_lcd_fps_scence_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_fps_scence_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -1310,6 +1341,7 @@ static ssize_t lcdkit_alpm_setting_store(struct device* dev,
 	if(lcdkit_info->panel_infos.aod_support)
     {
         ret = alpm_setting_store(dev, attr, buf, count);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
     return count;
 }
@@ -1325,6 +1357,7 @@ static ssize_t lcdkit_lcd_func_switch_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_func_switch_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 static ssize_t lcdkit_lcd_dynamic_porch_show(struct device* dev,
@@ -1338,6 +1371,7 @@ static ssize_t lcdkit_lcd_dynamic_porch_store(struct device* dev,
 {
     ssize_t ret = 0;
     ret = lcd_dynamic_porch_store(dev, attr, buf, count);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 static ssize_t lcdkit_test_config_show(struct device* dev,
@@ -1380,6 +1414,7 @@ static ssize_t lcdkit_test_config_store(struct device* dev,
     }
 
     ret = lcd_test_config_store(dev, lcdkit_info, buf);
+    LCDKIT_DEBUG("ret = %d\n", ret);
 
     return count;
 }
@@ -1474,6 +1509,7 @@ static ssize_t lcdkit_reg_read_store(struct device* dev,
         return 0;
     }
     ret = lcd_reg_read_store(dev, lcdkit_info, buf);
+    LCDKIT_DEBUG("ret = %d\n", ret);
     return count;
 }
 
@@ -1517,6 +1553,7 @@ static ssize_t lcdkit_ddic_oem_info_store(struct device* dev,
     }
 
     ret = lcd_ddic_oem_info_store(dev, lcdkit_info, buf);
+    LCDKIT_DEBUG("ret = %d\n", ret);
 
     return count;
 }

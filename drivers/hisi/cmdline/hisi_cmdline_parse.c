@@ -6,13 +6,17 @@
 #include "securec.h"
 
 /* Format of hex string: 0x12345678 */
-#define RUNMODE_FLAG_NORMAL  0
-#define RUNMODE_FLAG_FACTORY 1
-#define HEX_STRING_MAX  (10)
-#define TRANSFER_BASE    (16)
+#define RUNMODE_FLAG_NORMAL         0
+#define RUNMODE_FLAG_FACTORY        1
+#define HEX_STRING_MAX              10
+#define TRANSFER_BASE               16
+#define ASW_PROTECT_FLAG_INVALID    (-1)
+#define ASW_PROTECT_VOLT_INVALID    (-1)
+#define ASW_PROTECT_BACKUP_INVALID  (-1)
 
 static unsigned int hisi_platform_product_id = 0xFFFFFFFF;
 static unsigned int runmode_factory = RUNMODE_FLAG_NORMAL;
+
 
 static int __init early_parse_runmode_cmdline(char *p)
 {
@@ -228,6 +232,7 @@ static int __init early_parse_pdcharge_cmdline(char *p)
 }
 
 early_param("androidboot.mode", early_parse_pdcharge_cmdline);
+
 
 unsigned int get_pd_charge_flag(void)
 {

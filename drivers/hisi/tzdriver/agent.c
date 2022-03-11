@@ -324,6 +324,24 @@ struct __smc_event_data *find_event_control(unsigned int agent_id)
 
 	return tmp_data;
 }
+
+static void release_shared_mem_by_addr(TC_NS_DEV_File *dev_file, void *kernel_addr)
+{
+	TC_NS_Shared_MEM *shared_mem = NULL;
+	TC_NS_Shared_MEM *shared_mem_temp = NULL;
+
+	mutex_lock(&dev_file->shared_mem_lock);
+	list_for_each_entry_safe(shared_mem, shared_mem_temp,
+		&dev_file->shared_mem_list, head) {
+		if (shared_mem != NULL && shared_mem->kernel_addr == kernel_addr) {
+			if (atomic_read(&shared_mem->usage) == 1)
+				list_del(&shared_mem->head);
+			break;
+		}
+	}
+	mutex_unlock(&dev_file->shared_mem_lock);
+}
+
 static void free_event_control(unsigned int agent_id)
 {
 	struct __smc_event_data *event_data = NULL;
@@ -340,12 +358,57 @@ static void free_event_control(unsigned int agent_id)
 	spin_unlock_irqrestore(&agent_control.lock, flags);
 	if (event_data != NULL) {
 		/* Release the share memory obtained in TC_NS_register_agent() */
+		if (event_data->buffer != NULL)
+			release_shared_mem_by_addr(event_data->owner, event_data->buffer->kernel_addr);
 		put_sharemem_struct(event_data->buffer);
 		put_agent_event(event_data);
 	}
 }
 
+static void wait_agent_response(struct __smc_event_data *event_data)
+{
+	/* only userspace CA need freeze */
+	bool need_freeze = !(current->flags & PF_KTHREAD);
+	bool sig_pending = !sigisemptyset(&current->pending.signal);
+	bool answered = true;
 
+	do {
+		answered = true;
+		/*
+		 * wait_event_freezable will be interrupted by signal and freezer
+		 which is called to free a userspace task in suspend. Freezing
+		 * a task means wakeup a task by fake_signal_wake_up and let it
+		 * have an opportunity to enter into 'refrigerator' by try_to_freeze
+		 * used in wait_event_freezable.
+		 *
+		 * What scenes can be freezed ?
+		 * 1. CA is waiting agent -> suspend -- OK
+		 * 2. suspend -> CA start agent request -- OK
+		 * 3. CA is waiting agent -> CA is killed -> suspend  -- NOK
+		 */
+		if (need_freeze && !sig_pending) {
+			int r = wait_event_freezable(event_data->ca_pending_wq,
+				atomic_read(&event_data->ca_run));
+			if (r == -ERESTARTSYS) {
+				if (!sigisemptyset(&current->pending.signal))
+					sig_pending = true;
+				tloge("agent wait event is interrupted by %s\n",
+					sig_pending ? "signal" : "freezer");
+				/*
+				 * When freezing a userspace task, fake_signal_wake_up only set
+				 * TIF_SIGPENDING but not set a real signal. After task thawed,
+				 * CA need wait agent response again, so TIF_SIGPENDING need to
+				 * be cleared.
+				 */
+				if (!sig_pending)
+					clear_thread_flag(TIF_SIGPENDING);
+				answered = false;
+			}
+		} else {
+			wait_event(event_data->ca_pending_wq, atomic_read(&event_data->ca_run));
+		}
+	} while (!answered);
+}
 int agent_process_work(const TC_NS_SMC_CMD *smc_cmd, unsigned int agent_id)
 {
 	struct __smc_event_data *event_data = NULL;
@@ -382,8 +445,7 @@ int agent_process_work(const TC_NS_SMC_CMD *smc_cmd, unsigned int agent_id)
 
 	tlogd("agent 0x%x request, goto sleep, pe->run=%d\n",
 		agent_id, atomic_read(&event_data->ca_run));
-	/* we need to wait agent work done even if CA receive a signal */
-	wait_event(event_data->ca_pending_wq, atomic_read(&event_data->ca_run));
+	wait_agent_response(event_data);
 	atomic_set(&event_data->ca_run, 0);
 	put_agent_event(event_data);
 

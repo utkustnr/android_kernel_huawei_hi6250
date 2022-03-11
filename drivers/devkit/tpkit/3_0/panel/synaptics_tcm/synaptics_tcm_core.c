@@ -475,9 +475,9 @@ static int synaptics_tcm_chip_get_capacitance_test_type(struct ts_test_type_info
 	}
 	switch (info->op_action) {
 		case TS_ACTION_READ:
-			memcpy(info->tp_test_type,
-					tcm_hcd->syna_tcm_chip_data->tp_test_type,
-					TS_CAP_TEST_TYPE_LEN);
+			strncpy(info->tp_test_type,
+				tcm_hcd->syna_tcm_chip_data->tp_test_type,
+				TS_CAP_TEST_TYPE_LEN - 1);
 			TS_LOG_INFO("read_chip_get_test_type=%s, \n",
 					info->tp_test_type);
 			break;

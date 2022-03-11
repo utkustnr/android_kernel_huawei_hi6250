@@ -56,7 +56,7 @@ config ANDROID_BINDER_IPC_SELFTEST
 
 config HW_BINDER_FG_REQ_FIRST
 	bool "Huawei Binder Proceed Foreground Request First"
-	depends on ANDROID_BINDER_IPC && HW_VIP_THREAD
+	depends on ANDROID_BINDER_IPC && (HW_VIP_THREAD||HW_QOS_THREAD)
 	default n
 	---help---
 	  Enable binder optimization of Huawei.

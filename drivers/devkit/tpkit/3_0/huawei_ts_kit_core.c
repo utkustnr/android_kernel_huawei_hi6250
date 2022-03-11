@@ -55,6 +55,10 @@
 #include <uapi/linux/sched/types.h>
 #endif
 
+#ifdef CONFIG_HUAWEI_DEVKIT_HISI
+#include <huawei_platform/sensor/hw_comm_pmic.h>
+#endif
+
 #define SCHEDULE_DELAY_MILLiSECOND      200
 #define PROJECT_ID_LEN  10
 #define TS_GAMMA_DATA_LEN 146
@@ -84,6 +88,10 @@ struct ts_tui_data tee_tui_data;
 EXPORT_SYMBOL(tee_tui_data);
 #endif
 u8 g_ts_kit_log_cfg = 0;
+
+#ifdef CONFIG_HUAWEI_DEVKIT_HISI
+static struct hw_comm_pmic_cfg_t tp_pmic_ldo_set;
+#endif
 
 static struct ts_cmd_node ping_cmd_buff;
 static struct ts_cmd_node pang_cmd_buff;
@@ -2722,6 +2730,9 @@ static void ts_boot_detection(void)
 	struct ts_kit_device_data *dev = g_ts_kit_platform_data.chip_data;
 	if(dev->ops->chip_boot_detection && g_ts_kit_platform_data.chip_data->boot_detection_flag) {
 		value = dev->ops->chip_boot_detection();
+		if (value)
+			TS_LOG_ERR("%s: chip_boot_detection error: %d\n",
+				__func__, value);
 	}
 	return;
 }
@@ -3944,6 +3955,17 @@ int ts_kit_power_supply_get(enum ts_kit_power_id power_id)
 			return ret;
 		}
 		break;
+	case TS_KIT_POWER_PMIC:
+#ifdef CONFIG_HUAWEI_DEVKIT_HISI
+		tp_pmic_ldo_set.pmic_num =  power->pmic_power.pmic_num;
+		tp_pmic_ldo_set.pmic_power_type =  power->pmic_power.ldo_num;
+		tp_pmic_ldo_set.pmic_power_voltage = power->pmic_power.value;
+		TS_LOG_INFO("%s call %d,%d,%d\n", __func__,
+			tp_pmic_ldo_set.pmic_num,
+			tp_pmic_ldo_set.pmic_power_type,
+			tp_pmic_ldo_set.pmic_power_voltage);
+#endif
+		break;
 	default:
 		TS_LOG_ERR("%s: invalid power type %d\n", __func__, power->type);
 		return -EINVAL;
@@ -3976,6 +3998,9 @@ int ts_kit_power_supply_put(enum ts_kit_power_id power_id)
 	case TS_KIT_POWER_GPIO:
 		gpio_direction_output(power->gpio, 0);
 		gpio_free(power->gpio);
+		break;
+	case TS_KIT_POWER_PMIC:
+		TS_LOG_ERR("%s:release power\n", __func__);
 		break;
 	default:
 		TS_LOG_ERR("%s: invalid power type %d\n", __func__, power->type);
@@ -4017,6 +4042,15 @@ int ts_kit_power_supply_ctrl(enum ts_kit_power_id power_id, int status, unsigned
 		gpio_direction_output(power->gpio, status ? 1 : 0);
 		break;
 #endif
+	case TS_KIT_POWER_PMIC:
+#ifdef CONFIG_HUAWEI_DEVKIT_HISI
+		tp_pmic_ldo_set.pmic_power_state = (status ? 1 : 0);
+		rc = hw_pmic_power_cfg(TP_PMIC_REQ, &tp_pmic_ldo_set);
+		if (rc)
+			TS_LOG_ERR("%s:pmic %s failed, %d\n", __func__,
+				ts_kit_power_id2name(power_id), rc);
+#endif
+		break;
 	default:
 		TS_LOG_ERR("%s: invalid power type %d\n", __func__, power->type);
 		return -EINVAL;
@@ -4028,7 +4062,46 @@ int ts_kit_power_supply_ctrl(enum ts_kit_power_id power_id, int status, unsigned
 	return rc;
 }
 
-#define POWER_CONFIG_NAME_MAX 20
+#define POWER_CONFIG_NAME_MAX 30
+
+static void ts_kit_paser_pmic_power(struct device_node *chip_node,
+	struct ts_kit_platform_data *cd,
+	int power_id)
+{
+	const char *power_name = NULL;
+	char config_name[POWER_CONFIG_NAME_MAX] = {0};
+	struct ts_kit_power_supply *power = NULL;
+	int rc;
+
+	power_name = ts_kit_power_id2name(power_id);
+	power = &cd->ts_kit_powers[power_id];
+	snprintf(config_name, (POWER_CONFIG_NAME_MAX - 1),
+		"%s-value", power_name);
+	rc = of_property_read_u32(chip_node, config_name,
+		&power->pmic_power.value);
+	if (rc)
+		TS_LOG_ERR("%s:failed to get %s\n",
+			__func__, config_name);
+	snprintf(config_name, (POWER_CONFIG_NAME_MAX - 1),
+		"%s-ldo-num", power_name);
+	rc = of_property_read_u32(chip_node, config_name,
+		&power->pmic_power.ldo_num);
+	if (rc)
+		TS_LOG_ERR("%s:failed to get %s\n",
+			__func__, config_name);
+	snprintf(config_name, (POWER_CONFIG_NAME_MAX - 1),
+		"%s-pmic-num", power_name);
+	rc = of_property_read_u32(chip_node, config_name,
+		&power->pmic_power.pmic_num);
+	if (rc)
+		TS_LOG_ERR("%s:failed to get %s\n",
+			__func__, config_name);
+	TS_LOG_INFO("%s: to get %d, %d,%d\n", __func__,
+		power->pmic_power.ldo_num,
+		power->pmic_power.pmic_num,
+		power->pmic_power.value);
+}
+
 static int ts_kit_parse_one_power(struct device_node *chip_node,
 			struct ts_kit_platform_data *cd,
 			int power_id)
@@ -4065,6 +4138,9 @@ static int ts_kit_parse_one_power(struct device_node *chip_node,
 			TS_LOG_ERR("%s:failed to get %s\n", __func__, config_name);
 			return rc;
 		}
+		break;
+	case TS_KIT_POWER_PMIC:
+		ts_kit_paser_pmic_power(chip_node, cd, power_id);
 		break;
 	default:
 		TS_LOG_ERR("%s: invaild power type %d", __func__, power->type);

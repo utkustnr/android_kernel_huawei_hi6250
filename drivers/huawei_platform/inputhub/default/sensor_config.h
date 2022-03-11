@@ -59,6 +59,7 @@ extern int vishay_vcnl36832_als_flag;
 #define VCNL36658_PARA_SIZE (31)
 #define TSL2591_PARA_SIZE (15)
 #define BH1726_PARA_SIZE (16)
+#define VD6281_PARA_SIZE (8)
 #define MAX_PARA_SIZE (33)
 #define BH1749_PARA_SIZE (27)
 #define ACC_OFFSET_NV_NUM 307
@@ -294,6 +295,13 @@ typedef struct {
 	s16 als_para[MAX_PARA_SIZE];
 } als_para_normal_table;
 
+typedef struct _VD6281_ALS_PARA_TABLE {
+	uint8_t phone_type;
+	uint8_t phone_version;
+	uint8_t tp_manufacture;
+	uint8_t tp_color;
+	s16 vd6281_para[VD6281_PARA_SIZE];
+} VD6281_ALS_PARA_TABLE;
 extern int fill_extend_data_in_dts(struct device_node *dn, const char *name, unsigned char *dest, size_t max_size, int flag);
 extern int mcu_i3c_rw(uint8_t bus_num, uint8_t i2c_add, uint8_t *tx, uint32_t tx_len, uint8_t *rx_out, uint32_t rx_len);
 extern int mcu_i2c_rw(uint8_t bus_num, uint8_t i2c_add, uint8_t *tx, uint32_t tx_len, uint8_t *rx_out, uint32_t rx_len);

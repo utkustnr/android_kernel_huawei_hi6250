@@ -13,6 +13,7 @@
 
 #include "hisi_fb.h"
 #include <linux/leds.h>
+#include "lcdkit_backlight_ic_common.h"
 
 #include <chipset_common/hwzrhung/hung_wp_screen.h>
 
@@ -21,11 +22,16 @@
 static int lcd_backlight_registered;
 static unsigned int is_recovery_mode;
 static int is_no_fastboot_bl_enable;
+static bool bl_slope_status;
 
 unsigned long backlight_duration = (3 * HZ / 60);
 
 extern unsigned int get_boot_into_recovery_flag(void);
 
+bool hisi_get_bl_slope_status(void)
+{
+	return bl_slope_status;
+}
 void hisifb_set_backlight(struct hisi_fb_data_type *hisifd, uint32_t bkl_lvl, bool enforce)
 {
 	struct hisi_fb_panel_data *pdata = NULL;
@@ -61,7 +67,9 @@ void hisifb_set_backlight(struct hisi_fb_data_type *hisifd, uint32_t bkl_lvl, bo
 		}
 
 		hung_wp_screen_setbl(temp);
+		bl_slope_status = true;
 		if (hisifd->backlight.bl_level_old == 0) {
+			bl_slope_status = false;
 			HISI_FB_INFO("backlight level = %d \n", bkl_lvl);
 		}
 		hisifd->bl_level = bkl_lvl;

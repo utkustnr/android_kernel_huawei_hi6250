@@ -21,6 +21,9 @@ static bool power_on_status = false;//false: power off, true:power on
 /*lint -save -e826 -e31 -e485 -e785 -e731 -e846 -e514 -e866 -e30 -e84 -e838 -e64 -e528 -e753 -e749 -e715 -specific(-e826 -e31 -e485 -e785 -e731 -e846 -e514 -e866 -e30 -e84 -e838 -e64 -e528 -e753 -e749 -e715)*/
 //lint -save -e747
 char const* hi556AGASSI2BACK_get_name(hwsensor_intf_t* si);
+#define GPIO_LOW_STATE     0
+#define GPIO_HIGH_STATE    1
+
 int hi556AGASSI2BACK_config(hwsensor_intf_t* si, void  *argp);
 int hi556AGASSI2BACK_power_up(hwsensor_intf_t* si);
 int hi556AGASSI2BACK_power_down(hwsensor_intf_t* si);
@@ -283,6 +286,14 @@ int hi556AGASSI2BACK_match_id(hwsensor_intf_t* si, void * data)
     struct sensor_cfg_data *cdata = NULL;
     int error = 0;
     cam_info("%s enter.", __func__);
+    uint32_t module_id_0 = 0;
+    uint32_t module_id_1 = 0;
+    struct pinctrl_state *pinctrl_def  = NULL;
+    struct pinctrl_state *pinctrl_idle = NULL;
+    struct pinctrl *p    = NULL;
+    static const char * const sensor_name[] = { "hi556AGASSI2BACK", "hi556AGASSI2BACK_HX" };
+    int rc = 0;
+
     if(NULL == si || NULL == data)
     {
         cam_err("%s. si or data is NULL.", __func__);
@@ -301,9 +312,116 @@ int hi556AGASSI2BACK_match_id(hwsensor_intf_t* si, void * data)
         cam_err("%s. failed to memset_s write_data.", __func__);
     }
 
-    strncpy_s(cdata->cfg.name, DEVICE_NAME_SIZE, sensor->board_info->name, DEVICE_NAME_SIZE - 1);
-    cdata->data = sensor->board_info->sensor_index;
-    return 0;
+    if ((strlen(sensor->board_info->name) == strlen(sensor_dts_name)) &&
+            !strncmp(sensor->board_info->name, sensor_dts_name, strlen(sensor_dts_name))) {
+        p = devm_pinctrl_get(s_hi556AGASSI2BACK.dev);
+        if (IS_ERR_OR_NULL(p)) {
+            cam_err("could not get pinctrl.\n");
+            rc = -1;
+            goto matchID_exit;
+        }
+
+        rc = gpio_request(sensor->board_info->gpios[FSIN].gpio, NULL);
+
+        if (rc < 0) {
+            cam_err("%s failed to request gpio[%d]", __func__, sensor->board_info->gpios[FSIN].gpio);
+            rc = -1;
+            goto pinctrl_exit;
+        }
+        cam_info("%s gpio[%d].", __func__, sensor->board_info->gpios[FSIN].gpio);
+
+        pinctrl_def = pinctrl_lookup_state(p, "default");
+        if (IS_ERR_OR_NULL(pinctrl_def)) {
+            cam_err("could not get defstate.\n");
+            rc = -1;
+            goto gpio_error;
+        }
+
+        pinctrl_idle = pinctrl_lookup_state(p, "idle");
+        if (IS_ERR_OR_NULL(pinctrl_idle)) {
+            pr_err("could not get idle defstate.\n");
+            rc = -1;
+            goto gpio_error;
+        }
+
+        /* PULL UP */
+        rc = pinctrl_select_state(p, pinctrl_def);
+        if (rc) {
+            cam_err("could not set pins to default state.\n");
+            rc = -1;
+            goto gpio_error;
+        }
+
+        mdelay(1);
+        cam_info("%s gpio[%d].", __func__, sensor->board_info->gpios[FSIN].gpio);
+        rc = gpio_direction_input(sensor->board_info->gpios[FSIN].gpio);
+        if (rc < 0) {
+            cam_err("%s failed to config gpio(%d) input.\n", __func__, sensor->board_info->gpios[FSIN].gpio);
+            rc = -1;
+            goto gpio_error;
+        }
+
+        module_id_1 = gpio_get_value(sensor->board_info->gpios[FSIN].gpio);
+
+        /* PULL DOWN */
+        rc = pinctrl_select_state(p, pinctrl_idle);
+        if (rc) {
+            cam_err("could not set pins to idle state.\n");
+            rc = -1;
+            goto gpio_error;
+        }
+
+        mdelay(1);
+        cam_info("%s gpio[%d].", __func__, sensor->board_info->gpios[FSIN].gpio);
+
+        rc = gpio_direction_input(sensor->board_info->gpios[FSIN].gpio);
+        if (rc < 0) {
+            cam_err("%s failed to config gpio(%d) input.\n", __func__, sensor->board_info->gpios[FSIN].gpio);
+            rc = -1;
+            goto gpio_error;
+        }
+
+        module_id_0 = gpio_get_value(sensor->board_info->gpios[FSIN].gpio);
+
+        cam_info("%s module_id_0 %d module_id_1 %d .\n", __func__, module_id_0, module_id_1);
+        if ((module_id_0 == GPIO_HIGH_STATE) && (module_id_1 == GPIO_HIGH_STATE)) {
+            // holitech BW module
+            strncpy_s(cdata->cfg.name, sizeof(cdata->cfg.name), sensor_name[0], strlen(sensor_name[0]) + 1);
+            cdata->data = sensor->board_info->sensor_index;
+            rc = 0;
+        } else if ((module_id_0 == GPIO_LOW_STATE) && (module_id_1 == GPIO_LOW_STATE)) {
+            // holitech HX module
+            strncpy_s(cdata->cfg.name, sizeof(cdata->cfg.name), sensor_name[1], strlen(sensor_name[1]) + 1);
+            cdata->data = sensor->board_info->sensor_index;
+            rc = 0;
+        } else {
+            strncpy_s(cdata->cfg.name, sizeof(cdata->cfg.name),
+                sensor->board_info->name, strlen(sensor->board_info->name) + 1);
+            cdata->data = sensor->board_info->sensor_index;
+            cam_err("%s failed to get the module id value.\n", __func__);
+            rc = 0;
+        }
+
+        gpio_free(sensor->board_info->gpios[FSIN].gpio);
+        goto pinctrl_exit;
+    } else {
+        strncpy_s(cdata->cfg.name, sizeof(cdata->cfg.name),
+            sensor->board_info->name, strlen(sensor->board_info->name) + 1);
+        cdata->data = sensor->board_info->sensor_index;
+        rc = 0;
+        goto matchID_exit;
+    }
+
+gpio_error:
+    gpio_free(sensor->board_info->gpios[FSIN].gpio);
+pinctrl_exit:
+    devm_pinctrl_put(p);
+matchID_exit:
+    if (cdata->data != SENSOR_INDEX_INVALID) { /* lint !e650 */
+        cam_info("%s, cdata->cfg.name = %s", __func__, cdata->cfg.name);
+    }
+
+    return rc;
 }
 
 int hi556AGASSI2BACK_config(hwsensor_intf_t* si, void  *argp)

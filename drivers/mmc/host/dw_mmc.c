@@ -3929,7 +3929,7 @@ int sd_need_retry(struct mmc_card *card, int retry)
 {
 	if (card == NULL)
 		return 0;
-	if (mmc_card_sd(card) && mmc_blk_is_retryable(card->host)) {
+	if ((mmc_card_sd(card) || mmc_card_mmc(card)) && mmc_blk_is_retryable(card->host)) {
 		if (retry < 5)
 			return 1;
 	}

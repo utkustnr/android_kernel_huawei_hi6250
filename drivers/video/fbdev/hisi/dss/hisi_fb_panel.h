@@ -1327,6 +1327,7 @@ void hisi_fb_device_set_status0(uint32_t status);
 int hisi_fb_device_set_status1(struct hisi_fb_data_type *hisifd);
 bool hisi_fb_device_probe_defer(uint32_t panel_type, uint32_t bl_type);
 
+int32_t bl_config_max_value(void);
 #if defined (CONFIG_HUAWEI_DSM)
 void panel_check_status_and_report_by_dsm(struct lcd_reg_read_t *lcd_status_reg, int cnt, char __iomem *mipi_dsi0_base);
 void panel_status_report_by_dsm(struct lcd_reg_read_t *lcd_status_reg, int cnt, char __iomem *mipi_dsi0_base, int report_cnt);

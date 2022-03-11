@@ -952,14 +952,8 @@ int udp_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 #endif
 #ifdef CONFIG_HUAWEI_XENGINE
 	bAccelerate = Emcom_Xengine_Hook_Ul_Stub( sk );
-	if( bAccelerate )
-	{
-		EMCOM_XENGINE_SetAccState(sk, EMCOM_XENGINE_ACC_HIGH);
-	}
-	else
-	{
+	if (!bAccelerate)
 		EMCOM_XENGINE_SetAccState(sk, EMCOM_XENGINE_ACC_NORMAL);
-	}
 #endif
 #ifdef CONFIG_HUAWEI_BASTET
 		BST_FG_Custom_Process(sk, msg, (uint8_t)BST_FG_UDP_BITMAP);

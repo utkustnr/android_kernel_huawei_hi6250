@@ -349,34 +349,6 @@ VOS_VOID OM_Write16Reg( VOS_UINT_PTR ulRegAddr, VOS_UINT16 usRegVal)
 
 VOS_VOID OM_PcvHookInd(VOS_UCHAR* pucBuf, VOS_UINT16 usLen, VOS_UINT16 usBit, VOS_UINT32 ulFrameTick)
 {
-    OM_PCV_TRANS_IND_STRU              *pstOmToAppMsg;
-    DIAG_TRANS_IND_STRU                 stPcvIndMsg;
-
-    pstOmToAppMsg = (OM_PCV_TRANS_IND_STRU *)VOS_MemAlloc(ACPU_PID_PCVOICE, DYNAMIC_MEM_PT, sizeof(OM_PCV_TRANS_IND_STRU) + usLen);
-
-    if (VOS_NULL_PTR == pstOmToAppMsg)
-    {
-        PS_LOG(ACPU_PID_PCVOICE, 0, PS_PRINT_ERROR, "OM_PcvHookInd: VOS_AllocMsg failure.\n");
-        return;
-    }
-
-    PAM_MEM_CPY_S((VOS_UINT8*)pstOmToAppMsg + sizeof(OM_PCV_TRANS_IND_STRU), usLen, (VOS_VOID*)pucBuf, usLen);
-
-    /* ¹³È¡µãµÄbitmap */
-    pstOmToAppMsg->usHookTarget   = (VOS_UINT16) PAM_PCV_BIT_N(usBit);
-    pstOmToAppMsg->ulFrameTick    = ulFrameTick;
-    pstOmToAppMsg->usDataLen      = usLen;
-
-    stPcvIndMsg.ulModule  = DIAG_GEN_MODULE(DIAG_MODEM_0, DIAG_MODE_COMM);
-    stPcvIndMsg.ulPid     = ACPU_PID_PCVOICE;
-    stPcvIndMsg.ulMsgId   = OM_APP_VOICE_HOOK_IND;
-    stPcvIndMsg.ulLength  = usLen + sizeof(OM_PCV_TRANS_IND_STRU);
-    stPcvIndMsg.pData     = (VOS_VOID *)pstOmToAppMsg;
-
-    (VOS_VOID)DIAG_TransReport(&stPcvIndMsg);
-
-    (VOS_VOID)VOS_MemFree(ACPU_PID_PCVOICE, pstOmToAppMsg);
-
     return;
 }
 

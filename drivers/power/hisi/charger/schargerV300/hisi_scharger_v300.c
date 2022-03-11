@@ -2863,7 +2863,7 @@ static int hi6523_fcp_adapter_vol_check(int adapter_vol_mv)
   Return:        0: success
                 -1: fail
 ***************************************************************************/
-static int hi6523_fcp_set_adapter_output_vol(int *output_vol)
+static int hi6523_fcp_set_adapter_output_vol(int output_vol)
 {
 	u8 val = 0;
 	u8 vol = 0;
@@ -2879,18 +2879,34 @@ static int hi6523_fcp_set_adapter_output_vol(int *output_vol)
 	}
 	SCHARGER_INF("%s: id out reg[0x4] = %u.\n", __func__, val);
 
-	/*get adapter max output vol value */
-	ret = hi6523_fcp_get_adapter_output_vol(&vol);
-	if (ret) {
-		SCHARGER_ERR("%s: fcp get adapter output vol err.\n", __func__);
+	switch (output_vol) {
+	case CHG_FCP_OUTPUT_VOL_5V:
+		ret = hi6523_fcp_adapter_reg_read(&vol,
+			CHG_FCP_SLAVE_REG_DISCRETE_OUT_V(0));
+		if (ret) {
+			SCHARGER_ERR("%s get output_vol error\n", __func__);
+			return -1;
+		}
+		break;
+	case CHG_FCP_OUTPUT_VOL_9V:
+		/* get adapter max output vol value */
+		ret = hi6523_fcp_get_adapter_output_vol(&vol);
+		if (ret) {
+			SCHARGER_ERR("%s: fcp get adapter output vol err\n",
+				__func__);
+			return -1;
+		}
+		if (vol > (CHG_FCP_OUTPUT_VOL_9V * CHG_FCP_VOL_STEP)) {
+			vol = CHG_FCP_OUTPUT_VOL_9V * CHG_FCP_VOL_STEP;
+			SCHARGER_INF("limit adap to 9V, while support 12V\n");
+		}
+		break;
+	default:
+		SCHARGER_ERR("input val is invalid\n");
 		return -1;
 	}
 
-	if (vol > CHG_FCP_OUTPUT_VOL_9V * CHG_FCP_VOL_STEP) {
-		vol = CHG_FCP_OUTPUT_VOL_9V * CHG_FCP_VOL_STEP;
-		SCHARGER_INF("fcp limit adapter vol to 9V, while adapter support 12V.\n");
-	}
-	*output_vol = vol / CHG_FCP_VOL_STEP;
+	SCHARGER_INF("%s: output_vol=%u\n", __func__, vol);
 
 	/*retry if write fail */
 	ret0 = hi6523_fcp_adapter_reg_write(vol, CHG_FCP_SLAVE_VOUT_CONFIG);
@@ -3219,9 +3235,9 @@ static int hi6523_fcp_adapter_reset(void)
 	msleep(25);
 	ret = hi6523_fcp_adapter_vol_check(FCP_ADAPTER_RST_VOL);
 	if (ret) {
-		ret = hi6523_write_byte(CHG_FCP_CTRL_REG, 0);	//clear fcp_en and fcp_master_rst
+		ret0 = hi6523_write_byte(CHG_FCP_CTRL_REG, 0);	//clear fcp_en and fcp_master_rst
 		SCHARGER_ERR("%s: adc check adapter output voltage failed.\n ", __func__);
-		return ret;
+		return (ret || ret0);
 	}
 
 	ret0 = hi6523_write_byte(CHG_FCP_CTRL_REG, 0);	//clear fcp_en and fcp_master_rst

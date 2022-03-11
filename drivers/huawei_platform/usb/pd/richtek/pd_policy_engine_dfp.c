@@ -183,6 +183,23 @@ void pe_dfp_vdm_attention_request_entry(
 	pd_free_pd_event(pd_port, pd_event);
 }
 
+#ifdef CONFIG_PD_DFP_RESET_CABLE
+/* [PD2.0] Figure 8-83 DFP Cable Soft Reset State Diagram */
+void pe_dfp_cbl_send_soft_reset_entry(
+	pd_port_t *pd_port, pd_event_t *pd_event)
+{
+	pd_send_cable_soft_reset(pd_port);
+	pd_free_pd_event(pd_port, pd_event);
+}
+
+/* [PD2.0] Figure 8-83 DFP Cable Reset State Diagram */
+void pe_dfp_cbl_send_cable_reset_entry(
+	pd_port_t *pd_port, pd_event_t *pd_event)
+{
+	PE_DBG("pe_dfp_cbl_send_cable_reset_entry\n");
+}
+#endif /* CONFIG_PD_DFP_RESET_CABLE */
+
 void pe_dfp_vdm_unknown_entry(
 				pd_port_t *pd_port, pd_event_t *pd_event)
 {

@@ -96,6 +96,7 @@ static inline int hi6555c_irq_stat(unsigned int irq_stat_bit);
 static inline void hi6555c_irqs_mask_set(unsigned int irqs);
 static inline void hi6555c_irqs_clr(unsigned int irqs);
 static inline void hi6555c_irqs_mask_clr(unsigned int irqs);
+static void hi6555c_power_codec(struct snd_soc_codec *codec, int on);
 
 static int classd_voltage = CLASSD_4500mV_VOL;
 static bool HSLR_GAIN_RECONFIGURE_FLAG = false;
@@ -116,6 +117,8 @@ static int hac_switch = 0;
 static int classk_en_gpio = CLASSK_GPIO_NUM_DEFAULT;
 
 static int classk_mode = CLASSK_MODE0;
+
+static int micbias_status = 0;
 
 #define MBHC_TYPE_FAIL_MAX_TIMES             (5)
 #define MBHC_TYPE_REPORT_MAX_TIMES           (20)
@@ -633,6 +636,70 @@ static int hs_switch_put(struct snd_kcontrol *kcontrol,
  * HS AREA END
  *
  *****************************************************************************/
+/*****************************************************************************
+ *
+ * MICBIAS ON BEGIN
+ *
+ *****************************************************************************/
+static const char * const micbias_on_text[] = {"OFF", "ON"};
+
+static const struct soc_enum micbias_on_enum[] = {
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(micbias_on_text), micbias_on_text),
+};
+static void micbias_on_swtich(int micbias_cmd)
+{
+	if (NULL == g_codec) {
+		loge("input pointer is null\n");
+		return;
+	}
+	if (micbias_cmd) {
+		hi6555c_power_codec(g_codec, HI6555C_ON);
+		hi6555c_clr_reg_bits(HI6555C_SMT_CODEC_ANA_RW02_ADDR, (0x01 << HI6555C_SMT_MICB1_PD_BIT_START));
+	}
+	else {
+		hi6555c_power_codec(g_codec, HI6555C_OFF);
+		hi6555c_set_reg_bits(HI6555C_SMT_CODEC_ANA_RW02_ADDR, (0x01 << HI6555C_SMT_MICB1_PD_BIT_START));
+	}
+}
+static int micbias_on_get(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	if (NULL == kcontrol || NULL == ucontrol) {
+		loge("input pointer is null\n");
+		return 0;
+	}
+
+	ucontrol->value.integer.value[0] = micbias_status;
+
+	return 0;
+}
+static int micbias_on_put(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	struct hi6555c_priv *priv = NULL;
+
+	if (NULL == kcontrol || NULL == ucontrol || NULL == g_codec) {
+		loge("input pointer is null\n");
+		return 0;
+	}
+	priv = snd_soc_codec_get_drvdata(g_codec);
+	if (NULL == priv) {
+		loge("input pointer is null\n");
+		return 0;
+	}
+	if (priv->micbias_always_on) {
+		micbias_status = ucontrol->value.integer.value[0];
+		micbias_on_swtich(micbias_status);
+	}
+
+	return 0;
+}
+/*****************************************************************************
+ *
+ * MICBIAS ON END
+ *
+ *****************************************************************************/
+
 /*****************************************************************************
  *
  * CLASSK AREA BEGIN
@@ -1584,7 +1651,8 @@ static const struct snd_kcontrol_new hi6555c_snd_controls[] = {
 			classk_mode_enum[0], classk_mode_get, classk_mode_put),
 	SOC_ENUM_EXT("HS_SWTICH",
 			hs_switch_enum[0], hs_switch_get, hs_switch_put),
-
+	SOC_ENUM_EXT("MICBIAS_ON",
+			micbias_on_enum[0], micbias_on_get, micbias_on_put),
 	SOC_SINGLE_EXT("CLASSD_VOLTAGE_CONFIG", HI6555C_DDR_CODEC_VIR2_ADDR, 0, 0xffff, 0,
 			classd_voltage_get, classd_voltage_put),
 };
@@ -1884,13 +1952,30 @@ static int hi6555c_soc_ibias_supply_power_mode_event(struct snd_soc_dapm_widget 
 static int hi6555c_smt_ibias_supply_power_mode_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
+	struct hi6555c_priv *priv = NULL;
+
+	if (NULL == g_codec) {
+		loge("input pointer is null\n");
+		return 0;
+	}
+	priv = snd_soc_codec_get_drvdata(g_codec);
+	if (NULL == priv) {
+		loge("input pointer is null\n");
+		return 0;
+	}
+
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		hi6555c_ibias_work_enable(g_codec, true);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		hi6555c_ibias_work_enable(g_codec, false);
-		break;
+		if(priv->micbias_always_on) {
+			logi("not turn off.\n");
+			break;
+		} else {
+			hi6555c_ibias_work_enable(g_codec, false);
+			break;
+		}
 	default:
 		loge("power mode event err : %d\n", event);
 		break;
@@ -1903,6 +1988,18 @@ static int hi6555c_smt_ibias_supply_power_mode_event(struct snd_soc_dapm_widget 
 static int hi6555c_smt_micb1_power_mode_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
+	struct hi6555c_priv *priv = NULL;
+
+	if (NULL == g_codec) {
+		loge("input pointer is null\n");
+		return 0;
+	}
+	priv = snd_soc_codec_get_drvdata(g_codec);
+	if (NULL == priv) {
+		loge("input pointer is null\n");
+		return 0;
+	}
+
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		/* MICBIAS PU */
@@ -1910,8 +2007,13 @@ static int hi6555c_smt_micb1_power_mode_event(struct snd_soc_dapm_widget *w,
 		msleep(1);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		hi6555c_set_reg_bits(HI6555C_SMT_CODEC_ANA_RW02_ADDR, (0x01 << HI6555C_SMT_MICB1_PD_BIT_START));
-		break;
+		if(priv->micbias_always_on) {
+			logi("not turn off.\n");
+			break;
+		} else {
+			hi6555c_set_reg_bits(HI6555C_SMT_CODEC_ANA_RW02_ADDR, (0x01 << HI6555C_SMT_MICB1_PD_BIT_START));
+			break;
+		}
 	default:
 		loge("power mode event err : %d\n", event);
 		break;
@@ -5202,6 +5304,8 @@ static int hi6555c_soc_init(struct snd_soc_codec *codec)
 	priv->i2s2_disabled = of_property_read_bool(np, "i2s2-func-disabled");
 	logd("I2S-2 needed or not :%d\n", priv->i2s2_disabled);
 
+	priv->micbias_always_on = of_property_read_bool(np, "micbias-always-on");
+	logi("micbias always open needed or not :%d\n", priv->micbias_always_on);
 	/* codec init cfg */
 	hi6555c_reuse(codec);
 

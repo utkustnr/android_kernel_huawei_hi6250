@@ -494,6 +494,7 @@ enum rx_event_type{
 	WIRELESS_CHARGE_RX_OCP,
 	WIRELESS_CHARGE_RX_OVP,
 	WIRELESS_CHARGE_RX_OTP,
+	WIRELESS_CHARGE_RX_LDO_OFF,
 };
 
 extern struct blocking_notifier_head rx_event_nh;

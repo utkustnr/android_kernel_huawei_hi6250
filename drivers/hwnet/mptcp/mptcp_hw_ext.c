@@ -726,10 +726,25 @@ static int mptcp_hw_ext_set_config_by_pid_fd(struct mptcp_hw_ext *config,
 		return err;
 	}
 
+	if (sock->type != SOCK_STREAM) {
+		pr_err("%s not tcp sock\n", __func__);
+		fput_by_pid(pid, file);
+		return ret;
+	}
+
 	sk = sock->sk;
 	if (!sk) {
 		pr_err("%s: get sock fail by pid_fd:%d_%d\n",
 			__func__, pid, fd);
+		fput_by_pid(pid, file);
+		return ret;
+	}
+
+	sock_hold(sk);
+
+	if (sk->sk_protocol != IPPROTO_TCP && sk->sk_family != AF_INET && sk->sk_family != AF_INET6) {
+		pr_err("%s not support family\n", __func__);
+		sock_put(sk);
 		fput_by_pid(pid, file);
 		return ret;
 	}
@@ -826,7 +841,8 @@ static int mptcp_hw_ext_set_config_by_pid_fd(struct mptcp_hw_ext *config,
 				value->subflow_prio[i].low_prio);
 		}
 
-		mptcp_hw_ext_mod_subflow_prio(sk);
+		if (sk->sk_state == TCP_ESTABLISHED)
+			mptcp_hw_ext_mod_subflow_prio(sk);
 		break;
 	}
 
@@ -841,6 +857,7 @@ exit:
 	bh_unlock_sock(sk);
 	local_bh_enable();
 	write_lock_bh(&mptcp_hw_ext_lock);
+	sock_put(sk);
 	fput_by_pid(pid, file);
 
 	return ret;

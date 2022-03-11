@@ -314,17 +314,17 @@ static int gtx8_load_isp(struct firmware_data *fw_data)
 	}
 	TS_LOG_DEBUG("Success clear 0x%x\n", HW_REG_ISP_RUN_FLAG);
 
-	/* TODO: change address 0xBDE6 set backdoor flag HW_REG_CPU_RUN_FROM */
+	/* change address 0xBDE6 set flag HW_REG_CPU_RUN_FROM */
 	memset(reg_val, 0x55, sizeof(reg_val));
 	ret = gtx8_reg_write(HW_REG_CPU_RUN_FROM, reg_val, 8);
 	if (ret < 0) {
-		TS_LOG_ERR("Failed set backdoor flag\n");
+		TS_LOG_ERR("Failed set HW_REG_CPU_RUN_FROM flag\n");
 		return ret;
 	}
 	TS_LOG_DEBUG("Success write [8]0x55 to 0x%x\n",
 					HW_REG_CPU_RUN_FROM);
 
-	/* TODO: change reg_val 0x08---> 0x00 release ss51 */
+	/* change reg_val 0x08 ---> 0x00 release ss51 */
 	reg_val[0] = 0x00;
 	ret = gtx8_reg_write(HW_REG_CPU_CTRL,
 				     reg_val, 1);
@@ -672,7 +672,7 @@ static int gtx8_update_finish(void)
 	if (ret < 0)
 		TS_LOG_ERR("Failed to hold ss51\n");
 
-	/* clear back door flag */
+	/* clear HW_REG_CPU_RUN_FROM flag */
 	memset(reg_val, 0, sizeof(reg_val));
 	ret = gtx8_reg_write(HW_REG_CPU_RUN_FROM, reg_val, 8);
 	if (ret) {

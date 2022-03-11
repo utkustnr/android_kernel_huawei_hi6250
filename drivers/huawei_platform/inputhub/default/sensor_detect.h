@@ -67,6 +67,9 @@
 #define BH1749_MAX_ThRESHOLD_NUM 25
 #define BH1749_MIN_ThRESHOLD_NUM 26
 
+#define VD6281_MAX_ThRESHOLD_NUM    6
+#define VD6281_MIN_ThRESHOLD_NUM    7
+
 #define KB_DEFAULT_UART_NUM           (8)
 #define KB_DEFAULT_DETECT_ADC_NUM     (7)
 #define KB_DEFAULT_DISCONNECT_ADC_VOL (1700)
@@ -157,6 +160,7 @@ struct g_sensor_platform_data {
 	uint16_t z_calibrate_thredhold;
 	uint8_t wakeup_duration;
 	uint8_t g_sensor_extend_data[SENSOR_PLATFORM_EXTEND_DATA_SIZE];
+	uint8_t gpio_int2_sh_func;
 };
 
 struct gyro_platform_data {
@@ -258,6 +262,7 @@ struct ps_platform_data {
 	uint8_t max_near_pdata_loop;
 	uint8_t oily_count_size;
 	uint8_t digital_offset_max;
+	uint8_t is_always_on;
 };
 
 struct airpress_platform_data {

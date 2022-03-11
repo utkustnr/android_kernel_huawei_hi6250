@@ -735,6 +735,10 @@ extern uint8_t g_prefix_ce_support;
 extern uint8_t g_prefix_sharpness1D_support;
 extern uint8_t g_prefix_sharpness2D_support;
 
+extern int delta_bl_delayed;
+extern bool blc_enable_delayed;
+extern bool dc_switch_xcc_updated;
+
 extern uint32_t g_online_cmdlist_idxs;
 extern uint32_t g_offline_cmdlist_idxs;
 

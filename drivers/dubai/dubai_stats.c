@@ -39,6 +39,8 @@
 #define DUBAI_AOD_DURATION_ENENT	(6)
 #define MAX_WS_NAME_LEN				(64)
 #define MAX_WS_NAME_COUNT			(128)
+#define WAKEUP_TAG_SIZE				(48)
+#define WAKEUP_MSG_SIZE				(128)
 
 #ifdef SENSORHUB_DUBAI_INTERFACE
 extern uint64_t iomcu_dubai_log_fetch(uint8_t event_type);
@@ -143,6 +145,12 @@ struct dubai_ws_lasting_transmit {
 	char data[0];
 } __packed;
 
+struct dubai_wakeup_entry {
+	char tag[WAKEUP_TAG_SIZE];
+	char msg[WAKEUP_MSG_SIZE];
+	struct list_head list;
+};
+
 static atomic_t kworker_count;
 static atomic_t uevent_count;
 static atomic_t log_stats_enable;
@@ -162,6 +170,7 @@ static LIST_HEAD(binder_stats_died_list);
 static DEFINE_MUTEX(binder_stats_hash_lock);
 static LIST_HEAD(binder_stats_list);
 static DEFINE_MUTEX(binder_stats_list_lock);
+static LIST_HEAD(wakeup_list);
 
 int dubai_get_battery_rm(void __user *argp) {
 #ifdef CONFIG_HISI_COUL
@@ -431,14 +440,31 @@ int dubai_log_stats_enable(void __user *argp)
 	return ret;
 }
 
-void dubai_update_wakeup_info(const char *name, int gpio)
+/*
+ * Caution: It's dangerous to use HWDUBAI_LOG in this function,
+ * because it's in the SR process, and the HWDUBAI_LOG will wake up the kworker thread that will open irq
+ */
+void dubai_update_wakeup_info(const char *tag, const char *fmt, ...)
 {
-	if (name == NULL) {
+	va_list args;
+	struct dubai_wakeup_entry *entry;
+
+	if (tag == NULL || strlen(tag) >= WAKEUP_TAG_SIZE) {
 		DUBAI_LOGE("Invalid parameter");
 		return;
 	}
 
-	HWDUBAI_LOGE("DUBAI_TAG_KERNEL_WAKEUP", "irq=%s gpio=%d", name, gpio);
+	entry = kzalloc(sizeof(struct dubai_wakeup_entry), GFP_ATOMIC);
+	if (entry == NULL) {
+		DUBAI_LOGE("Failed to allocate memory");
+		return;
+	}
+
+	strncpy(entry->tag, tag, WAKEUP_TAG_SIZE - 1); /* unsafe_function_ignore: strncpy */
+	va_start(args, fmt);
+	vscnprintf(entry->msg, WAKEUP_MSG_SIZE, fmt, args);
+	va_end(args);
+	list_add_tail(&entry->list, &wakeup_list);
 }
 EXPORT_SYMBOL(dubai_update_wakeup_info);
 
@@ -1075,7 +1101,7 @@ int dubai_get_ws_lasting_name(void __user * argp)
 
 	transmit->count = ret;
 	log_entry->length = LOG_ENTRY_SIZE(struct dubai_ws_lasting_transmit,
-                struct dubai_ws_lasting_name, transmit->count);
+				struct dubai_ws_lasting_name, transmit->count);
 	ret = send_buffered_log(log_entry);
 	if (ret < 0) {
 		DUBAI_LOGE("Failed to send wakeup source log entry");
@@ -1101,6 +1127,17 @@ exit:
 	return NOTIFY_OK;
 }
 
+static void dubai_send_wakeup_info(void)
+{
+	struct dubai_wakeup_entry *entry, *tmp;
+
+	list_for_each_entry_safe(entry, tmp, &wakeup_list, list) {
+		HWDUBAI_LOGE(entry->tag, "%s", entry->msg);
+		list_del_init(&entry->list);
+		kfree(entry);
+	}
+}
+
 static int dubai_pm_notify(struct notifier_block *nb,
 			unsigned long mode, void *data)
 {
@@ -1109,6 +1146,7 @@ static int dubai_pm_notify(struct notifier_block *nb,
 		HWDUBAI_LOGE("DUBAI_TAG_KERNEL_SUSPEND", "");
 		break;
 	case PM_POST_SUSPEND:
+		dubai_send_wakeup_info();
 		HWDUBAI_LOGE("DUBAI_TAG_KERNEL_RESUME", "");
 		break;
 	default:
@@ -1143,6 +1181,7 @@ void dubai_stats_init(void)
 	dubai_backlight.sum_brightness_time = 0;
 	register_pm_notifier(&dubai_pm_nb);
 	profile_event_register(PROFILE_TASK_EXIT, &process_notifier_block);
+	DUBAI_LOGI("DUBAI stats initialize success");
 }
 
 void dubai_stats_exit(void)
@@ -1150,6 +1189,7 @@ void dubai_stats_exit(void)
 	struct dubai_kworker_entry *kworker = NULL;
 	struct hlist_node *tmp;
 	struct dubai_uevent_entry *uevent, *temp;
+	struct dubai_wakeup_entry *wakeup, *wakeup_temp;
 	unsigned long bkt;
 
 	profile_event_unregister(PROFILE_TASK_EXIT, &process_notifier_block);
@@ -1171,6 +1211,10 @@ void dubai_stats_exit(void)
 	}
 	atomic_set(&uevent_count, 0);
 	mutex_unlock(&uevent_lock);
+	list_for_each_entry_safe(wakeup, wakeup_temp, &wakeup_list, list) {
+		list_del_init(&wakeup->list);
+		kfree(wakeup);
+	}
 
 	unregister_pm_notifier(&dubai_pm_nb);
 }

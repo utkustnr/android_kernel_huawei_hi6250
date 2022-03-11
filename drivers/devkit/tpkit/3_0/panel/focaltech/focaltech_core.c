@@ -1130,7 +1130,7 @@ static int focal_esdcheck_tp_reset( void )
 
 	ret = focal_status_resume();
 	if(ret < 0){
-		TS_LOG_ERR("%s: failed to resume status\n",__func__, ret);
+		TS_LOG_ERR("%s: failed to resume status\n", __func__);
 		return -EINVAL;
 	}
 
@@ -2224,7 +2224,7 @@ static int focal_after_resume(void *feature_info)
 	ret = focal_status_resume();
 	if(ret < 0)
 	{
-		TS_LOG_ERR("%s: failed to resume status\n",__func__, ret);
+		TS_LOG_ERR("%s: failed to resume status\n", __func__);
 		return -EINVAL;
 	}
 

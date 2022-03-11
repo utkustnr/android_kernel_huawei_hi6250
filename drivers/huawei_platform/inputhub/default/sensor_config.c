@@ -73,6 +73,7 @@ extern int tmd2745_flag;
 extern int rohm_rpr531_flag;
 extern int tsl2591_flag;
 extern int bh1726_flag;
+extern int vd6281_als_flag;
 s16 minThreshold_als_para;
 s16 maxThreshold_als_para;
 
@@ -1183,6 +1184,41 @@ int tpmodule_notifier_call_chain(unsigned long val, void *v)
 }
 EXPORT_SYMBOL(tpmodule_notifier_call_chain);
 
+void set_vd6281_als_extend_prameters(void)
+{
+	int vd6281_als_para_table = 0;
+	unsigned int i = 0;
+	for(i=0; i<ARRAY_SIZE(vd6281_als_para_diff_tp_color_table);i++)
+	{
+		if((vd6281_als_para_diff_tp_color_table[i].phone_type == als_data.als_phone_type)
+			&& (vd6281_als_para_diff_tp_color_table[i].phone_version == als_data.als_phone_version)
+			&&(( vd6281_als_para_diff_tp_color_table[i].tp_manufacture == tp_manufacture)
+				||(vd6281_als_para_diff_tp_color_table[i].tp_manufacture == TS_PANEL_UNKNOWN))
+			&& (vd6281_als_para_diff_tp_color_table[i].tp_color == phone_color))
+		{
+			vd6281_als_para_table = i;
+			break;
+		}
+	}
+	memcpy(als_data.als_extend_data,vd6281_als_para_diff_tp_color_table[vd6281_als_para_table].vd6281_para,
+		sizeof(vd6281_als_para_diff_tp_color_table[vd6281_als_para_table].vd6281_para) >
+		SENSOR_PLATFORM_EXTEND_ALS_DATA_SIZE?
+		SENSOR_PLATFORM_EXTEND_ALS_DATA_SIZE:
+		sizeof(vd6281_als_para_diff_tp_color_table[vd6281_als_para_table].vd6281_para));
+		i = sizeof(vd6281_als_para_diff_tp_color_table[vd6281_als_para_table].vd6281_para);
+	hwlog_info("vd6281_als_para_table size = %d\n",i);
+	minThreshold_als_para = vd6281_als_para_diff_tp_color_table[vd6281_als_para_table].vd6281_para[VD6281_MAX_ThRESHOLD_NUM];
+	maxThreshold_als_para = vd6281_als_para_diff_tp_color_table[vd6281_als_para_table].vd6281_para[VD6281_MIN_ThRESHOLD_NUM];
+
+	hwlog_info("vd6281_als_para_tabel= %d\n",vd6281_als_para_table);
+	for( i=0; i<VD6281_PARA_SIZE; i++){
+		hwlog_info( "the vd6281 %d als paramater is the %d", i, vd6281_als_para_diff_tp_color_table[vd6281_als_para_table].vd6281_para[i] );
+	}
+	hwlog_info("\n");
+
+
+}
+
 void set_als_extend_prameters(als_para_normal_table *als_para_diff_tp_color_table, int arraysize)
 {
 	unsigned int i = 0;
@@ -1656,6 +1692,8 @@ void select_als_para(struct device_node *dn)
 		set_tsl2591_als_extend_prameters();
 	} else if (bh1726_flag == 1) {
 		set_bh1726_als_extend_prameters();
+	} else if (vd6281_als_flag == 1){
+		set_vd6281_als_extend_prameters();
 	} else if (bh1749_flag == 1) {
 		select_rohmbh1749_als_data();
 	} else if (vishay_vcnl36832_als_flag == 1) {

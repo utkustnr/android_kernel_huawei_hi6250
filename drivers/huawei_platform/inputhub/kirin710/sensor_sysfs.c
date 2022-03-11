@@ -501,20 +501,38 @@ static void cap_prox_enq_notify_work(const int item_id, uint16_t value,uint16_t 
 
 static void cap_prox_do_enq_work(int calibrate_index)
 {
-	if(!strncmp(sensor_chip_info[CAP_PROX], "huawei,semtech-sx9323", strlen("huawei,semtech-sx9323"))){
-		switch(calibrate_index){
-			case 1:
-				cap_prox_enq_notify_work(SAR_SENSOR_DIFF_MSG,sar_calibrate_datas.semtech_cali_data.diff,
-					sar_pdata.sar_datas.semteck_data.calibrate_thred[DIFF_MIN_THREDHOLD],
-					sar_pdata.sar_datas.semteck_data.calibrate_thred[DIFF_MAX_THREDHOLD],CAP_PROX_DIFF);
-				break;
-			case 2:
-				cap_prox_enq_notify_work(SAR_SENSOR_OFFSET_MSG,sar_calibrate_datas.semtech_cali_data.offset,
-					sar_pdata.sar_datas.semteck_data.calibrate_thred[OFFSET_MIN_THREDHOLD],
-					sar_pdata.sar_datas.semteck_data.calibrate_thred[OFFSET_MAX_THREDHOLD],CAP_PROX_OFFSET);
-				break;
-			default:
-				break;
+	uint16_t diff;
+	uint16_t offset;
+	uint16_t *calibrate_thred = NULL;
+
+	if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,semtech-sx9323",
+			strlen("huawei,semtech-sx9323"))) {
+		diff = sar_calibrate_datas.semtech_cali_data.diff;
+		offset = sar_calibrate_datas.semtech_cali_data.offset;
+		calibrate_thred = sar_pdata.sar_datas.semteck_data.calibrate_thred;
+	} else if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,abov-a96t3x6",
+			strlen("huawei,abov-a96t3x6"))) {
+		diff = sar_calibrate_datas.abov_cali_data.diff;
+		offset = sar_calibrate_datas.abov_cali_data.offset;
+		calibrate_thred = sar_pdata.sar_datas.abov_data.calibrate_thred;
+	}
+
+	if (calibrate_thred) {
+		switch (calibrate_index) {
+		case 1: /* near data */
+			cap_prox_enq_notify_work(SAR_SENSOR_DIFF_MSG, diff,
+						calibrate_thred[DIFF_MIN_THREDHOLD],
+						calibrate_thred[DIFF_MAX_THREDHOLD],
+						CAP_PROX_DIFF);
+			break;
+		case 2: /* far data */
+			cap_prox_enq_notify_work(SAR_SENSOR_OFFSET_MSG, offset,
+						calibrate_thred[OFFSET_MIN_THREDHOLD],
+						calibrate_thred[OFFSET_MAX_THREDHOLD],
+						CAP_PROX_OFFSET);
+			break;
+		default:
+			break;
 		}
 	}
 }
@@ -1541,12 +1559,41 @@ static void cap_prox_calibrate_work_func(struct work_struct *work)
 	}
 	hwlog_info("cap_prox calibrate work enter --\n");
 }
+
+static void attr_abov_calibrate_write(int calibrate_index, uint16_t abov_data)
+{
+	switch (calibrate_index) {
+	case 1: /* 1: near data */
+		sar_calibrate_datas.abov_cali_data.diff = abov_data;
+		break;
+	case 2: /* 2: far data */
+		sar_calibrate_datas.abov_cali_data.offset = abov_data;
+		break;
+	default:
+		hwlog_err(" abov a96t3x6 sar calibrate err\n");
+		break;
+	}
+	hwlog_info("abov a96t3x6 %u\n", abov_data);
+	hwlog_info("abov_data offset:%d diff:%d\n",
+		sar_calibrate_datas.abov_cali_data.offset,
+		sar_calibrate_datas.abov_cali_data.diff);
+	cap_prox_calibrate_len = sizeof(sar_calibrate_datas);
+	if (cap_prox_calibrate_len > sizeof(cap_prox_calibrate_data))
+		cap_prox_calibrate_len = sizeof(cap_prox_calibrate_data);
+
+	memset(cap_prox_calibrate_data, 0, cap_prox_calibrate_len);
+	memcpy(cap_prox_calibrate_data, &sar_calibrate_datas,
+		cap_prox_calibrate_len);
+}
+
 static ssize_t attr_cap_prox_calibrate_write(struct device *dev,
 					     struct device_attribute *attr, const char *buf, size_t count)
 {
 	unsigned long val = 0;
 	int calibrate_index = 0;
 	read_info_t pkg_mcu;
+	uint16_t semtech = 0;
+	uint16_t abov_data = 0;
 
 	hwlog_info("attr_cap_prox_calibrate_write\n");
 	if (strict_strtoul(buf, 10, &val))
@@ -1592,14 +1639,12 @@ static ssize_t attr_cap_prox_calibrate_write(struct device *dev,
 				cap_prox_calibrate_len = sizeof(cap_prox_calibrate_data);
 				memset(cap_prox_calibrate_data, 0, cap_prox_calibrate_len);
 				memcpy(cap_prox_calibrate_data, &sar_calibrate_datas, cap_prox_calibrate_len);
-		    }
-                  else if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,semtech-sx9323", strlen("huawei,semtech-sx9323")))
-                  {
-			uint16_t semtech = 0;
-			memcpy(&semtech, pkg_mcu.data, sizeof(semtech));
-			switch(calibrate_index) {
+			} else if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,semtech-sx9323",
+				strlen("huawei,semtech-sx9323"))) {
+				memcpy(&semtech, pkg_mcu.data, sizeof(semtech));
+				switch (calibrate_index) {
 				case 1: /* near data */
-					sar_calibrate_datas.semtech_cali_data.diff= semtech;
+					sar_calibrate_datas.semtech_cali_data.diff = semtech;
 					break;
 				case 2:/* far data */
 					sar_calibrate_datas.semtech_cali_data.offset = semtech;
@@ -1607,23 +1652,29 @@ static ssize_t attr_cap_prox_calibrate_write(struct device *dev,
 				default:
 					hwlog_err(" semtech sar calibrate err\n");
 					break;
-			}
-			hwlog_info("semtech_data %u\n", semtech);
-			hwlog_info("semtech_data offset:%d,diff:%d\n", sar_calibrate_datas.semtech_cali_data.offset,
+				}
+				hwlog_info("semtech_data %u\n", semtech);
+				hwlog_info("semtech_data offset:%d,diff:%d\n",
+					sar_calibrate_datas.semtech_cali_data.offset,
 					sar_calibrate_datas.semtech_cali_data.diff);
-			cap_prox_calibrate_len = pkg_mcu.data_length;
-			if (cap_prox_calibrate_len > sizeof(cap_prox_calibrate_data)) {
-				cap_prox_calibrate_len = sizeof(cap_prox_calibrate_data);
-			}
-			memset(cap_prox_calibrate_data, 0, cap_prox_calibrate_len);
-			memcpy(cap_prox_calibrate_data, &sar_calibrate_datas, cap_prox_calibrate_len);
-		    } else {
+				cap_prox_calibrate_len = pkg_mcu.data_length;
+				if (cap_prox_calibrate_len > sizeof(cap_prox_calibrate_data))
+					cap_prox_calibrate_len = sizeof(cap_prox_calibrate_data);
+
+				memset(cap_prox_calibrate_data, 0, cap_prox_calibrate_len);
+				memcpy(cap_prox_calibrate_data, &sar_calibrate_datas,
+					cap_prox_calibrate_len);
+			} else if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,abov-a96t3x6",
+				strlen("huawei,abov-a96t3x6"))) {
+				memcpy(&abov_data, pkg_mcu.data, sizeof(abov_data));
+				attr_abov_calibrate_write(calibrate_index, abov_data);
+			} else {
 				cap_prox_calibrate_len = pkg_mcu.data_length;
 				if (cap_prox_calibrate_len > sizeof(cap_prox_calibrate_data)) {
 					cap_prox_calibrate_len = sizeof(cap_prox_calibrate_data);
 				}
 				memcpy(cap_prox_calibrate_data, pkg_mcu.data, sizeof(cap_prox_calibrate_data));
-		    }
+			}
 			INIT_WORK(&cap_prox_calibrate_work, cap_prox_calibrate_work_func);
 			queue_work(system_power_efficient_wq, &cap_prox_calibrate_work);
 			#ifdef SENSOR_DATA_ACQUISITION
@@ -3203,6 +3254,11 @@ static ssize_t show_sar_data(struct device *dev, struct device_attribute *attr, 
 		return snprintf(buf, MAX_STR_SIZE, "offset:%d diff:%d \n",
 			sar_calibrate_datas.semtech_cali_data.offset, sar_calibrate_datas.semtech_cali_data.diff);
 	}
+	if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,abov-a96t3x6",
+		strlen("huawei,abov-a96t3x6")))
+		return snprintf(buf, MAX_STR_SIZE, "offset:%d, diff:%d\n",
+			sar_calibrate_datas.abov_cali_data.offset,
+			sar_calibrate_datas.abov_cali_data.diff);
 
 	return -1;
 }

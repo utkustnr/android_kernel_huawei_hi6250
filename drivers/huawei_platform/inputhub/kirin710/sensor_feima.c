@@ -12,6 +12,7 @@
 
 #define MIN_CAP_PROX_MODE 0
 #define MAZ_CAP_PROX_MODE 2
+#define ONE_MILLION 1000000
 
 struct class *sensors_class;
 int sleeve_test_enabled = 0;
@@ -50,6 +51,7 @@ extern char sensor_chip_info[SENSOR_MAX][MAX_CHIP_INFO_LEN];
 extern struct sar_sensor_detect semtech_sar_detect;
 extern struct sar_sensor_detect adi_sar_detect;
 extern struct sar_sensor_detect cypress_sar_detect;
+extern struct sar_sensor_detect g_abov_sar_detect;
 extern bool fingersense_data_ready;
 extern s16 fingersense_data[FINGERSENSE_DATA_NSAMPLES];
 extern struct compass_platform_data mag_data;
@@ -743,6 +745,7 @@ static ssize_t show_sar_sensor_detect(struct device *dev, struct device_attribut
 	int semtech_detect_result = 0;
 	int adi_detect_result = 0;
 	int cypress_detect_result = 0;
+	int abov_detect_result = 0;
 
 	if(semtech_sar_detect.detect_flag == 1){
 		hwlog_info("semtech_sar_detect \n");
@@ -756,9 +759,15 @@ static ssize_t show_sar_sensor_detect(struct device *dev, struct device_attribut
 		hwlog_info("cypress_sar_detect \n");
 		cypress_detect_result = sar_sensor_i2c_detect(cypress_sar_detect);
 	}
-	final_detect_result = semtech_detect_result | adi_detect_result | cypress_detect_result;
+	if (g_abov_sar_detect.detect_flag == 1) {
+		hwlog_info("abov_sar_detect\n");
+		abov_detect_result = sar_sensor_i2c_detect(g_abov_sar_detect);
+	}
+	final_detect_result = semtech_detect_result | adi_detect_result |
+		cypress_detect_result | abov_detect_result;
 	hwlog_info("In %s! final_detect_result=%d, semtech_detect_result=%d, adi_detect_result=%d , cypress_detect_result=%d\n",
 		    __func__, final_detect_result, semtech_detect_result, adi_detect_result,cypress_detect_result);
+	hwlog_info("abov_detect_result = %d\n", abov_detect_result);
 	return snprintf(buf, MAX_STR_SIZE, "%d\n", final_detect_result);
 }
 static ssize_t store_fingersense_enable(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
@@ -899,6 +908,50 @@ static ssize_t store_ois_ctrl(struct device *dev, struct device_attribute *attr,
 	return size;
 }
 
+int send_als_ud_data_to_mcu(int tag, uint32_t subcmd, const void *data, int length, bool is_recovery)
+{
+	int ret;
+	write_info_t pkg_ap;
+	pkt_parameter_req_t cpkt;
+	pkt_header_t *hd = (pkt_header_t *)&cpkt;
+
+	memset(&pkg_ap, 0, sizeof(pkg_ap));
+
+	pkg_ap.tag = tag;
+	pkg_ap.cmd = CMD_CMN_CONFIG_REQ;
+	cpkt.subcmd = subcmd;
+	pkg_ap.wr_buf = &hd[1];
+	pkg_ap.wr_len = length + SUBCMD_LEN;
+	memcpy(cpkt.para, data, length);
+
+	if (is_recovery)
+		return write_customize_cmd(&pkg_ap, NULL, false);
+
+	ret = write_customize_cmd(&pkg_ap, NULL, true);
+	if (ret) {
+		hwlog_err("send als ud data to mcu fail,ret=%d\n", ret);
+		return -1;
+	}
+
+	return 0;
+}
+void save_light_to_sensorhub(uint32_t mipi_level, uint32_t bl_level)
+{
+	uint64_t timestamp = 0;
+	struct timespec64 ts;
+	uint32_t para[3];
+
+	if (als_data.is_bllevel_supported) {
+		get_monotonic_boottime64(&ts);
+		timestamp = ((unsigned long long)(ts.tv_sec * NSEC_PER_SEC) +
+			(unsigned long long)ts.tv_nsec) / ONE_MILLION;
+		para[0] = mipi_level;
+		para[1] = bl_level;
+		para[2] = (uint64_t)timestamp;
+		send_als_ud_data_to_mcu(TAG_ALS, SUB_CMD_UPDATE_BL_LEVEL,
+				(const void *)&(para), sizeof(para), false);
+	}
+}
 /*files create for every sensor*/
 DEVICE_ATTR(enable, 0660, show_enable, store_enable);
 DEVICE_ATTR(set_delay, 0660, show_set_delay, store_set_delay);

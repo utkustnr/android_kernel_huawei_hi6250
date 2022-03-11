@@ -125,6 +125,7 @@ struct thp_ioctl_spi_msg_package {
 #define PROX_SUPPORT 1
 #define THP_PROX_ENTER 1
 #define THP_PROX_EXIT 0
+#define AFTER_SUSPEND_TIME 2000
 
 #define SPI_POLLING_MODE 1
 #define SPI_DMA_MODE 2
@@ -441,6 +442,7 @@ struct thp_core_data {
 	unsigned int timeout;
 	struct thp_gpios gpios;
 	bool suspended;
+	bool early_suspended;
 	bool work_status;
 #if defined(CONFIG_HUAWEI_DSM)
 	struct host_dsm_info dsm_info;
@@ -471,6 +473,7 @@ struct thp_core_data {
 	bool event_flag;
 	bool need_work_in_suspend;
 	bool prox_cache_enable;
+	struct timeval tp_suspend_record_tv;
 	u32 support_gesture_mode;
 	u32 hide_product_info_en;
 	u32 support_oem_info;
@@ -478,6 +481,7 @@ struct thp_core_data {
 	struct thp_easy_wakeup_info easy_wakeup_info;
 	struct mutex thp_wrong_touch_lock;
 	u16 frame_data_addr;
+	unsigned char sleep_mode; /* for record the switch command from framework */
 };
 
 

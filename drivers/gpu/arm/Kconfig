@@ -71,7 +71,6 @@ if MALI_NORR
 #source "drivers/gpu/arm/bifrost-r6p0-cet/Kconfig"
 #source "drivers/gpu/arm/bifrost-r7p0-00cet0/Kconfig"
 #source "drivers/gpu/arm/bifrost-r9p0-00cet0/Kconfig"
-source "drivers/gpu/arm/bifrost-r16p0-00cet5/Kconfig"
 endif
 
 if MALI_TRYM

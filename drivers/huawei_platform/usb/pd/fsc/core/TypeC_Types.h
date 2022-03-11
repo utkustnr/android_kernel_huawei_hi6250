@@ -37,6 +37,7 @@ typedef enum {
     TryWaitDebSink,
     UnattachedDebSource,
     IllegalCable,
+	EmarkerCheck,
 } ConnectionState;
 
 enum{

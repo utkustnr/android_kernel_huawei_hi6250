@@ -22,7 +22,6 @@
 const char g_cmd_monitor_white_table[][TASK_COMM_LEN]={
 	{"FIAgentThread"},
 	{"AIAgentThread"},
-	{"tee_test_ut"},
 };
 const uint32_t g_white_table_thread_num = sizeof(g_cmd_monitor_white_table) / TASK_COMM_LEN;
 

@@ -48,6 +48,7 @@
 #include <chipset_common/hwzrhung/zrhung.h>
 #endif
 /****************************MICRO DEFINITION*********************************/
+#define RWSEM_READER_OWNED ((struct task_struct *)1UL)
 #define ENABLE_SHOW_LEN         8
 #define WHITELIST_STORE_LEN     200
 #define IGNORELIST_LENGTH       100

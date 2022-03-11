@@ -114,7 +114,11 @@ struct opt_regs common_opt_regs[] = {
 
 struct opt_regs buck_common_opt_regs[] = {
         /*reg,  mask, shift, val, before,after*/
-        REG_CFG(0xb0 ,  0xff,   0, 0x01, 0,    0), /* ACR reg reset */
+        REG_CFG(0xb0  , 0xff,   0, 0x01, 0,    0), /* ACR reg reset */
+        REG_CFG(0xae  , 0xff,   0, 0x10, 0,    0), /* SOH reg reset */
+        REG_CFG(0xf1  , 0x02,   1, 0x00, 0,    0), /* sc_pulse_mode_en reg reset */
+        REG_CFG(0x281 , 0xc0,   6, 0x02, 0,    0), /* da_chg_cap3_sel reg reset 0x02*/
+        REG_CFG(0xec  , 0x10,   4, 0x00, 0,    0), /* sc_wdt_test_sel reg reset 0x00*/
         REG_CFG(0x2e9 , 0xff,   0, 0x1B, 0,    0),
         REG_CFG(0x2e0 , 0xff,   0, 0x3F, 0,    0),
         REG_CFG(0x2f2 , 0xff,   0, 0xA6, 0,    0),
@@ -223,7 +227,7 @@ struct opt_regs otg_opt_regs[] = {
         REG_CFG(0x2ee , 0xe7,   0, 0x09, 0,    0),
         REG_CFG(0xf0  , 0x0f,   0, 0x06, 0,    0),
         REG_CFG(0x2d9 , 0xff,   0, 0x10, 0,    0),
-        REG_CFG(0x2de , 0xff,   0, 0X1E, 0,    0),
+        REG_CFG(0x2de , 0xff,   0, 0X1C, 0,    0),
 };
 
 /**********************************************************
@@ -396,6 +400,7 @@ int hi6526_read(u16 reg, u8 *value)
 *                      value:register value
 *  return value:  0-success or others-fail
 **********************************************************/
+
 static int hi6526_write_mask(u16 reg, u8 mask, u8 shift, u8 value)
 {
         int ret = 0;
@@ -3355,7 +3360,7 @@ static int hi6526_fcp_adapter_vol_check(int adapter_vol_mv)
   Return:        0: success
                 -1: fail
 ***************************************************************************/
-static int hi6526_fcp_set_adapter_output_vol(int *output_vol)
+static int hi6526_fcp_set_adapter_output_vol(int output_vol)
 {
         u8 val = 0;
         u8 vol = 0;
@@ -3371,18 +3376,33 @@ static int hi6526_fcp_set_adapter_output_vol(int *output_vol)
         }
         SCHARGER_INF("%s: id out reg[0x4] = %u.\n", __func__, val);
 
-        /*get adapter max output vol value */
-        ret = hi6526_fcp_get_adapter_output_vol(&vol);
-        if (ret) {
-                SCHARGER_ERR("%s: fcp get adapter output vol err.\n", __func__);
-                return -1;
-        }
-
-        if (vol > CHG_FCP_OUTPUT_VOL_9V * CHG_FCP_VOL_STEP) {
-                vol = CHG_FCP_OUTPUT_VOL_9V * CHG_FCP_VOL_STEP;
-                SCHARGER_INF("fcp limit adapter vol to 9V, while adapter support 12V.\n");
-        }
-        *output_vol = vol / CHG_FCP_VOL_STEP;
+	switch (output_vol) {
+	case CHG_FCP_OUTPUT_VOL_5V:
+		ret = hi6526_fcp_adapter_reg_read(&vol,
+			CHG_FCP_SLAVE_REG_DISCRETE_OUT_V(0));
+		if (ret) {
+			SCHARGER_ERR("%s get output_vol error\n", __func__);
+			return -1;
+		}
+		break;
+	case CHG_FCP_OUTPUT_VOL_9V:
+		/* get adapter max output vol value */
+		ret = hi6526_fcp_get_adapter_output_vol(&vol);
+		if (ret) {
+			SCHARGER_ERR("%s: fcp get adapter output vol err\n",
+				__func__);
+			return -1;
+		}
+		if (vol > (CHG_FCP_OUTPUT_VOL_9V * CHG_FCP_VOL_STEP)) {
+			vol = CHG_FCP_OUTPUT_VOL_9V * CHG_FCP_VOL_STEP;
+			SCHARGER_INF("limit adap to 9V, while support 12V\n");
+		}
+		break;
+	default:
+		SCHARGER_ERR("input val is invalid\n");
+		return -1;
+	}
+	SCHARGER_INF("%s: output_vol=%u\n", __func__, vol);
 
         /*retry if write fail */
         ret = hi6526_fcp_adapter_reg_write(vol, CHG_FCP_SLAVE_VOUT_CONFIG);

@@ -21,8 +21,6 @@
 #include "lm36274.h"
 #include "hisi_fb.h"
 #include <linux/hisi/hw_cmdline_parse.h> //for runmode_is_factory
-#include <dsm/dsm_pub.h>
-extern struct dsm_client *lcd_dclient;
 #include "lcdkit_panel.h"
 
 struct class *lm36274_class = NULL;
@@ -46,6 +44,8 @@ static int g_resume_bl_duration = 0;  /* default not support auto resume*/
 static enum hrtimer_restart lm36274_bl_resume_hrtimer_fnc(struct hrtimer *timer);
 static void lm36274_bl_resume_workqueue_handler(struct work_struct *work);
 extern int bl_lvl_map(int level);
+
+static int lm36274_fault_check_support;
 
 struct backlight_information {
 	/* whether support lm36274 or not */
@@ -205,6 +205,10 @@ static int lm36274_parse_dts(struct device_node *np)
 			LM36274_INFO("get %s from dts value = 0x%x\n", lm36274_dts_string[i],bl_info.lm36274_reg[i]);
 		}
 	}
+
+	if (of_property_read_u32(np, "lm36274_check_fault_support",
+		&lm36274_fault_check_support) < 0)
+		LM36274_INFO("No need to detect fault flags!\n");
 
 	if (lcdkit_info.panel_infos.bias_change_lm36274_from_panel_support) {
 		lm36274_get_target_voltage(&vpos_target, &vneg_target);
@@ -574,6 +578,38 @@ err_out:
     return ret;
 }
 
+static void lm36274_check_fault(struct lm36274_chip_data *pchip,
+	int last_level, int level)
+{
+	unsigned int val = 0;
+	int ret;
+	int i;
+
+	LM36274_INFO("backlight check FAULT_FLAG!\n");
+
+	ret = regmap_read(pchip->regmap, REG_FLAGS, &val);
+	if (ret < 0) {
+		LM36274_ERR("read lm36274 FAULT_FLAG failed!\n");
+		return;
+	}
+
+	for (i = 0; i < FLAG_CHECK_NUM; i++) {
+		if (!(err_table[i].flag & val))
+			continue;
+		LM36274_ERR("last_bkl:%d, cur_bkl:%d\n FAULT_FLAG:0x%x!\n",
+			last_level, level, err_table[i].flag);
+		ret = dsm_client_ocuppy(lcd_dclient);
+		if (ret) {
+			LM36274_ERR("dsm_client_ocuppy fail: ret=%d!\n", ret);
+			continue;
+		}
+		dsm_client_record(lcd_dclient,
+			"lm36274 last_bkl:%d, cur_bkl:%d\n FAULT_FLAG:0x%x!\n",
+			last_level, level, err_table[i].flag);
+		dsm_client_notify(lcd_dclient, err_table[i].err_no);
+	}
+}
+
 /**
  * lm36274_set_backlight_reg(): Set Backlight working mode
  *
@@ -654,6 +690,12 @@ int lm36274_set_backlight_reg(unsigned int bl_level)
 	if (ret < 0) {
 		goto i2c_error;
 	}
+
+	/* Judge power on or power off */
+	if (lm36274_fault_check_support &&
+		((last_level <= 0 && level != 0) ||
+		(last_level > 0 && level == 0)))
+		lm36274_check_fault(lm36274_g_chip, last_level, level);
 
 	last_level = level;
 	up(&(lm36274_g_chip->test_sem));
@@ -1303,7 +1345,8 @@ static int lm36274_remove(struct i2c_client *client)
 {
     struct lm36274_chip_data *pchip = i2c_get_clientdata(client);
 
-    regmap_write(pchip->regmap, REG_BL_ENABLE, BL_DISABLE);
+	if (regmap_write(pchip->regmap, REG_BL_ENABLE, BL_DISABLE) < 0)
+		LM36274_ERR("regmap_write REG_BL_ENABLE err\n");
 
     sysfs_remove_group(&client->dev.kobj, &lm36274_group);
 

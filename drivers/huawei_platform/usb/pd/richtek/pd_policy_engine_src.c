@@ -36,6 +36,12 @@ void pe_src_startup_entry(pd_port_t *pd_port, pd_event_t *pd_event)
 	pd_reset_protocol_layer(pd_port);
 	pd_set_rx_enable(pd_port, PD_RX_CAP_PE_STARTUP);
 
+#ifdef CONFIG_USB_PD_RESET_CABLE
+	pd_port->reset_cable = false;
+	pd_port->detect_emark = false;
+	pd_port->vswap_ret = 0;
+#endif /* CONFIG_USB_PD_RESET_CABLE */
+
 	switch (pd_event->event_type) {
 	case PD_EVT_HW_MSG:	/* CC attached */
 		pd_enable_vbus_valid_detection(pd_port, true);

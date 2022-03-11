@@ -23,6 +23,7 @@
 #include <huawei_platform/usb/pd/richtek/tcpci_timer.h>
 #ifdef CONFIG_TYPEC_CAP_CUSTOM_SRC2
 #include <huawei_platform/usb/pd/richtek/pd_dpm_core.h>
+#include <huawei_platform/usb/hw_pd_dev.h>
 #endif
 #include <huawei_platform/usb/pd/richtek/tcpm.h>
 #include <huawei_platform/power/huawei_charger.h>
@@ -306,7 +307,8 @@ static const char *const typec_attach_name[] = {
 #ifdef CONFIG_TYPEC_CAP_CUSTOM_SRC
 	"CUSTOM_SRC",
 #endif	/* CONFIG_TYPEC_CAP_CUSTOM_SRC */
-
+	"ATTACHED_VBUS_ONLY",
+	"UNATTACHED_VBUS_ONLY",
 #ifdef CONFIG_TYPEC_CAP_CUSTOM_SRC2
 	"CUSTOM_SRC2",
 #endif  /* CONFIG_TYPEC_CAP_CUSTOM_SRC2 */
@@ -761,6 +763,17 @@ static inline void typec_custom_src_attached_entry(
 
 			TYPEC_DBG("Rp 1.5A or 3A\r\n");
 
+			if (pd_dpm_smart_holder_without_emark()) {
+				TYPEC_NEW_STATE(typec_attached_custom_src2);
+				tcpc_dev->typec_attach_new =
+				TYPEC_ATTACHED_CUSTOM_SRC2;
+				typec_state.new_state =
+				TYPEC_ATTACHED_CUSTOM_SRC2;
+				pd_dpm_handle_pe_event(
+				PD_DPM_PE_EVT_TYPEC_STATE, &typec_state);
+				TYPEC_DBG("without emark\n");
+				return;
+			}
 			/* 1. treat cc1 as cc */
 			tcpci_set_polarity(tcpc_dev, 1);
 			/* 2. configure tx/rx cap for sop' message */
@@ -2515,6 +2528,25 @@ static int tcpc_pd_dpm_disable_pd(void *client, bool disable)
 	return 0;
 }
 
+static void tcpc_pd_dpm_detect_emark_cable(void *client)
+{
+	struct tcpc_device *tcpc_dev = NULL;
+
+	if (!client) {
+		TYPEC_INFO("%s client is NULL\n", __func__);
+		return;
+	}
+
+	tcpc_dev = client;
+#ifdef CONFIG_USB_PD_RESET_CABLE
+	tcpc_dev->pd_port.reset_cable = true;
+	tcpc_dev->pd_port.detect_emark = true;
+	tcpc_dev->pd_port.vswap_ret = 0;
+#endif /* CONFIG_USB_PD_RESET_CABLE */
+	tcpm_data_role_swap(tcpc_dev);
+	return;
+}
+
 static struct pd_dpm_ops tcpc_device_pd_dpm_ops = {
 	.pd_dpm_hard_reset = tcpc_pd_dpm_hard_reset,
 	.pd_dpm_get_hw_dock_svid_exist = tcpc_pd_dpm_get_hw_dock_svid_exist,
@@ -2523,6 +2555,7 @@ static struct pd_dpm_ops tcpc_device_pd_dpm_ops = {
 	.pd_dpm_set_voltage = tcpc_pd_dpm_set_voltage,
 	.pd_dpm_get_cc_state = rt1711h_get_cc_state,
 	.pd_dpm_disable_pd = tcpc_pd_dpm_disable_pd,
+	.pd_dpm_detect_emark_cable = tcpc_pd_dpm_detect_emark_cable,
 };
 int tcpc_typec_init(struct tcpc_device *tcpc_dev, uint8_t typec_role)
 {

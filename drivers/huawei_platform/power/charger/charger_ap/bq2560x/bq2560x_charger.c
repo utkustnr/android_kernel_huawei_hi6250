@@ -71,6 +71,8 @@ static bool g_hiz_mode = FALSE;
 static int hiz_iin_limit_flag = HIZ_IIN_FLAG_FALSE;
 static int g_cv_flag;
 static int g_cv_policy;
+static int g_bq2560x_cv;
+static bool g_shutdown_flag;
 
 #define TERM_CURR                    (840)
 #define LIMIT_CURR                   (840)
@@ -86,6 +88,9 @@ static int g_cv_policy;
 #define DELAY_100MS                  100
 #define DELAY_1500MS                 1500
 #define RETRY_MAX3                   3
+#define MIN_CV                       4350
+
+static int bq2560x_fcp_reset(void);
 
 static int bq2560x_write_block(struct bq2560x_device_info *di,
 	u8 *value, u8 reg, unsigned int num_bytes)
@@ -454,6 +459,10 @@ static int bq2560x_chip_init(struct chip_init_crit *init_crit)
 
 	switch (init_crit->vbus) {
 	case ADAPTER_5V:
+		/* reset fcp before chip init with vbus 5v */
+		if (di->fcp_support)
+			(void)bq2560x_fcp_reset();
+
 		ret = bq2560x_5v_chip_init(di);
 		break;
 
@@ -468,6 +477,16 @@ static int bq2560x_chip_init(struct chip_init_crit *init_crit)
 static int bq2560x_set_input_current(int value)
 {
 	int val = 0;
+
+	/*
+	 * IC precision deviation by hw: +100mA(current >= 1700)
+	 * max value protect: 3200mA
+	 */
+	if (value >= AC_IIN_CURRENT_THRESHOLD) {
+		value += AC_IIN_CURRENT_OFFSET;
+		if (value > AC_IIN_MAX_CURRENT)
+			value = AC_IIN_MAX_CURRENT;
+	}
 
 	val = (value - REG00_IINLIM_BASE) / REG00_IINLIM_LSB;
 
@@ -526,6 +545,11 @@ static int bq2560x_reused_set_cv(int value)
 
 static int bq2560x_set_terminal_voltage(int value)
 {
+	if ((g_bq2560x_cv > MIN_CV) && (value > g_bq2560x_cv)) {
+		hwlog_info("set cv to custom_cv=%d\n", g_bq2560x_cv);
+		value = g_bq2560x_cv;
+	}
+
 	g_cv_policy = value;
 
 	if (g_cv_flag == 0)
@@ -705,18 +729,19 @@ static int bq2560x_get_ilim(void)
 static int bq2560x_check_charger_plugged(void)
 {
 	u8 reg = 0;
-	int ret = 0;
+	int ret;
 
 	ret = bq2560x_read_mask(BQ2560X_REG_SS,
 			BQ2560X_REG_SS_PG_STAT_MASK,
 			BQ2560X_REG_SS_PG_STAT_SHIFT,
 			&reg);
+	if (ret < 0)
+		hwlog_info("read i2c fail\n");
 
 	hwlog_info("check_charger_plugged [%x]=0x%x\n", BQ2560X_REG_SS, reg);
 
 	if (reg == BQ2560x_REG_SS_VBUS_PLUGGED)
 		return REG08_POWER_GOOD;
-
 	return 0;
 }
 
@@ -852,6 +877,9 @@ static int bq2560x_set_charger_hiz(int enable)
 		hwlog_err("di is null\n");
 		return 0;
 	}
+
+	if (g_shutdown_flag)
+		enable = 0;
 
 	if (enable > 0) {
 #ifdef CONFIG_HUAWEI_USB_SHORT_CIRCUIT_PROTECT
@@ -1024,12 +1052,8 @@ static int bq2560x_fcp_get_adapter_output_current(void)
 	return 0;
 }
 
-static int bq2560x_fcp_set_adapter_output_vol(int *output_vol)
+static int bq2560x_fcp_set_adapter_output_vol(int output_vol)
 {
-	if (!output_vol)
-		return -1;
-
-	*output_vol = VOLTAGE9V;
 	return 0;
 }
 
@@ -1086,8 +1110,8 @@ static int bq2560x_fcp_adapter_detect(void)
 		try_cnt++;
 		ret = bq2560x_is_ovpstate(&is_ovp);
 		if (!ret && is_ovp == true) {
-			/* up 9v succ must reset ovp to 10p5 */
-			(void)bq2560x_set_ovpthreshold(REG06_OVP_10P5V);
+			/* up 9v succ must reset ovp to 14p3 */
+			(void)bq2560x_set_ovpthreshold(REG06_OVP_14P3V);
 			hwlog_info("fcp detect upto9v succ\n");
 			return 0;
 		}
@@ -1095,7 +1119,7 @@ static int bq2560x_fcp_adapter_detect(void)
 	}
 
 	/* fourth: reset when detect 9v failed */
-	(void)bq2560x_set_ovpthreshold(REG06_OVP_10P5V);
+	(void)bq2560x_set_ovpthreshold(REG06_OVP_14P3V);
 	(void)bq2560x_fcp_reset();
 
 	hwlog_err("fcp detect upto9v fail\n");
@@ -1227,6 +1251,13 @@ static int bq2560x_probe(struct i2c_client *client,
 	}
 	hwlog_info("hiz_iin_limit=%d\n", di->hiz_iin_limit);
 
+	ret = of_property_read_u32(np, "custom_cv", &g_bq2560x_cv);
+	if (ret) {
+		hwlog_err("custom_cv dts read failed\n");
+		g_bq2560x_cv = 0;
+	}
+	hwlog_info("custom_cv=%d\n", g_bq2560x_cv);
+
 	di->gpio_cd = of_get_named_gpio(np, "gpio_cd", 0);
 	hwlog_info("gpio_cd=%d\n", di->gpio_cd);
 
@@ -1341,6 +1372,26 @@ bq2560x_fail_0:
 	return ret;
 }
 
+static void bq2560x_shutdown(struct i2c_client *client)
+{
+	int ret;
+	u8 part;
+	u8 reg = 0;
+
+	ret = bq2560x_read_byte(BQ2560X_REG_VPRS, &reg);
+	if (ret)
+		return;
+
+	part = reg & BQ2560X_REG_VPRS_PART_MASK;
+	if (part) {
+		g_shutdown_flag = TRUE;
+		/* 0:close hiz mode */
+		ret = bq2560x_set_charger_hiz(0);
+		if (ret)
+			hwlog_err("set bq2560x set hiz fail\n");
+	}
+}
+
 static int bq2560x_remove(struct i2c_client *client)
 {
 	struct bq2560x_device_info *di = i2c_get_clientdata(client);
@@ -1385,6 +1436,7 @@ static const struct i2c_device_id bq2560x_i2c_id[] = {
 static struct i2c_driver bq2560x_driver = {
 	.probe = bq2560x_probe,
 	.remove = bq2560x_remove,
+	.shutdown = bq2560x_shutdown,
 	.id_table = bq2560x_i2c_id,
 	.driver = {
 		.owner = THIS_MODULE,

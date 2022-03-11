@@ -100,7 +100,6 @@ extern const char *get_str_end(const char *cmd_buf);
 extern bool get_arg(const char *str, int *arg);
 extern als_run_stop_para_t als_ud_data_upload;
 extern int als_ud_rgbl_block;
-extern struct semaphore sem_als_ud_rgbl_block;
 
 extern uint8_t sem_als_ud_rgbl_block_flag;
 
@@ -1040,19 +1039,30 @@ int send_als_ud_data_to_mcu(int tag, uint32_t subcmd, const void *data, int leng
 	return 0;
 }
 
+void send_dc_status_to_sensorhub(uint32_t dc_status)
+{
+	uint32_t para;
+
+	if (als_data.als_phone_type == VOGUE_PHONE_TYPE) {
+		para = (uint32_t)dc_status;
+		send_als_ud_data_to_mcu(TAG_ALS, SUB_CMD_CHANGE_DC_STATUS,
+			(const void *)&(para), sizeof(para), false);
+	}
+}
+
 void save_light_to_sensorhub(uint32_t mipi_level, uint32_t bl_level)
 {
 	uint64_t timestamp = 0;
 	struct timespec64 ts;
-	uint32_t para[3];
+	struct BrightData para;
 
 	if (als_data.als_phone_type == ELE_PHONE_TYPE || als_data.als_phone_type == VOGUE_PHONE_TYPE ||
 			als_data.is_bllevel_supported) {
 		get_monotonic_boottime64(&ts);
 		timestamp = ((unsigned long long)(ts.tv_sec * NSEC_PER_SEC) + (unsigned long long)ts.tv_nsec) / 1000000;
-		para[0] = (uint32_t)mipi_level;
-		para[1] = (uint32_t)bl_level;
-		para[2] = (uint32_t)timestamp;
+		para.mipiData = mipi_level;
+		para.brightData = bl_level;
+		para.timeStamp = (uint64_t)timestamp;
 		send_als_ud_data_to_mcu(TAG_ALS, SUB_CMD_UPDATE_BL_LEVEL, (const void *)&(para), sizeof(para), false);
 	}
 }
@@ -1132,14 +1142,12 @@ static ssize_t show_als_ud_rgbl_block_data(struct device *dev, struct device_att
 {
 	int ret = 0;
 	/*Block node by soft irq*/
-	down(&sem_als_ud_rgbl_block);
 	sem_als_ud_rgbl_block_flag = 1;
 	als_ud_rgbl_block = 0;
-	up(&sem_als_ud_rgbl_block);
 	ret = wait_event_freezable_timeout(sensorhub_als_block_waitq, (als_ud_rgbl_block != 0), msecs_to_jiffies(100000));
 	if (ret > 0){
 		hwlog_info("normal message transfer \n");
-		return snprintf(buf, MAX_STR_SIZE, "%d,%d,%d\n", \
+		return snprintf(buf, MAX_STR_SIZE, "%llu,%u,%u\n", \
 			als_ud_data_upload.sample_start_time, als_ud_data_upload.sample_interval, als_ud_data_upload.integ_time);//unit:ms
 	}else{
 		hwlog_info("soft irq time out\n");
@@ -2431,7 +2439,6 @@ static int sensors_feima_init(void)
 	sensors_class = class_create(THIS_MODULE, "sensors");
 	if (IS_ERR(sensors_class))
 		return PTR_ERR(sensors_class);
-	sema_init(&sem_als_ud_rgbl_block, 1);
 	sensors_class->dev_groups = sensors_attr_groups;
 	sensors_register();
 	init_sensors_get_data();

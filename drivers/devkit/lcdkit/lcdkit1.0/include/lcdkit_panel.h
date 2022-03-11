@@ -432,6 +432,9 @@ enum
 	SHARP_TD4336_HMA_PANEL_ID = 11,
 	LG_NT36772A_HMA_PANEL_ID = 12,
 	BOE_HX83112E_HMA_PANEL_ID = 13,
+	JDI_TD4336_RT8555_HMA_PANEL_ID = 14,
+	SHARP_TD4336_RT8555_HMA_PANEL_ID = 15,
+	LG_NT36772A_RT8555_HMA_PANEL_ID = 16,
 	RGBW_PANEL_ID_MAX,
 };
 
@@ -500,6 +503,12 @@ enum esd_judge_type {
     ESD_BIT_VALID,
 };
 
+enum {
+    POWER_ON = 0,
+    POWER_TS_SUSPEND = 1,
+    POWER_OFF = 2,
+};
+
 struct lcdkit_panel_infos
 {
     /*panel information*/
@@ -547,6 +556,8 @@ struct lcdkit_panel_infos
     /*backlight sem*/
     struct semaphore bl_sem;
     struct semaphore lcdkit_cmd_sem;
+    struct semaphore thp_second_poweroff_sem;
+    int panel_power_state;
 
     int idle2_lcd_reset_low;
     int idle2_lcd_on_reset_low_to_high;
@@ -661,6 +672,7 @@ struct lcdkit_panel_infos
     u8 rst_set_low_before_resume;
     /*scan mode*/
     int scan_mode;
+    u8 thp_proximity_support;
 
     /*esd check commond*/
     struct lcdkit_dsi_panel_cmds esd_cmds;
@@ -1016,6 +1028,8 @@ struct lcdkit_panel_infos
     uint32_t delay_af_tp_before_suspend;
     u8 rst_after_vbat_flag;
     u8 lcdph_delay_set_flag;
+    u8 tddi_tp_gesture_sequence_flag;
+	u8 lcd_poweron_after_bl;
 
     uint32_t delay_af_vsn_off;
     uint32_t delay_af_vsp_off;

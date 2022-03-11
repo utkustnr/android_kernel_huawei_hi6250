@@ -82,7 +82,7 @@
 #define DTS_COMP_TCL_NT36682A "tcl_nt36682a_6p59_1080p_video"
 #define DTS_COMP_TM_NT36682A "tm_nt36682a_6p59_1080p_video"
 #define DTS_COMP_BOE_TD4320_6P59 "boe_td4320_6p59_1080p_video"
-#define DTS_COMP_TM_TD4320_6P59 "tm_td4320_6p59_1080p_video"
+#define DTS_COMP_TM_TD4321_6P59 "tm_td4321_6p59_1080p_video"
 
 #define DTS_COMP_CMI_NT36682A "cmi_nt36682a_6p15_1080p_video"
 #define DTS_COMP_JDI_TD4320 "jdi_td4320_6p15_1080p_video"
@@ -90,6 +90,7 @@
 #define DTS_COMP_BOE_NT36682A "boe_nt36682a_6p15_1080p_video"
 #define DTS_COMP_TM_TD4320 "tm_td4320_6p15_1080p_video"
 #define DTS_COMP_TM_TD4330 "tm_td4330_6p15_1080p_video"
+#define DTS_COMP_TM_NT36682A_6P15 "tm_nt36682a_6p15_1080p_video"
 
 #define DTS_COMP_AUO_TD4320_6P4 "auo_td4320_6p4_1080p_video"
 #define DTS_COMP_BOE_TD4320_6P4 "boe_td4320_6p4_1080p_video"

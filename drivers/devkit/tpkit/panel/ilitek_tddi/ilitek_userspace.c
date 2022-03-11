@@ -987,7 +987,10 @@ static long ilitek_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long
 
     case ILITEK_IOCTL_I2C_SET_WRITE_LENGTH:
     case ILITEK_IOCTL_I2C_SET_READ_LENGTH:
-        i2c_rw_length = arg;
+		if (arg <= sizeof(szBuf))
+			i2c_rw_length = arg;
+		else
+			ilitek_err("arg exceeds buff length\n");
         break;
 
     case ILITEK_IOCTL_TP_HW_RESET:

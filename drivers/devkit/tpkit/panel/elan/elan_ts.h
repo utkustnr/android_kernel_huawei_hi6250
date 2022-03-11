@@ -113,6 +113,8 @@
 #define PROJECT_ID_POLL	5
 #define LCD_PANEL_INFO_MAX_LEN  128
 #define ELAN_PANEL_ID_START_BIT	6
+#define READ_PORJECT_ID_WORDS 6
+#define SEND_CMD_VALID_INDEX 9
 
 struct elan_ktf_ts_data {
 	int gpio_3v3_en;

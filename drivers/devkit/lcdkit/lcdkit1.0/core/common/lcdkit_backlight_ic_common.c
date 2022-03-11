@@ -1,6 +1,7 @@
 #include "lcdkit_bias_bl_utility.h"
 #include "lcdkit_backlight_ic_common.h"
 #include "lcdkit_dbg.h"
+#include "i2c-designware-core.h"
 
 #if defined (CONFIG_HUAWEI_DSM)
 #include <dsm/dsm_pub.h>
@@ -18,6 +19,41 @@ static bool bl_ic_init_status = false;
 static int g_force_resume_bl_flag = BL_RESUME_IDLE;
 
 extern void hisi_blpwm_bl_regisiter(int (*set_bl)(int bl_level));
+
+static void i2c_suspend_work_around(u32 *numb)
+{
+	u32 i2c_bus_numb = *numb;
+
+	if (plcdkit_bl_ic == NULL)
+		return;
+
+	LCDKIT_INFO("chip_name = %s, bl_ic_numb =%d gpio_lcd_bl =%d\n",
+		chip_name, plcdkit_bl_ic->bl_config.bl_ic_numb,
+		lcdkit_info.panel_infos.gpio_lcd_bl);
+	if ((i2c_bus_numb == plcdkit_bl_ic->bl_config.bl_ic_numb) &&
+	    (!strcmp(chip_name, "hw_rt8555")))
+		gpio_set_value(lcdkit_info.panel_infos.gpio_lcd_bl, GPIO_PULL_DOWN);
+}
+
+static void i2c_resume_work_around(u32 *numb)
+{
+	u32 i2c_bus_numb = *numb;
+
+	if (plcdkit_bl_ic == NULL)
+		return;
+
+	LCDKIT_INFO("chip_name = %s, bl_ic_numb =%d gpio_lcd_bl =%d\n",
+		chip_name, plcdkit_bl_ic->bl_config.bl_ic_numb,
+		lcdkit_info.panel_infos.gpio_lcd_bl);
+	if ((i2c_bus_numb == plcdkit_bl_ic->bl_config.bl_ic_numb) &&
+	    (!strcmp(chip_name, "hw_rt8555")))
+		gpio_set_value(lcdkit_info.panel_infos.gpio_lcd_bl, GPIO_PULL_UP);
+}
+
+struct i2c_work_around_ops lcdkit_i2c_work_ops = {
+	.i2c_suspend_work_around = i2c_suspend_work_around,
+	.i2c_resume_work_around = i2c_resume_work_around,
+};
 
 static int lcdkit_backlight_ic_read_byte(struct lcdkit_bl_ic_device *pbl_ic, u8 reg, u8 *pdata)
 {
@@ -177,6 +213,7 @@ int lcdkit_backlight_ic_set_brightness(unsigned int level)
     unsigned char level_lsb = 0;
     unsigned char level_msb = 0;
     int ret = 0;
+	bool bl_set_slope_status = false;
 #if defined (CONFIG_HUAWEI_DSM)
     static uint32_t s_brightness_set_fail_count = 0;
     static bool bl_backlight_off_flag = false;
@@ -211,6 +248,28 @@ int lcdkit_backlight_ic_set_brightness(unsigned int level)
     level_lsb = level & plcdkit_bl_ic->bl_config.bl_lsb_reg_cmd.cmd_mask;
     level_msb = (level >> plcdkit_bl_ic->bl_config.bl_lsb_reg_cmd.val_bits)&plcdkit_bl_ic->bl_config.bl_msb_reg_cmd.cmd_mask;
     LCDKIT_DEBUG("[backlight] level_lsb is 0x%x , level_msb is 0x%x \n",level_lsb,level_msb);
+
+	if (!strcmp(chip_name, "hw_rt8555")) {
+		if ((!level_lsb) && level_msb) {
+			level_lsb += 1;
+			LCDKIT_INFO("level_lsb = 0x%x  level_msb = 0x%x\n",
+			    level_lsb, level_msb);
+		}
+		bl_set_slope_status = hisi_get_bl_slope_status();
+		LCDKIT_DEBUG("bl_set_slope_status = %d\n", bl_set_slope_status);
+		if ((plcdkit_bl_ic->bl_config.backlight_slope.cmd_val) &&
+			(bl_set_slope_status == true)) {
+			ret = lcdkit_backlight_ic_write_byte(plcdkit_bl_ic,
+			plcdkit_bl_ic->bl_config.backlight_slope.cmd_reg,
+			plcdkit_bl_ic->bl_config.backlight_slope.cmd_val);
+			if (ret < 0) {
+				LCDKIT_ERR("TEST_ERROR_I2C\n");
+				up(&(plcdkit_bl_ic->test_sem));
+				return TEST_ERROR_I2C;
+			}
+			bl_set_slope_status = false;
+		}
+	}
 
     if(plcdkit_bl_ic->bl_config.bl_lsb_reg_cmd.val_bits != 0)
     {
@@ -311,6 +370,8 @@ int lcdkit_backlight_ic_disable_device(void)
     }
     if(plcdkit_bl_ic->bl_config.suspend_disbrightness_support)
     {
+        /* set brightness need 1ms delay after config reset reg */
+        mdelay(1);
         ret = lcdkit_backlight_ic_set_brightness(0);
         if(ret < 0)
         {
@@ -627,10 +688,6 @@ void lcdkit_parse_backlight_ic_config(struct device_node *np)
     struct property *prop = NULL;
 
     LCDKIT_INFO("lcdkit_parse_backlight_ic_config\n");
-    if(!strlen(chip_name) || !strcmp(chip_name,"default") ||(NULL == np))
-    {
-        return -1;
-    }
 
 	lcdkit_parse_backlight_ic_param(np, "lcdkit-bl-ic-level", &g_bl_config.bl_level);
 	lcdkit_parse_backlight_ic_param(np, "lcdkit-bl-ic-ctrl-mode", &g_bl_config.bl_ctrl_mod);
@@ -642,6 +699,10 @@ void lcdkit_parse_backlight_ic_config(struct device_node *np)
 	lcdkit_parse_backlight_ic_param(np, "lcdkit-bl-ic-init-delay", &g_bl_config.ic_init_delay);
 	lcdkit_parse_backlight_ic_param(np, "lcdkit-bl-ic-ovp-check", &g_bl_config.ovp_check_enable);
 	lcdkit_parse_backlight_ic_param(np, "lcdkit-bl-ic-fake-lcd-ovp-check", &g_bl_config.fake_lcd_ovp_check);
+	lcdkit_parse_backlight_ic_param(np, "lcdkit-bl-ic-numb",
+		&g_bl_config.bl_ic_numb);
+	lcdkit_parse_backlight_ic_param(np, "lcdkit-bl-ic-en-gpio-disable",
+		&g_bl_config.bl_ic_en_gpio_disable);
 
     lcdkit_backlight_ic_propname_cat(tmp_buf,"lcdkit-bl-ic-init-cmd",sizeof(tmp_buf));
     prop = of_find_property(np, tmp_buf, NULL);
@@ -708,6 +769,8 @@ void lcdkit_parse_backlight_ic_config(struct device_node *np)
 	lcdkit_parse_backlight_ic_cmd(np, "lcdkit-bl-ic-bias-disable-cmd", &g_bl_config.bias_disable_cmd);
 	lcdkit_parse_backlight_ic_cmd(np, "lcdkit-bl-ic-brt-ctrl-cmd", &g_bl_config.bl_brt_ctrl_cmd);
 	lcdkit_parse_backlight_ic_cmd(np, "lcdkit-bl-ic-fault-ctrl-cmd", &g_bl_config.bl_fault_ctrl_cmd);
+	lcdkit_parse_backlight_ic_cmd(np, "lcdkit-bl-ic-slope-command",
+		&g_bl_config.backlight_slope);
 
 	lcdkit_parse_backlight_ic_param(np, "lcdkit-bl-ic-hidden-reg-surpport", &g_bl_config.ic_hidden_reg_support);
 	lcdkit_parse_backlight_ic_cmd(np, "lcdkit-bl-ic-sec-reg-enable-cmd", &g_bl_config.security_reg_enable_cmd);
@@ -1695,6 +1758,12 @@ static int lcdkit_backlight_ic_probe(struct i2c_client *client, const struct i2c
 #endif
         return ret;
     }
+
+	if (!strcmp(chip_name, "hw_rt8555")) {
+		ret = i2c_work_around_ops_register(&lcdkit_i2c_work_ops);
+		if (ret)
+			LCDKIT_ERR("register i2c_work_around_ops failed!\n");
+	}
 
     if(plcdkit_bl_ic->bl_config.bl_wq_support)
     {

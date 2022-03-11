@@ -569,6 +569,7 @@ static int __secsg_parse_dt(struct device *dev,
 	u64 water_mark = 0;
 	u32 heap_attr = 0;
 	u32 pool_shift = ION_PBL_SHIFT;
+	u32 pre_alloc_attr = 0;
 	int ret = 0;
 
 	nd = of_get_child_by_name(dev->of_node, heap_data->name);
@@ -614,24 +615,35 @@ static int __secsg_parse_dt(struct device *dev,
 	if (ret < 0) {
 		pr_err("can't find prop:water-mark\n");
 		water_mark = 0;
+		ret = 0;
 	}
 	secsg_heap->water_mark = PAGE_ALIGN(water_mark);
 
 	ret = of_property_read_u32(nd, "pool-shift", &pool_shift);
 	if (ret < 0) {
-		pr_err("can not find pool-shift.\n");
+		pr_err("can't find prop:pool-shift.\n");
 		pool_shift = ION_PBL_SHIFT;
+		ret = 0;
 	}
 	secsg_heap->pool_shift = pool_shift;
 
 	ret = of_property_read_u32(nd, "heap-attr", &heap_attr);
 	if (ret < 0) {
-		pr_err("can not find heap-arrt.\n");
+		pr_err("can't find prop:heap-arrt.\n");
 		heap_attr = HEAP_NORMAL;
+		ret = 0;
 	}
 	if (heap_attr >= HEAP_MAX)
 		heap_attr = HEAP_NORMAL;
 	secsg_heap->heap_attr = heap_attr;
+
+	ret = of_property_read_u32(nd, "pre-alloc-attr", &pre_alloc_attr);
+	if (ret < 0) {
+		pr_err("can't find prop:pre-alloc-attr.\n");
+		pre_alloc_attr = 0;
+		ret = 0;
+	}
+	secsg_heap->pre_alloc_attr = pre_alloc_attr;
 
 out:
 	return ret;
@@ -663,12 +675,14 @@ struct ion_heap *ion_secsg_heap_create(struct ion_platform_heap *heap_data)
 		return ERR_PTR(-ENOMEM);/*lint !e747*/
 
 	mutex_init(&secsg_heap->mutex);
+	mutex_init(&secsg_heap->pre_alloc_mutex);
 
 	secsg_heap->pool = NULL;
 	secsg_heap->heap.ops = &secsg_heap_ops;
 	secsg_heap->heap.type = ION_HEAP_TYPE_SECSG;
 	secsg_heap->heap_size = heap_data->size;
 	secsg_heap->alloc_size = 0;
+	secsg_heap->cma_alloc_size = 0;
 	dev = heap_data->priv;
 	INIT_LIST_HEAD(&secsg_heap->allocate_head);
 
@@ -709,11 +723,15 @@ struct ion_heap *ion_secsg_heap_create(struct ion_platform_heap *heap_data)
 	    __secsg_fill_watermark(secsg_heap))
 		pr_err("__secsg_fill_watermark failed!\n");
 
+	if (secsg_heap->pre_alloc_attr)
+		INIT_WORK(&secsg_heap->pre_alloc_work, secsg_pre_alloc_wk_func);
+
 	pr_err("secsg heap info %s:\n"
 		  "\t\t\t\t\t\t\t heap id : %u\n"
 		  "\t\t\t\t\t\t\t heap cmatype : %u\n"
 		  "\t\t\t\t\t\t\t heap cmaname : %s\n"
 		  "\t\t\t\t\t\t\t heap attr : %u\n"
+		  "\t\t\t\t\t\t\t pre alloc attr : %u\n"
 		  "\t\t\t\t\t\t\t pool shift : %u\n"
 		  "\t\t\t\t\t\t\t heap size : %lu MB\n"
 		  "\t\t\t\t\t\t\t per alloc size :  %llu MB\n"
@@ -726,6 +744,7 @@ struct ion_heap *ion_secsg_heap_create(struct ion_platform_heap *heap_data)
 		  secsg_heap->cma_type,
 		  secsg_heap->cma_name,
 		  secsg_heap->heap_attr,
+		  secsg_heap->pre_alloc_attr,
 		  secsg_heap->pool_shift,
 		  secsg_heap->heap_size / SZ_1M,
 		  secsg_heap->per_alloc_sz / SZ_1M,

@@ -1322,6 +1322,7 @@ enum {
 	FILE_AKM09918_DOE_MAG,          /*74*/
 	FILE_BMA2X2_ACC,                /*75*/
 	FILE_N2DM_ACC,                /*76*/
+	FILE_A96T3X6_CAP_PROX,			/* 77 */
 	FILE_ID_MAX = 79,                       /* MAX VALID FILE ID */
 };
 

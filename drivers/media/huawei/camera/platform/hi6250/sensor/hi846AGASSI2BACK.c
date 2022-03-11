@@ -287,7 +287,7 @@ int hi846AGASSI2BACK_match_id(hwsensor_intf_t* si, void * data)
     struct pinctrl_state *pinctrl_def  = NULL;
     struct pinctrl_state *pinctrl_idle = NULL;
     struct pinctrl *p    = NULL;
-    char *sensor_name [] = { "hi846AGASSI2BACK_HOLITECH" , "hi846AGASSI2BACK_OFILM"};
+    static const char * const sensor_name[] = { "hi846AGASSI2BACK_HOLITECH", "hi846AGASSI2BACK_OFILM", "hi846AGASSI2BACK_LITEARRAY"};
     int rc = 0;
 
     if (!si || !data){
@@ -387,6 +387,11 @@ int hi846AGASSI2BACK_match_id(hwsensor_intf_t* si, void * data)
         else if((module_id_0 == GPIO_LOW_STATE) && (module_id_1 == GPIO_LOW_STATE)){
             //ofilm module
             strncpy_s(cdata->cfg.name, sizeof(cdata->cfg.name), sensor_name[1], strlen(sensor_name[1])+1);
+            cdata->data = sensor->board_info->sensor_index;
+            rc = 0;
+        } else if ((module_id_0 == GPIO_LOW_STATE) && (module_id_1 == GPIO_HIGH_STATE)) {
+            /* latearray module */
+            strncpy_s(cdata->cfg.name, sizeof(cdata->cfg.name), sensor_name[2], strlen(sensor_name[2])+1);
             cdata->data = sensor->board_info->sensor_index;
             rc = 0;
         }

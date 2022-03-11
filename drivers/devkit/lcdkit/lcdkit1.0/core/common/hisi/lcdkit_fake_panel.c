@@ -215,9 +215,11 @@ static int lcdkit_fake_set_backlight(struct platform_device* pdev, uint32_t bl_l
         }
         LCDKIT_INFO("set backlight to %d\n", bl_level);
         ret = hisi_blpwm_set_backlight(hisifd, bl_level);
+	LCDKIT_DEBUG("ret = %d\n", ret);
     }
     else {
         ret = hisi_blpwm_set_backlight(hisifd, 0);
+	LCDKIT_DEBUG("ret = %d\n", ret);
         if(pinfo->bl_ic_ctrl_mode == COMMON_IC_MODE)
         {
             struct lcdkit_bl_ic_info *tmp = NULL;

@@ -64,10 +64,10 @@
 /* Max sizes for login info buffer comming from teecd */
 #define MAX_PACKAGE_NAME_LEN 255
 /* The apk certificate format is as follows:
- * modulus_size(4bytes) ||modulus buffer(256 bytes)
- * || exponent size(4 bytes) || exponent buffer(1 bytes)
+ * modulus_size(4 bytes) + modulus buffer(512 bytes)
+ * + exponent size(4 bytes) + exponent buffer(1 bytes)
  */
-#define MAX_PUBKEY_LEN 512
+#define MAX_PUBKEY_LEN 1024
 
 struct tag_TC_NS_Shared_MEM;
 
@@ -170,6 +170,7 @@ typedef struct  tag_TC_NS_SMC_CMD {
 typedef struct tag_TC_NS_Shared_MEM {
 	void *kernel_addr;
 	void *user_addr;
+	void *user_addr_ca; /* for ca alloc share mem */
 	unsigned int len;
 	bool from_mailbox;
 	struct list_head head;

@@ -256,6 +256,9 @@ enum rq_flag_bits {
 	__REQ_INTEGRITY,	/* I/O includes block integrity payload */
 	__REQ_FUA,		/* forced unit access */
 	__REQ_PREFLUSH,		/* request for cache flush */
+#ifdef CONFIG_ROW_VIP_QUEUE
+	__REQ_VIP,		/* vip activity */
+#endif
 	__REQ_BG,		/* background activity */
 	__REQ_FG,		/* foreground activity */
 
@@ -303,9 +306,16 @@ enum rq_flag_bits {
 #define REQ_FAILFAST_MASK \
 	(REQ_FAILFAST_DEV | REQ_FAILFAST_TRANSPORT | REQ_FAILFAST_DRIVER)
 
+#ifdef CONFIG_ROW_VIP_QUEUE
+#define REQ_COMMON_MASK \
+	(REQ_FAILFAST_MASK | REQ_SYNC | REQ_META | REQ_PRIO | REQ_NOIDLE | \
+	 REQ_PREFLUSH | REQ_FUA | REQ_INTEGRITY | REQ_NOMERGE | REQ_VIP | \
+	 REQ_BG | REQ_FG)
+#else
 #define REQ_COMMON_MASK \
 	(REQ_FAILFAST_MASK | REQ_SYNC | REQ_META | REQ_PRIO | REQ_NOIDLE | \
 	 REQ_PREFLUSH | REQ_FUA | REQ_INTEGRITY | REQ_NOMERGE | REQ_BG | REQ_FG)
+#endif
 
 #define REQ_CLONE_MASK		REQ_COMMON_MASK
 
@@ -332,6 +342,9 @@ enum rq_flag_bits {
 #define REQ_COPY_USER		(1ULL << __REQ_COPY_USER)
 #define REQ_PREFLUSH		(1ULL << __REQ_PREFLUSH)
 #define REQ_FLUSH_SEQ		(1ULL << __REQ_FLUSH_SEQ)
+#ifdef CONFIG_ROW_VIP_QUEUE
+#define REQ_VIP  		(1ULL << __REQ_VIP)
+#endif
 #define REQ_BG			(1ULL << __REQ_BG)
 #define REQ_FG			(1ULL << __REQ_FG)
 #define REQ_IO_STAT		(1ULL << __REQ_IO_STAT)

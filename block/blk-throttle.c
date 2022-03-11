@@ -3150,8 +3150,16 @@ again:
 		goto out;
 	/*lint -restore*/
 
+#ifdef CONFIG_ROW_VIP_QUEUE
+	if (!blk_queue_qos_on(bdev_get_queue(bio->bi_bdev))) {
+		if (blkcg->type <= BLK_THROTL_FG)
+			bio->bi_opf |= REQ_FG;
+	}
+#else
 	if (blkcg->type <= BLK_THROTL_FG)
 		bio->bi_opf |= REQ_FG;
+
+#endif
 
 	if (bio->bi_opf & (REQ_META | REQ_PREFLUSH | REQ_FUA))
 		goto out;

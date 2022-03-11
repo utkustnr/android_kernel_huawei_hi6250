@@ -125,6 +125,8 @@ struct hisi_bci_device_info {
 	unsigned int capacity_filter_count;
 	unsigned int prev_capacity;
 	unsigned int charge_full_count;
+	unsigned int chg_full_rpt_thr;
+	unsigned int chg_full_wait_times;
 	unsigned int wakelock_enabled;
 	#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
 	struct power_supply bat;
@@ -250,11 +252,11 @@ static int calc_capacity_from_voltage(void)
 static int hisi_force_full_timer(int curr_capacity,
 				 struct hisi_bci_device_info *di)
 {
-	if (curr_capacity > CHG_CANT_FULL_THRESHOLD) {
+	if (curr_capacity > (int)di->chg_full_rpt_thr) {
 		di->charge_full_count++;
-		if (di->charge_full_count >= CHARGE_FULL_TIME) {
+		if (di->charge_full_count >= di->chg_full_wait_times) {
 			bci_info("FORCE_CHARGE_FULL = %d\n", curr_capacity);
-			di->charge_full_count = CHARGE_FULL_TIME;
+			di->charge_full_count = di->chg_full_wait_times;
 			curr_capacity = CAPACITY_FULL;
 		}
 	} else {
@@ -366,6 +368,9 @@ void bci_set_work_interval(int capacity, struct hisi_bci_device_info *di)
 #endif
 	if (capacity > CHG_CANT_FULL_THRESHOLD)
 		di->monitoring_interval = WORK_INTERVAL_REACH_FULL;
+
+	if (di->chargedone_stat && (hisi_bci_show_capacity() <= CHG_CANT_FULL_THRESHOLD))
+		di->monitoring_interval = WORK_INTERVAL_MAX;
 }
 /*******************************************************
   Function:       vth_correct_soc
@@ -1548,6 +1553,7 @@ static int hisi_bci_battery_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CHARGE_COUNTER:
 		val->intval = hisi_battery_cc();
 		val->intval = abs(val->intval) + 1;
+		val->intval *= 1000; /* 1000 is the unit of mah to uah */
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_DEC:
 		val->intval = (di->capacity * di->capacity_dec_base_decimal);
@@ -1883,6 +1889,12 @@ static int hisi_bci_parse_dts(struct device_node *np, struct hisi_bci_device_inf
 		google_battery_node = 0;
 		bci_err("error:get google_battery_node value failed!\n");
 	}
+	if (of_property_read_u32(np, "chg_full_rpt_thr", (u32 *)&di->chg_full_rpt_thr))
+		di->chg_full_rpt_thr = CHG_CANT_FULL_THRESHOLD;
+	if (of_property_read_u32(np, "chg_full_wait_times", (u32 *)&di->chg_full_wait_times))
+		di->chg_full_wait_times = CHARGE_FULL_TIME;
+	bci_info("chg_full_rpt_thr = %d, chg_full_wait_times = %d\n",
+		di->chg_full_rpt_thr, di->chg_full_wait_times);
 
 	/*bci_work_interval_para*/
 	array_len = of_property_count_strings(np, "bci_work_interval_para");

@@ -61,6 +61,9 @@ enum pmic_power_req_src_t {
 	VIB_PMIC_REQ = 1 << 2,
 	MAIN_CAM_PMIC_REQ = 1 << 3,
 	AUDIO_PMIC_REQ = 1 << 4,
+	DF_PMIC_REQ = 1 << 5,
+	DOT_PMIC_REQ = 1 << 6,
+	VCM_PMIC_REQ = 1 << 7,
 };
 
 struct hw_comm_pmic_cfg_t {

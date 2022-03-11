@@ -364,6 +364,9 @@ struct bq2560x_device_info {
 #define BQ2560X_REG_VPRS_PN_MASK                     (0x78)
 #define BQ2560X_REG_VPRS_PN_SHIFT                    (3)
 
+#define BQ2560X_REG_VPRS_PART_MASK                   0x04
+#define BQ2560X_REG_VPRS_PART_SHIFT                  2
+
 #define BQ2560X_REG_VPRS_DEV_REV_MASK                (0x03)
 #define BQ2560X_REG_VPRS_DEV_REV_SHIFT               (0)
 
@@ -375,7 +378,10 @@ struct bq2560x_device_info {
 #define HIZ_IIN_FLAG_FALSE                           (0)
 #define IINLIM_100                                   (100)
 
-#define AC_IIN_MAX_CURRENT                           (2000)
+#define AC_IIN_MAX_CURRENT                           3200
 #define EX_AC_IIN_MAX_CURRENT                        (2100)
+/* by hardware */
+#define AC_IIN_CURRENT_OFFSET                        100
+#define AC_IIN_CURRENT_THRESHOLD                     1700
 
 #endif /* end of _BQ2560X_CHARGER_H_ */

@@ -937,7 +937,8 @@ static void gt1x_put_test_result(
 	if (gt1x_ts->dev_data->ts_platform_data->chip_data->rawdata_newformatflag == TS_RAWDATA_NEWFORMAT){
 		gt1x_put_test_result_newformat((struct ts_rawdata_info_new *)info,ts_test);
 	}else{
-		TS_LOG_ERR("%s : Not support old capacitance data format !!\n");
+		TS_LOG_ERR("%s: Not support old capacitance data format\n",
+			__func__);
 	}
 
 	return ;

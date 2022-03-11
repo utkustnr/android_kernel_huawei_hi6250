@@ -132,6 +132,7 @@ enum NV_ITEM_ID_ENUM
     /* Added for network not include eps_network_feature_support IE ,2017-08-25,begin */
     EN_NV_ID_NETWORK_FEATURE_VOPS_OPTIMIZE_CTRL     = 0x7999, /* 此NV用于解决沙特运营商ZAIN网络未携带eps network feature support信元时,非VOLTE用户无法进行IMS注册的问题 */
     /* Added for network not include eps_network_feature_support IE ,2017-08-25,end */
+    EN_NV_ID_COMPATIBLE_OPTIMIZE_FOR_PROTCL_AND_NET  = 0x79AA,
     EN_NV_ID_LNAS_EMM_END                           = 0x7BD4,/* EMM END */
     EN_NV_ID_LNAS_IMSA_BEGIN                        = 0x7BD5,/* IMSA BEGIN */
     EN_NV_ID_IMSA_DSDS_OPT_CONFIG                   = 0x7BD6,
@@ -195,6 +196,7 @@ enum NV_ITEM_ID_ENUM
     EN_NV_ID_LNAS_ESM_CHANGE_TO_IMSAPN_CONFIG       = 0xCBEC, /* ATTACH时承载被拒后，是否要替换为IMS的APN */
     /* Added 2016-12-14 for KDDI,end */
     EN_NV_ID_LNAS_ESM_PROTOCOL_CONFIG                = 0xCBF1,
+    EN_NV_ID_LNAS_COMPATIBILITY_CONFIG              = 0xCBF2,
     EN_NV_ID_LNAS_ERABM_ESM_END                     = 0xCCB0,/* ERABM ESM END */
     EN_NV_ID_LNAS_RSV_BEGIN                         = 0xCCB1,/* RSV BEGIN */
     EN_NV_ID_LNAS_RSV_END                           = 0xCF08,/* RSV END */
@@ -682,6 +684,7 @@ enum NV_ITEM_ID_ENUM
     EN_NV_ID_LTE_TX_UL_AMPR_NS05                    = 0xD759,
     EN_NV_ID_LTE_TX_CA_AMPR                         = 0xD760,
     EN_NV_ID_LTE_TX_CFR                             = 0xD761,
+    EN_NV_ID_LTE_CSU_EMU_EXTEND                     = 0xD762,
 
     /* add for supp comb v10i0 begin */
     EN_NV_ID_UE_CAP_V10i0_BAND_COMB_PARAM1          = 0xBB80,

@@ -60,7 +60,7 @@ struct i2c_err_info {
 };
 
 struct smartpa_vendor_info {
-	int vendor;
+	unsigned int vendor;
 	const char *chip_model;
 };
 
@@ -84,10 +84,12 @@ typedef struct smartpakit_gpio_reset {
 // 0 read reg node:   read  addr  | count | 0
 // 1 write reg node:  write addr  | value | 1
 // 2 time delay node: 0(not used) | value | 2
+// 3 compare reg node:   read  addr  | mask | 3
 typedef enum smartpakit_reg_ctl_type {
 	SMARTPAKIT_REG_CTL_TYPE_R = 0,  // read reg
 	SMARTPAKIT_REG_CTL_TYPE_W,      // write reg
 	SMARTPAKIT_REG_CTL_TYPE_DELAY,  // only time delay
+	SMARTPAKIT_REG_CTL_TYPE_R_COMPARE,     // read reg and compare
 
 	SMARTPAKIT_REG_CTL_TYPE_MAX,
 } smartpakit_reg_ctl_type_t;
@@ -109,6 +111,7 @@ typedef struct smartpakit_reg_ctl {
 typedef struct smartpakit_reg_ctl_sequence {
 	unsigned int num;
 	smartpakit_reg_ctl_t *regs;
+	unsigned int *compare_value;
 } smartpakit_reg_ctl_sequence_t;
 
 typedef struct smartpakit_gpio_irq {
@@ -118,6 +121,8 @@ typedef struct smartpakit_gpio_irq {
 	bool need_reset;
 	char gpio_name[SMARTPAKIT_NAME_MAX];
 	char irq_name[SMARTPAKIT_NAME_MAX];
+	bool irq_need_reset_status;
+	bool compare_value_existed;
 
 	smartpakit_reg_ctl_sequence_t *rw_sequence; // read or write reg sequence
 } smartpakit_gpio_irq_t;

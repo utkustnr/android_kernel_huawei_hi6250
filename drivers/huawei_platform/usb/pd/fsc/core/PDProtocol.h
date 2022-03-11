@@ -82,6 +82,9 @@ void ProtocolLoadSOP(void);
 void ProtocolLoadSOP1(void);
 void ProtocolLoadEOP(void);
 void ProtocolSendHardReset(void);
+#ifdef FSC_HAVE_CUSTOM_SRC2
+void ProtocolSendCableReset(void);
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 void ProtocolFlushRxFIFO(void);
 void ProtocolFlushTxFIFO(void);
 void ResetProtocolLayer(FSC_BOOL ResetPDLogic);

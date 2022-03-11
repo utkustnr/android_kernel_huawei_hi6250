@@ -1298,9 +1298,6 @@ int sock_getsockopt(struct socket *sock, int level, int optname,
 		break;
 
 #ifdef CONFIG_HUAWEI_XENGINE
-	case SO_XENGINE_PROXYUID:
-		return Emcom_Xengine_GetProxyUid(sk, optval, optlen, len);
-
 	case SO_XENGINE_SOCKFLAG:
 		v.val = sk->hicom_flag;
 		break;

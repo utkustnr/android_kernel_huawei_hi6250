@@ -77,6 +77,22 @@
 
 struct i2c_adapter *device_adap_addr = NULL;
 
+static struct i2c_work_around_ops *g_i2c_work_ops;
+
+int i2c_work_around_ops_register(struct i2c_work_around_ops *ops)
+{
+	int ret = 0;
+
+	if (ops != NULL) {
+		g_i2c_work_ops = ops;
+	} else {
+		g_i2c_work_ops = NULL;
+		pr_err("%s: i2c_work_around_ops register fail!\n", __func__);
+		return -ENODEV;
+	}
+	return ret;
+}
+
 static u32 hs_i2c_dw_get_clk_rate_khz(struct dw_i2c_dev *dev)
 {
 	u32 rate;
@@ -899,6 +915,13 @@ static int hs_dw_i2c_probe(struct platform_device *pdev)
 		d->setpin = 1;
 	}
 
+	r = of_property_read_u32(dev->of_node,
+		"i2c_bus_numb", &d->i2c_bus_numb);
+	if (r)
+		dev_err(dev, "doesn't have i2c_bus_numb property!\n");
+
+	dev_info(dev, "i2c_bus_numb =%d\n", d->i2c_bus_numb);
+
 	r = of_property_read_u32_array(dev->of_node, "reset-reg-base", &data[0], 4);
 	if (r) {
 		dev_err(dev,  "doesn't have reset-reg-base property!\n");
@@ -1160,6 +1183,11 @@ static int hs_dw_i2c_suspend(struct device *dev)
 		usleep_range(1000, 2000);
 	}
 
+	dev_info(&pdev->dev, "dev->i2c_bus_numb = %d\n", i_dev->i2c_bus_numb);
+
+	if (g_i2c_work_ops && g_i2c_work_ops->i2c_suspend_work_around)
+		g_i2c_work_ops->i2c_suspend_work_around(&(i_dev->i2c_bus_numb));
+
 	dev_info(&pdev->dev, "%s: suspend -\n", __func__);
 	return 0;
 }
@@ -1192,6 +1220,11 @@ static int hs_dw_i2c_resume(struct device *dev)
 	clk_disable(i_dev->clk);
 
 	mutex_unlock(&i_dev->lock);/*lint !e455*/
+
+	dev_info(&pdev->dev, "dev->i2c_bus_numb = %d\n", i_dev->i2c_bus_numb);
+
+	if (g_i2c_work_ops && g_i2c_work_ops->i2c_resume_work_around)
+		g_i2c_work_ops->i2c_resume_work_around(&(i_dev->i2c_bus_numb));
 
 	dev_info(&pdev->dev, "%s: resume -\n", __func__);
 	return 0;

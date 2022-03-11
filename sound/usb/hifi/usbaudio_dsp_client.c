@@ -755,11 +755,7 @@ void hifi_samplerate_table_filled(struct audioformat *fp, struct usbaudio_format
 	}
 
 	for (i = 0; i < fp->nr_rates; i++) {
-		if (is_customized_headset(usb_id)) {
-			rate = fp->rate_table[i];
-		} else {
-			rate = pcm_cfg[SNDRV_PCM_STREAM_PLAYBACK].rates;
-		}
+		rate = fp->rate_table[i];
 		switch (rate) {
 		case 44100:
 			fmt->rate_table[USBAUDIO_TABLE_SAMPLERATE_44100] = 44100;

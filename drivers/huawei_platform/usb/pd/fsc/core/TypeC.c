@@ -41,6 +41,9 @@
 
 #ifdef FSC_HAVE_VDM
 #include "vdm/vdm_config.h"
+#ifdef FSC_HAVE_CUSTOM_SRC2
+#include "vdm/vdm.h"
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 #endif // FSC_HAVE_VDM
 
 #ifdef FSC_DEBUG
@@ -116,7 +119,10 @@ CCTermType              vconnterm_attached;
 USBTypeCCurrent         SinkCurrent;            // Variable to indicate the current capability we have received
 FSC_U8           loopCounter = 0;        // Used to count the number of Unattach<->AttachWait loops
 USBTypeCCurrent  SourceCurrent;                 // Variable to indicate the current capability we are broadcasting
-
+#ifdef FSC_HAVE_CUSTOM_SRC2
+FSC_BOOL                huawei_emarker_detected_;
+FSC_U8                  huawei_emarker_tries_;
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 
 /////////////////////////////////////////////////////////////////////////////
 // Tick at 100us
@@ -292,6 +298,17 @@ void InitializeTypeCVariables(void)
 
     c2a_cable = FALSE;
 }
+
+#ifdef FSC_HAVE_CUSTOM_SRC2
+int get_emarker_detect_status(void)
+{
+	return huawei_emarker_detected_;
+}
+void set_emarker_detect_status(FSC_BOOL status)
+{
+	huawei_emarker_detected_ = status;
+}
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 
 #define HARD_RESET_REG_ADDR 0x09
 #define HARD_RESET_CONFIG    0x40
@@ -531,6 +548,12 @@ void StateMachineTypeC(void)
             case DebugAccessorySink:
                 StateMachineDebugAccessorySink();
                 break;
+#ifdef FSC_HAVE_CUSTOM_SRC2
+		case EmarkerCheck:
+			if (pd_dpm_get_is_support_smart_holder())
+				StateMachineEmarkerCheck();
+			break;
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 #endif /* FSC_HAVE_SNK */
 #endif // FSC_HAVE_ACCMODE
 #if (defined(FSC_HAVE_SNK) && defined(FSC_HAVE_ACCMODE))
@@ -845,12 +868,21 @@ void StateMachineAttachWaitSink(void)
 
 		if(isVBUSOverVoltage(VBUS_MDAC_4P20))
 		{
-		    if((VCONNTerm >= CCTypeRdUSB) && (VCONNTerm < CCTypeUndefined))
-		    {
-				cctermprevious_attached =
-					DecodeCCTermination();
-				vconnterm_attached = VCONNTerm;
-				SetStateDebugAccessorySink();
+			if ((VCONNTerm >= CCTypeRdUSB) &&
+				(VCONNTerm < CCTypeUndefined)) {
+#ifdef FSC_HAVE_CUSTOM_SRC2
+				if (VCONNTerm == CCTypeRd1p5 &&
+					pd_dpm_get_is_support_smart_holder()) {
+					SetStateEmarkCheck();
+				} else {
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
+					cctermprevious_attached =
+						DecodeCCTermination();
+					vconnterm_attached = VCONNTerm;
+					SetStateDebugAccessorySink();
+#ifdef FSC_HAVE_CUSTOM_SRC2
+				}
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 			} else if(VCONNTerm == CCTypeOpen) {
 #ifdef FSC_HAVE_DRP
 				if ((PortType == USBTypeC_DRP) && blnSrcPreferred)
@@ -1416,6 +1448,53 @@ void StateMachineDebugAccessorySink(void)
     Registers.Measure.MDAC = VBUS_MDAC_3P36;
     DeviceWrite(regMeasure, 1, &Registers.Measure.byte);
 }
+
+#ifdef FSC_HAVE_CUSTOM_SRC2
+#define HUAWEI_CABLE_RETRIES 10
+void StateMachineEmarkerCheck(void)
+{
+	if (!isVBUSOverVoltage(VBUS_MDAC_3P36))
+		SetStateDelayUnattached();
+	if (!pd_dpm_smart_holder_without_emark()) {
+		FSC_PRINT("FUSB %s huawei_emarker_detected_ = %d\n",
+		__func__, huawei_emarker_detected_);
+		FSC_PRINT("FUSB %s huawei_emarker_tries_ = %d\n",
+		__func__, huawei_emarker_tries_);
+		FSC_PRINT("FUSB %s ExpectingVdmResponse = %d\n",
+		__func__, expectingVdmResponse());
+		FSC_PRINT("FUSB %s StateTimer.expired = %d\n",
+		__func__, StateTimer.expired);
+
+		/* 5. polling to wait sop' message */
+		if ((huawei_emarker_detected_ == FALSE) &&
+			(huawei_emarker_tries_ < HUAWEI_CABLE_RETRIES) &&
+				(expectingVdmResponse() == FALSE) &&
+					(StateTimer.expired == TRUE)) {
+			if (Registers.Control.AUTO_RETRY == 0) {
+				Registers.Control.AUTO_RETRY = 1;
+				DeviceWrite(regControl3, 1,
+				&Registers.Control.byte[3]);
+			}
+
+			huawei_emarker_tries_++;
+			requestDiscoverIdentity(SOP_TYPE_SOP1);
+			platform_start_timer(&StateTimer, tCableResetPoll);
+		}
+#ifdef FSC_INTERRUPT_TRIGGERED
+		else if (huawei_emarker_detected_ == TRUE ||
+			(huawei_emarker_tries_ >= HUAWEI_CABLE_RETRIES &&
+				expectingVdmResponse() == FALSE)) {
+			huawei_emarker_tries_ = 0;
+			g_Idle = TRUE;
+			platform_enable_timer(FALSE);
+			USBPDDisable(TRUE);
+		}
+#endif // FSC_INTERRUPT_TRIGGERED
+	}
+	Registers.Measure.MDAC = VBUS_MDAC_3P36;
+	DeviceWrite(regMeasure, 1, &Registers.Measure.byte);
+}
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 #endif /* (defined(FSC_HAVE_SNK)*/
 
 #ifdef FSC_DTS
@@ -1755,6 +1834,55 @@ void SetStateDebugAccessorySink(void)
     platform_notify_debug_accessory_snk((CC_ORIENTATION)blnCCPinIsCC2);
     platform_set_timer(&StateTimer, tOrientedDebug);
 }
+
+#ifdef FSC_HAVE_CUSTOM_SRC2
+void SetStateEmarkCheck(void)
+{
+	g_Idle = FALSE;
+	loopCounter = 0;
+	ConnState = EmarkerCheck;
+
+	setStateSink();
+	updateVCONNSink();
+	Registers.Measure.MDAC = VBUS_MDAC_3P36;
+	DeviceWrite(regMeasure, 1, &Registers.Measure.byte);
+
+	// Huawei - Illegal 22k/22k
+	if (VCONNTerm == CCTypeRd1p5 &&
+		DecodeCCTerminationSink() == CCTypeRd1p5) {
+
+		if (pd_dpm_smart_holder_without_emark()) {
+			struct pd_dpm_typec_state typec_state = {
+				.new_state = PD_DPM_TYPEC_ATTACHED_CUSTOM_SRC2,
+			};
+			FSC_PRINT("FUSB %s smart holder without emark\n",
+				__func__);
+			pd_dpm_handle_pe_event(PD_DPM_PE_EVT_TYPEC_STATE,
+				&typec_state);
+		} else {
+			FSC_PRINT("FUSB %s: Rp 1.5A\n", __func__);
+			huawei_emarker_detected_ = FALSE;
+			// treat cc1 as cc
+			blnCCPinIsCC2 = TRUE;
+			blnCCPinIsCC1 = FALSE;
+			Registers.Switches.MEAS_CC2 = 1;
+			Registers.Switches.MEAS_CC1 = 0;
+			DeviceWrite(regSwitches0, 1,
+				&Registers.Switches.byte[0]);
+			USBPDEnable(TRUE, SINK);
+			PolicySinkStartup();
+			platform_cancel_hard_reset();
+			PolicyState = peDisabled;
+			// Enable SOP' DiscoverIdentity message to emark
+			Registers.Control.ENSOP1 = 1;
+			DeviceWrite(regControl1, 1, &Registers.Control.byte[1]);
+			// send cable reset to reset msg_id
+			ProtocolSendCableReset();
+			platform_start_timer(&StateTimer, tCableResetPoll);
+		}
+	}
+}
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 #endif // FSC_HAVE_SNK
 
 #ifdef FSC_HAVE_SRC

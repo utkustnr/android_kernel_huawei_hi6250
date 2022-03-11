@@ -1212,6 +1212,11 @@ static ssize_t show_sleeve_test_threshhold(struct device *dev, struct device_att
 	return -1;
 }
 
+void save_light_to_sensorhub(uint32_t mipi_level, uint32_t bl_level)
+{
+	return;
+}
+
 static DEVICE_ATTR(sleeve_test_prepare, 0220, NULL, store_sleeve_test_prepare);
 static DEVICE_ATTR(sleeve_test_threshhold, 0440, show_sleeve_test_threshhold, NULL);
 

@@ -49,6 +49,23 @@ dev_t ROOT_DEV;
 extern void engineer_mode_mount(void);
 #endif
 
+#ifdef CONFIG_ANDROID_SAR_RAMDISK
+static int __initdata android_bootmode;
+
+extern int mount_sar_ramdisk(char*);
+
+static int __init android_bootmode_setup(char *str) {
+	android_bootmode = simple_strtol(str,NULL,0);
+	return 1;
+}
+__setup("bootmode=", android_bootmode_setup);
+#endif
+
+extern dev_t begin_oae_dm(dev_t orginal_dev,
+			  char *saved_root_name,
+			  char *root_device_name);
+extern void end_oae_dm(void);
+
 static int __init load_ramdisk(char *str)
 {
 	rd_doload = simple_strtol(str,NULL,0) & 3;
@@ -539,11 +556,18 @@ void __init mount_root(void)
 #endif
 #ifdef CONFIG_BLOCK
 	{
-		int err = create_dev("/dev/root", ROOT_DEV);
+		int err;
+
+		ROOT_DEV = begin_oae_dm(ROOT_DEV, saved_root_name,
+					root_device_name);
+
+		err = create_dev("/dev/root", ROOT_DEV);
 
 		if (err < 0)
 			pr_emerg("Failed to create /dev/root: %d\n", err);
 		mount_block_root("/dev/root", root_mountflags);
+
+		end_oae_dm();
 	}
 #endif
 #ifdef CONFIG_HISI_ENGINEER_MODE

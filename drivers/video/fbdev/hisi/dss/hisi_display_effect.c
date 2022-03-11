@@ -22,16 +22,35 @@
 #include <linux/dma-mapping.h>
 #include <linux/memory.h>
 
+
 #define MMAP_DEVICE_NAME "display_sharemem_map"
 #define DTS_COMP_SHAREMEM_NAME "hisilicon,hisisharemem"
 #define DEV_NAME_SHARE_MEM "display_share_mem"
-
+#define XCC_COEF_LENGTH 12
 
 int g_factory_gamma_enable = 0;
 struct mutex g_rgbw_lock;
-
 static uint8_t* share_mem_virt = NULL;
 static phys_addr_t share_mem_phy = 0;
+const int JDI_TD4336_RT8555_RGBW_ID = 14;
+const int SHARP_TD4336_RT8555_RGBW_ID = 15;
+const int LG_NT36772A_RT8555_RGBW_ID = 16;
+static struct dss_display_effect_xcc last_xcc_param = {
+	0,
+	{
+		0x0, 0x8000, 0x0, 0x0,
+		0x0, 0x0, 0x8000, 0x0,
+		0x0, 0x0, 0x0, 0x8000
+	}
+};
+const int blc_xcc_buf_count = 16;
+const int display_effect_flag_max = 4;
+struct effect_bl_buf {
+	uint32_t blc_enable;
+	int delta;
+	struct dss_display_effect_xcc xcc_param;
+	uint32_t dc_enable;
+};
 
 /*lint -e838 -e778 -e845 -e712 -e527 -e30 -e142 -e715 -e655 -e550 +e559*/
 static void hisi_effect_module_support (struct hisi_fb_data_type *hisifd)
@@ -299,7 +318,11 @@ static int hisifb_effect_info_set_handler(const void __user *argp)
 			goto err_out_spin;
 		}
 	}
-	hisifd_primary->display_effect_flag = 4;
+
+	/*the display effect is not allowed to set reg when the partical update*/
+	if (hisifd_primary->display_effect_flag < 5)
+		hisifd_primary->display_effect_flag = 4;
+
 err_out_spin:
 	spin_unlock(&hisifd_primary->effect_lock);
 
@@ -664,7 +687,9 @@ int display_engine_ddic_rgbw_param_set(struct hisi_fb_data_type *hisifd, display
 	hisifd->de_info.rgbw_saturation_control = param->rgbw_saturation_control;
 	hisifd->de_info.frame_gain_speed = param->frame_gain_speed;
 	hisifd->de_info.pixel_gain_speed = param->pixel_gain_speed;
-	if((param->ddic_panel_id != LG_NT36772A_RGBW_ID) && (param->ddic_panel_id != LG_NT36772A_RGBW_ID_HMA) && (param->ddic_panel_id != BOE_HX83112E_RGBW_ID_HMA)) {
+	if((param->ddic_panel_id != LG_NT36772A_RGBW_ID) && (param->ddic_panel_id != LG_NT36772A_RGBW_ID_HMA)
+		&& (param->ddic_panel_id != BOE_HX83112E_RGBW_ID_HMA) && (param->ddic_panel_id != JDI_TD4336_RT8555_RGBW_ID)
+		&& (param->ddic_panel_id != SHARP_TD4336_RT8555_RGBW_ID) && (param->ddic_panel_id != LG_NT36772A_RT8555_RGBW_ID)) {
 		hisifd->de_info.frame_gain_limit = param->frame_gain_limit;
 		hisifd->de_info.pwm_duty_gain = param->pwm_duty_gain;
 		hisifd->de_info.color_distortion_allowance = param->color_distortion_allowance;
@@ -761,9 +786,13 @@ int display_engine_amoled_algo_param_set(struct hisi_fb_data_type *hisifd, displ
 	hisifd->de_info.amoled_param.Lowac_DBV_XCCThres = param->Lowac_DBV_XCCThres;
 	hisifd->de_info.amoled_param.Lowac_DBV_XCC_MinThres = param->Lowac_DBV_XCC_MinThres;
 	hisifd->de_info.amoled_param.Lowac_Fixed_DBVThres= param->Lowac_Fixed_DBVThres;
+	hisifd->de_info.amoled_param.Lowac_DBV_Thre_DC = param->Lowac_DBV_Thre_DC;
+	hisifd->de_info.amoled_param.Lowac_Fixed_DBV_Thres_DC = param->Lowac_Fixed_DBV_Thres_DC;
+	hisifd->de_info.amoled_param.DC_Backlight_Delayus = param->DC_Backlight_Delayus;
 	up(&hisifd->blank_sem);
 	HISI_FB_DEBUG("[effect] first screen on ! HBM_Max_BackLight:%d Hiac_DBVThres: %d HBMEnable: %d AmoledDimingEnable : %d\n",param->HBM_Max_BackLight,param->Hiac_DBVThres,param->HBMEnable,param->AmoledDimingEnable);
 	HISI_FB_DEBUG("[effect] first screen on ! Lowac_DBVThres:%d Lowac_DBV_XCCThres: %d Lowac_DBV_XCC_MinThres: %d Lowac_Fixed_DBVThres : %d\n",param->Lowac_DBVThres,param->Lowac_DBV_XCCThres,param->Lowac_DBV_XCC_MinThres,param->Lowac_Fixed_DBVThres);
+	HISI_FB_DEBUG("[effect] DC_Backlight_Delayus = %d", hisifd->de_info.amoled_param.DC_Backlight_Delayus);
 	return ret;
 }
 
@@ -1292,12 +1321,88 @@ ERR_OUT:
 	return;
 }
 
-ssize_t hisifb_display_effect_bl_ctrl_store(struct fb_info *info, const char *buf, size_t count) {
+int hisifb_display_effect_resolve_bl_buf(const char *buf,
+	struct effect_bl_buf *resolved_buf)
+{
+	int ret_count;
+	ret_count = sscanf(buf,
+		"%u:%d:%u:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%u",
+		&(resolved_buf->blc_enable),
+		&(resolved_buf->delta),
+		&(resolved_buf->xcc_param.xcc_enable),
+		&(resolved_buf->xcc_param.xcc_table[0]),
+		&(resolved_buf->xcc_param.xcc_table[1]),
+		&(resolved_buf->xcc_param.xcc_table[2]),
+		&(resolved_buf->xcc_param.xcc_table[3]),
+		&(resolved_buf->xcc_param.xcc_table[4]),
+		&(resolved_buf->xcc_param.xcc_table[5]),
+		&(resolved_buf->xcc_param.xcc_table[6]),
+		&(resolved_buf->xcc_param.xcc_table[7]),
+		&(resolved_buf->xcc_param.xcc_table[8]),
+		&(resolved_buf->xcc_param.xcc_table[9]),
+		&(resolved_buf->xcc_param.xcc_table[10]),
+		&(resolved_buf->xcc_param.xcc_table[11]),
+		&(resolved_buf->dc_enable));
+	HISI_FB_DEBUG("[effect] ret_count = %d\n", ret_count);
+	return ret_count;
+}
+
+static void hisifb_display_effect_handle_xcc(struct hisi_fb_data_type *hisifd,
+	struct effect_bl_buf *resolved_buf)
+{
+	if ((memcmp(&last_xcc_param, &(resolved_buf->xcc_param),
+		sizeof(last_xcc_param)) == 0))
+		return;
+	(void)memcpy(&last_xcc_param, &(resolved_buf->xcc_param),
+		sizeof(last_xcc_param));
+}
+
+static void hisifb_display_effect_handle_dc_sync(
+	struct hisi_fb_data_type *hisifd,
+	struct effect_bl_buf *resolved_buf, bool *dc_enable_changed)
+{
+	struct hisi_fb_data_type *hisifd_primary =
+		hisifd_list[PRIMARY_PANEL_IDX];
+	if (hisifd_primary == NULL) {
+		HISI_FB_ERR("hisifd_primary is NULL pointer, return!\n");
+		return;
+	}
+	*dc_enable_changed = resolved_buf->dc_enable !=
+		hisifd->de_info.amoled_param.DC_Brightness_Dimming_Enable;
+	if (*dc_enable_changed) {
+		/*the display effect is not allowed to set reg when the partical update*/
+		if (hisifd_primary->display_effect_flag < 5)
+			hisifd_primary->display_effect_flag = display_effect_flag_max;
+
+		hisifd->de_info.amoled_param.DC_Brightness_Dimming_Enable =
+			resolved_buf->dc_enable;
+		if (hisifd->bl_level > 0 || resolved_buf->dc_enable > 0) {
+			delta_bl_delayed = resolved_buf->delta;
+			blc_enable_delayed = resolved_buf->blc_enable;
+		} else {
+			hisifd->de_info.amoled_param.
+				DC_Brightness_Dimming_Enable_Real =
+				resolved_buf->dc_enable;
+			hisifd->de_info.blc_enable =
+				(bool)resolved_buf->blc_enable;
+			hisifd->de_info.blc_delta = resolved_buf->delta;
+		}
+	} else {
+		hisifd->de_info.blc_enable = (bool)resolved_buf->blc_enable;
+		hisifd->de_info.blc_delta = resolved_buf->delta;
+	}
+}
+
+ssize_t hisifb_display_effect_bl_ctrl_store(struct fb_info *info,
+	const char *buf, size_t count) {
 	struct hisi_fb_data_type *hisifd = NULL;
 	ktime_t current_bl_timestamp = ktime_get();
 	int bl_timeinterval = 16670000;
 	ssize_t ret = (ssize_t)count;
 	uint32_t len = 0;
+	ssize_t ret_count = 0;
+	bool dc_enable_changed = false;
+	struct effect_bl_buf resolved_buf = { 0 };
 
 	if (NULL == info) {
 		HISI_FB_ERR("[effect] info is NULL\n");
@@ -1327,12 +1432,23 @@ ssize_t hisifb_display_effect_bl_ctrl_store(struct fb_info *info, const char *bu
 
 	down(&hisifd->blank_sem_effect);
 
-	hisifd->de_info.blc_enable = (buf[0] == '1') ? true : false;
-	hisifd->de_info.blc_delta = (int)simple_strtol(buf + 2, NULL, 0);
+	HISI_FB_DEBUG("[effect] buf is %s\n", buf);
+	ret_count = hisifb_display_effect_resolve_bl_buf(buf, &resolved_buf);
+	if (ret_count == blc_xcc_buf_count) {
+		hisifb_display_effect_handle_xcc(hisifd, &resolved_buf);
+		hisifb_display_effect_handle_dc_sync(hisifd,
+			&resolved_buf, &dc_enable_changed);
+	} else {
+		hisifd->de_info.blc_enable = (bool)resolved_buf.blc_enable;
+		hisifd->de_info.blc_delta = resolved_buf.delta;
+		hisifd->de_info.amoled_param.DC_Brightness_Dimming_Enable = 0;
+	}
+	HISI_FB_DEBUG("[effect] blc_enable = %d, blc_delta = %d",
+		hisifd->de_info.blc_enable, hisifd->de_info.blc_delta);
 
 	if (abs((int)(ktime_to_ns(hisifd->backlight.bl_timestamp) - ktime_to_ns(current_bl_timestamp))) > bl_timeinterval) {
 		HISI_FB_DEBUG("[effect] delta:%d bl:%d enable:%d set, return %d\n", hisifd->de_info.blc_delta, hisifd->bl_level, hisifd->de_info.blc_enable, (uint32_t)ret);
-		if (hisifd->bl_level > 0) {
+		if (hisifd->bl_level > 0 && !dc_enable_changed) {
 			down(&hisifd->brightness_esd_sem);
 			hisifb_set_backlight(hisifd, hisifd->bl_level, true);
 			up(&hisifd->brightness_esd_sem);

@@ -463,8 +463,12 @@ static irqreturn_t ak8789_event_handler(int irq, void *hall_dev)
 	if (hall_gpio_type & 0x01) {
 		if (trig_val & IRQF_TRIGGER_FALLING) {
 			ret = irq_set_irq_type(irq, IRQF_TRIGGER_RISING);
+			if (ret < 0)
+				hwlog_err("set irq type err\n");
 		} else if (trig_val & IRQF_TRIGGER_RISING) {
 			ret = irq_set_irq_type(irq, IRQF_TRIGGER_FALLING);
+			if (ret < 0)
+				hwlog_err("set irq type err\n");
 		} else {
 			/*hwlog_err("Invalid trigger:%d\n", trig_val);*/
 			return IRQ_NONE;
@@ -472,8 +476,12 @@ static irqreturn_t ak8789_event_handler(int irq, void *hall_dev)
 	} else {
 		if (trig_val & IRQF_TRIGGER_LOW) {
 			ret = irq_set_irq_type(irq, IRQF_TRIGGER_HIGH);
+			if (ret < 0)
+				hwlog_err("set irq type err\n");
 		} else if (trig_val & IRQF_TRIGGER_HIGH) {
 			ret = irq_set_irq_type(irq, IRQF_TRIGGER_LOW);
+			if (ret < 0)
+				hwlog_err("set irq type err\n");
 		} else {
 			/*hwlog_err("Invalid trigger:%d\n", trig_val);*/
 			return IRQ_NONE;

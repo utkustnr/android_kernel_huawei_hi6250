@@ -108,6 +108,11 @@ static inline bool pd_process_ctrl_msg(
 
 	case PD_CTRL_WAIT:
 	case PD_CTRL_REJECT:
+#ifdef CONFIG_PD_DFP_RESET_CABLE
+		if (pd_port->detect_emark && pd_event->msg == PD_CTRL_REJECT)
+			pd_port->vswap_ret = PD_CTRL_REJECT;
+#endif /* CONFIG_PD_DFP_RESET_CABLE */
+
 		ret = PE_MAKE_STATE_TRANSIT_VIRT(PD_CTRL_MSG_REJECT_WAIT);
 		break;
 

@@ -102,7 +102,6 @@ hwsensor_subdev_get_info(
         hwsensor_t* s,
         hwsensor_info_t* info)
 {
-    int index;
     int i=0;
     int rc = 0;
     sensor_t *sensor = NULL;
@@ -136,8 +135,8 @@ hwsensor_subdev_get_info(
         memset_s(info->vcm_name, DEVICE_NAME_SIZE, 0, DEVICE_NAME_SIZE);
     }
     info->dev_id = s->cam_dev_num;
-    index = sensor->board_info->sensor_index;
-    info->mount_position = (hwsensor_position_kind_t)index;
+    info->mount_position =
+        (hwsensor_position_kind_t)sensor->board_info->sensor_index;
     info->extisp_type = sensor->board_info->extisp_type;
     info->module_type = sensor->board_info->module_type;
     info->flash_pos_type = sensor->board_info->flash_pos_type;

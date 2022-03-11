@@ -83,7 +83,9 @@ TC_NS_Shared_MEM *tc_mem_allocate(size_t len, bool from_mailbox)
 	shared_mem->from_mailbox = from_mailbox;
 	shared_mem->kernel_addr = addr;
 	shared_mem->len = len;
-
+	shared_mem->user_addr = NULL;
+	shared_mem->user_addr_ca = NULL;
+	atomic_set(&shared_mem->usage, 0);
 	return shared_mem;
 }
 

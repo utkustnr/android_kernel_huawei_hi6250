@@ -3,6 +3,7 @@ obj-$(CONFIG_HISI_BCI_BATTERY)		+= hisi_bci_battery.o
 obj-$(CONFIG_HISI_COUL)		        += coul/
 obj-$(CONFIG_HISI_CHARGER)		+= charger/
 obj-$(CONFIG_HISI_SOH)	                += soh/
+obj-$(CONFIG_HISI_ASW)	                += asw/
 
 ifeq ($(HLTHERM_RUNTEST),true)
 CFLAGS_KERNEL += -DCONFIG_HLTHERM_RUNTEST

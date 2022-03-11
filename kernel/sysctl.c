@@ -366,6 +366,15 @@ static struct ctl_table kern_table[] = {
 		.extra2     = &max_migration_delay_granulartiy,
 	},
 #endif
+#ifdef CONFIG_HW_QOS_THREAD
+	{
+		.procname     = "qos_sched",
+		.data         = &g_sysctl_qos_sched,
+		.maxlen       = sizeof(unsigned int),
+		.mode         = 0644,
+		.proc_handler = proc_dointvec,
+	},
+#endif
 	{
 		.procname	= "sched_latency_ns",
 		.data		= &sysctl_sched_latency,

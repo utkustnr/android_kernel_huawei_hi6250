@@ -903,7 +903,10 @@ void PolicySourceStartup(void)
 
 	#ifdef FSC_HAVE_VDM
                 mode_entered = FALSE;
-
+#ifdef FSC_HAVE_CUSTOM_SRC2
+		if (pd_dpm_get_is_support_smart_holder())
+			ExpectingVdmResponse = FALSE;
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
                 auto_mode_disc_tracker = 0;
 
                 core_svid_info.num_svids = 0;
@@ -2293,7 +2296,10 @@ void PolicySinkStartup(void)
 
 #ifdef FSC_HAVE_VDM
     auto_mode_disc_tracker = 0;
-
+#ifdef FSC_HAVE_CUSTOM_SRC2
+	if (pd_dpm_get_is_support_smart_holder())
+		ExpectingVdmResponse = FALSE;
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
     mode_entered = FALSE;
 
     core_svid_info.num_svids = 0;
@@ -3127,8 +3133,12 @@ void PolicySinkEvaluatePRSwap(void)
 #ifdef FSC_HAVE_VDM
 
 void PolicyGiveVdm(void) {
-
-    if (ProtocolMsgRx && PolicyRxHeader.MessageType == DMTVenderDefined)        // Have we received a VDM message
+	// Have we received a VDM message
+	if (ProtocolMsgRx && PolicyRxHeader.MessageType == DMTVenderDefined
+#ifdef FSC_HAVE_CUSTOM_SRC2
+		&& !pd_dpm_get_is_support_smart_holder()
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
+	)
     {
         sendVdmMessageFailed();                                                 // if we receive anything, kick out of here (interruptible)
         PolicySubIndex = 0;                                                     // Reset the sub index
@@ -3209,15 +3219,20 @@ void PolicyVdm (void) {
     }
     else
     {
-        if (sendingVdmData)
-        {
-            result = PolicySendData(DMTVenderDefined, vdm_msg_length, vdm_msg_obj, vdm_next_ps, 0, vdm_sop);
-            if (result == STAT_SUCCESS || result == STAT_ERROR)
-            {
-                FSC_PRINT("FUSB %s - VDM Sent Via PolicyVDM\n",__func__);
-                sendingVdmData = FALSE;
-            }
-        }
+#ifdef FSC_HAVE_CUSTOM_SRC2
+	if (!pd_dpm_get_is_support_smart_holder()) {
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
+	if (sendingVdmData) {
+		result = PolicySendData(DMTVenderDefined, vdm_msg_length,
+				vdm_msg_obj, vdm_next_ps, 0, vdm_sop);
+		if (result == STAT_SUCCESS || result == STAT_ERROR) {
+			FSC_PRINT("FUSB %s-VDM Sent Via PolicyVDM\n", __func__);
+			sendingVdmData = FALSE;
+		}
+	}
+#ifdef FSC_HAVE_CUSTOM_SRC2
+	}
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
     }
 
     if (VdmTimerStarted && (platform_check_timer(&VdmTimer)))
@@ -3438,6 +3453,13 @@ FSC_U8 PolicySendData(FSC_U8 MessageType, FSC_U8 NumDataObjects, doDataObject_t*
             Status = STAT_SUCCESS;
             break;
         case txError:                                                           // Didn't receive a GoodCRC message...
+#ifdef FSC_HAVE_CUSTOM_SRC2
+			if (pd_dpm_get_is_support_smart_holder())
+				if (sop == SOP_TYPE_SOP1) {
+					PDTxStatus = txIdle;
+					return STAT_ERROR;
+				}
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
             if (PolicyState == peSourceSendCaps)                                // If we were in the send source caps state when the error occurred...
                 PolicyState = peSourceDiscovery;                                // Go to the discovery state
             else if (PolicyIsSource)                                            // Otherwise, if we are a source...
@@ -3613,6 +3635,9 @@ void InitializeVdmManager(void)
 	vdmm.enter_mode_result  = &vdmEnterModeResult;
 	vdmm.exit_mode_result   = &vdmExitModeResult;
 	vdmm.inform_id			= &vdmInformIdentity;
+#ifdef FSC_HAVE_CUSTOM_SRC2
+	vdmm.inform_raw_vdo_data = &vdmInformRawData;
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 	vdmm.inform_svids		= &vdmInformSvids;
 	vdmm.inform_modes		= &vdmInformModes;
 	vdmm.inform_attention   = &vdmInformAttention;

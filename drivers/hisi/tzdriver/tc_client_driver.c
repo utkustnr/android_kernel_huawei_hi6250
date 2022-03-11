@@ -1535,6 +1535,7 @@ int TC_NS_OpenSession(TC_NS_DEV_File *dev_file, TC_NS_ClientContext *context)
 	TC_NS_Service *service = NULL;
 	TC_NS_Session *session = NULL;
 	struct task_struct *S = NULL;
+	struct task_struct *hidl_struct = NULL;
 	uint8_t flags = TC_CALL_GLOBAL;
 	unsigned char *hash_buf = NULL;
 	bool hidl_access = false;
@@ -1637,13 +1638,17 @@ find_service:
 	}
 
 	if (hidl_access) {
-		S = pid_task(find_vpid(context->callingPid), PIDTYPE_PID);
-		if (S == NULL || S->state == TASK_DEAD) {
+		rcu_read_lock();
+		hidl_struct = pid_task(find_vpid(context->callingPid), PIDTYPE_PID);
+		if (hidl_struct == NULL || hidl_struct->state == TASK_DEAD) {
 			tloge("task is dead!\n");
 			kfree(hash_buf);
 			ret = -EFAULT;
+			rcu_read_unlock();
 			goto error;
 		}
+		get_task_struct(hidl_struct);
+		rcu_read_unlock();
 	} else {
 		if(context->callingPid && current->mm) {
 			tloge("non hidl service pass non-zero callingpid , reject please!!!\n");
@@ -1653,16 +1658,20 @@ find_service:
 		}
 	}
 
-	if (NULL == S) {
+	if (hidl_struct != NULL)
+		S = hidl_struct;
+	else
 		S = current;
-	}
 	if (tee_calc_task_hash(hash_buf, true, S)) {
 		tloge("tee calc task hash failed\n");
 		kfree(hash_buf);
 		ret = -EFAULT;
+		if (hidl_struct != NULL)
+			put_task_struct(hidl_struct);
 		goto error;
 	}
-
+	if (hidl_struct != NULL)
+		put_task_struct(hidl_struct);
 	/* use the lock to make sure the TA sessions cannot be concurrency opened */
 	mutex_lock(&g_operate_session_lock);
 
@@ -1725,7 +1734,6 @@ find_service:
 	mutex_unlock(&service->session_lock);
 
 	put_service_struct(service);
-
 	return ret; /*lint !e429 */
 error:
 	mutex_lock(&service->session_lock);
@@ -1743,7 +1751,6 @@ error:
 		}
 	}
 	mutex_unlock(&service->session_lock);
-
 
 	kfree(session);
 	put_service_struct(service);
@@ -2125,8 +2132,6 @@ int TC_NS_ClientClose(TC_NS_DEV_File *dev, int flag)
 	int ret = TEEC_ERROR_GENERIC;
 	errno_t ret_s;
 	TC_NS_Service *service = NULL, *service_temp = NULL;
-	TC_NS_Shared_MEM *shared_mem = NULL;
-	TC_NS_Shared_MEM *shared_mem_temp = NULL;
 
 	if (dev == NULL) {
 		TCERR("invalid dev(null)\n");
@@ -2176,18 +2181,6 @@ int TC_NS_ClientClose(TC_NS_DEV_File *dev, int flag)
 		mutex_unlock(&g_operate_session_lock);
 	}
 
-	mutex_lock(&dev->shared_mem_lock);
-	list_for_each_entry_safe(shared_mem, shared_mem_temp,
-				 &dev->shared_mem_list, head) {
-		if (shared_mem) {
-			list_del(&shared_mem->head);
-			if (!flag)
-				put_sharemem_struct(shared_mem); /* pair with tc_client_mmap */
-			dev->shared_mem_cnt--;
-		}
-	}
-
-	mutex_unlock(&dev->shared_mem_lock);
 	if (!flag)
 		TC_NS_unregister_agent_client(dev);
 
@@ -2219,7 +2212,7 @@ void shared_vma_close(struct vm_area_struct *vma)
 {
 	TC_NS_Shared_MEM *shared_mem = NULL, *shared_mem_temp = NULL;
 	TC_NS_DEV_File *dev_file = vma->vm_private_data;
-
+	bool find = false;
 	if ((g_teecd_task == current->group_leader) && (!TC_NS_get_uid())
 			&& (g_teecd_task->flags & PF_EXITING ||
 				current->flags & PF_EXITING)) {
@@ -2230,13 +2223,25 @@ void shared_vma_close(struct vm_area_struct *vma)
 	mutex_lock(&dev_file->shared_mem_lock);
 	list_for_each_entry_safe(shared_mem, shared_mem_temp,
 				 &dev_file->shared_mem_list, head) {
-		if (shared_mem != NULL &&
-			atomic_read(&shared_mem->offset) == vma->vm_pgoff) {
-			if (atomic_read(&shared_mem->usage) == 1)
+		if (shared_mem != NULL){
+			if (shared_mem->user_addr ==
+				(void *)(uintptr_t)vma->vm_start) {
+				shared_mem->user_addr = NULL;
+				find = true;
+			} else if (shared_mem->user_addr_ca ==
+				(void *)(uintptr_t)vma->vm_start) {
+				shared_mem->user_addr_ca = NULL;
+				find = true;
+			}
+
+			if ((shared_mem->user_addr == NULL) &&
+				(shared_mem->user_addr_ca == NULL))
 				list_del(&shared_mem->head);
-			put_sharemem_struct(shared_mem); /* pair with tc_client_mmap */
-			dev_file->shared_mem_cnt--;
-			break;
+			/* pair with tc_client_mmap */
+			if (find == true) {
+				put_sharemem_struct(shared_mem);
+				break;
+			}
 		}
 	}
 	mutex_unlock(&dev_file->shared_mem_lock);
@@ -2275,6 +2280,7 @@ static int tc_client_mmap(struct file *filp, struct vm_area_struct *vma)
 	struct __smc_event_data *event_control = NULL;
 	bool is_teecd = false;
 	bool only_remap = false;
+	bool check_value = false;
 
 	if (dev_file == NULL) {
 		TCERR("can not find dev in malloc shared buffer!\n");
@@ -2294,18 +2300,21 @@ static int tc_client_mmap(struct file *filp, struct vm_area_struct *vma)
 	if (!check_ext_agent_access(current)) {
 		is_teecd = true;
 	}
-
+	mutex_lock(&dev_file->shared_mem_lock);
         /* TODO: need check libteec service,
                 service do alloc and client just map */
 
 	if (!is_teecd) {
 		/* using vma->vm_pgoff as share_mem index */
-		mutex_lock(&dev_file->shared_mem_lock);
-
 		/* check if aready allocated */
 		list_for_each_entry(shm_tmp, &dev_file->shared_mem_list, head) {
 			if (atomic_read(&shm_tmp->offset) == vma->vm_pgoff) {
 				tlogd("share_mem already allocated, shm_tmp->offset=%d\n", atomic_read(&shm_tmp->offset));
+				/* if this shared mem is already maped, just let shared_mem be NULL */
+				if (shm_tmp->user_addr_ca != NULL) {
+					only_remap = true;
+					break;
+				}
 				/* do remap to client */
 				only_remap = true;
 				shared_mem = shm_tmp;
@@ -2313,14 +2322,23 @@ static int tc_client_mmap(struct file *filp, struct vm_area_struct *vma)
 				tlogd("registed share_mem, shm_tmp->offset=%d\n", atomic_read(&shm_tmp->offset));
 			}
 		}
-		mutex_unlock(&dev_file->shared_mem_lock);
 	}
         
 	if (shared_mem == NULL && !only_remap )
 		shared_mem = tc_mem_allocate(len, is_teecd);
 
-	if (IS_ERR(shared_mem)) {
+	if (IS_ERR_OR_NULL(shared_mem)) {
 		put_agent_event(event_control);
+		mutex_unlock(&dev_file->shared_mem_lock);
+		return -1;
+	}
+	/* when remap, check the len of remap mem */
+	check_value = (only_remap &&
+		vma->vm_end - vma->vm_start != shared_mem->len);
+	if (check_value) {
+		tloge("len of map memory is invalid!\n");
+		put_agent_event(event_control);
+		mutex_unlock(&dev_file->shared_mem_lock);
 		return -1;
 	}
 
@@ -2329,10 +2347,11 @@ static int tc_client_mmap(struct file *filp, struct vm_area_struct *vma)
 		if (!valid_mmap_phys_addr_range(pfn, (unsigned long)shared_mem->len)) {
 			if (event_control) {
 				put_agent_event(event_control);
+				mutex_unlock(&dev_file->shared_mem_lock);
 				return -1;/*lint !e429*/
 			}
-			put_agent_event(event_control);
 			tc_mem_free(shared_mem);
+			mutex_unlock(&dev_file->shared_mem_lock);
 			return -1;
 		}
 
@@ -2350,11 +2369,12 @@ static int tc_client_mmap(struct file *filp, struct vm_area_struct *vma)
 
 		if (event_control) {
 			put_agent_event(event_control);
+			mutex_unlock(&dev_file->shared_mem_lock);
 			return -1;/*lint !e429*/
 		}
 		if (!only_remap)
 			tc_mem_free(shared_mem);
-		put_agent_event(event_control);
+		mutex_unlock(&dev_file->shared_mem_lock);
 		return -1;/*lint !e429*/
 	}
 
@@ -2365,15 +2385,13 @@ static int tc_client_mmap(struct file *filp, struct vm_area_struct *vma)
 
 	if (only_remap) {
 		tloge("only need remap to client\n");
-		mutex_lock(&dev_file->shared_mem_lock);
 		get_sharemem_struct(shared_mem);
+		shared_mem->user_addr_ca = (void *)vma->vm_start;
 		mutex_unlock(&dev_file->shared_mem_lock);
 		return ret;
 	}
 
 	shared_mem->user_addr = (void *)vma->vm_start;
-
-	mutex_lock(&dev_file->shared_mem_lock);
 	dev_file->shared_mem_cnt++;
 	list_add_tail(&shared_mem->head, &dev_file->shared_mem_list);
 	atomic_set(&shared_mem->usage, 1); /*lint !e1058 */

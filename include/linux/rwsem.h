@@ -57,7 +57,9 @@ extern struct rw_semaphore *rwsem_downgrade_wake(struct rw_semaphore *sem);
 #ifdef CONFIG_HW_VIP_THREAD
 #include <chipset_common/hwcfs/hwcfs_rwsem.h>
 #endif
-
+#ifdef CONFIG_HW_QOS_THREAD
+#include <chipset_common/hwqos/hwqos_rwsem.h>
+#endif
 /* Include the arch specific part */
 #include <asm/rwsem.h>
 

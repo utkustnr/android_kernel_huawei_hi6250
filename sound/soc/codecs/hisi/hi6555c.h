@@ -1697,7 +1697,7 @@ struct hi6555c_priv {
 	int hs_en_gpio;
 	int hs_en_value;
 	bool i2s2_disabled;
-
+	bool micbias_always_on;
 
 	/* clock */
 	struct clk *codec_soc;/* periph_clken12_codec_soc */

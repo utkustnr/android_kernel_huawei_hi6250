@@ -270,6 +270,8 @@ void lcdkit_parse_panel_dts(struct device_node* np)
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-panel-hbm-support", &lcdkit_info.panel_infos.hbm_support, 0);
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-panel-inversion-support", &lcdkit_info.panel_infos.inversion_support, 0);
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-panel-scan-support", &lcdkit_info.panel_infos.scan_support, 0);
+    OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-panel-thp-proximity-support",
+		&lcdkit_info.panel_infos.thp_proximity_support, 0);
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-panel-tp-lcd-reset-sync-support", &lcdkit_info.panel_infos.tp_lcd_reset_sync,0);
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-panel-esd-support", &lcdkit_info.panel_infos.esd_support, 0);
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-panel-fac-esd-support", &lcdkit_info.panel_infos.fac_esd_support, 0);
@@ -724,6 +726,9 @@ void lcdkit_parse_panel_dts(struct device_node* np)
     }
     /*for TP power ctrl*/
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-lcd-type", &g_tskit_ic_type, 1);
+    /* for TP gesture special sequence */
+    OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-tddi-tp-gesture-sequence-flag", \
+	    &lcdkit_info.panel_infos.tddi_tp_gesture_sequence_flag, 0);
     /*for power mode ctrl*/
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-bias-power-ctrl-mode", &lcdkit_info.panel_infos.bias_power_ctrl_mode, 0);
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-iovcc-power-ctrl-mode", &lcdkit_info.panel_infos.iovcc_power_ctrl_mode, 0);
@@ -804,6 +809,8 @@ void lcdkit_parse_panel_dts(struct device_node* np)
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-delay-af-display-on", &lcdkit_info.panel_infos.delay_af_display_on, 0);
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-delay-af-display-off", &lcdkit_info.panel_infos.delay_af_display_off, 0);
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-delay-af-display-off-second", &lcdkit_info.panel_infos.delay_af_display_off_second, 0);
+	OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-poweron-af-bl",
+		&lcdkit_info.panel_infos.lcd_poweron_after_bl, 0);
 
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-delay-af-vsn-off", &lcdkit_info.panel_infos.delay_af_vsn_off, 0);
     OF_PROPERTY_READ_U8_DEFAULT(np, "hw,lcdkit-delay-af-vsp-off", &lcdkit_info.panel_infos.delay_af_vsp_off, 0);

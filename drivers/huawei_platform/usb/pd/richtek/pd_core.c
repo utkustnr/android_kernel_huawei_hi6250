@@ -338,6 +338,8 @@ static void pd_core_power_flags_init(pd_port_t *pd_port)
 				supported_dpm_caps[i].prop_name);
 	}
 
+	pd_port->dpm_caps |= DPM_CAP_ATTEMP_DISCOVER_CABLE_DFP;
+
 	if (of_property_read_u32(np, "pr_check", &val) == 0)
 		pd_port->dpm_caps |= DPM_CAP_PR_CHECK_PROP(val);
 	else
@@ -675,6 +677,12 @@ int pd_reset_local_hw(pd_port_t *pd_port)
 	pd_port->pe_ready = false;
 	pd_port->dpm_ack_immediately = false;
 
+#ifdef CONFIG_USB_PD_RESET_CABLE
+	pd_port->reset_cable = false;
+	pd_port->detect_emark = false;
+	pd_port->vswap_ret = 0;
+#endif /* CONFIG_USB_PD_RESET_CABLE */
+
 #ifdef CONFIG_USB_PD_HANDLE_PRDR_SWAP
 	pd_port->postpone_pr_swap = false;
 	pd_port->postpone_dr_swap = false;
@@ -767,6 +775,21 @@ int pd_send_data_msg(pd_port_t *pd_port,
 {
 	return pd_send_message(pd_port, sop_type, msg, cnt, payload);
 }
+
+#ifdef CONFIG_USB_PD_RESET_CABLE
+int pd_send_cable_soft_reset(pd_port_t *pd_port)
+{
+	if (!pd_port)
+		return 0;
+
+	/* reset_protocol_layer */
+	pd_port->msg_id_tx[TCPC_TX_SOP_PRIME] = 0;
+	pd_port->msg_id_rx[TCPC_TX_SOP_PRIME] = 0;
+	pd_port->msg_id_rx_init[TCPC_TX_SOP_PRIME] = false;
+
+	return pd_send_ctrl_msg(pd_port, TCPC_TX_SOP_PRIME, PD_CTRL_SOFT_RESET);
+}
+#endif /* CONFIG_USB_PD_RESET_CABLE */
 
 int pd_send_soft_reset(pd_port_t *pd_port, uint8_t state_machine)
 {

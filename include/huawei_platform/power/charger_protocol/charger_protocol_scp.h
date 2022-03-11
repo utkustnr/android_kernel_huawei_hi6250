@@ -392,6 +392,8 @@ struct scp_protocol_device_info {
 	int min_cur_rd_flag;
 	int max_cur_rd_flag;
 	int rw_error_flag;
+	int adp_b_type1;
+	int adp_b_type1_rd_falg;
 };
 
 struct scp_protocol_ops {

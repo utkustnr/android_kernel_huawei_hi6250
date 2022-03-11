@@ -668,6 +668,8 @@ enum SYS_NV_ID_ENUM
 
 /* 3107 */     en_NV_Item_Was_Inter_Freq_Handover_Cust_Cfg   = 3107,
 
+/* 3123  */    en_NV_Item_WAS_Bar_Cell_For_Fach_Count_In_Sib_Is_Zero_Cfg = 3123,
+
 /* 3149  */    en_NV_Item_WAS_Primary_Plmn_Compare_Cfg       = 3149,
 
 /* 3500 */     en_NV_Item_CAS_1X_RC_PREF                     = 3500,

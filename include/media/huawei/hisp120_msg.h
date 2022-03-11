@@ -840,6 +840,7 @@ typedef enum
     SUBCMD_SET_AFSTAT_ALGO_RESULT = 176,
     SUBCMD_SET_LCD_FLASH_MODE = 177,
     SUBCMD_SET_AE_FULLSIZE_BINNING_CHANGE = 181,
+    SUBCMD_BSHUTTER_FINISH = 182,
     SUBCMD_MAX,
     SUBCMD_SET_HFBC_ALIGMENT, // not support in hisp120, for common code compilation
 } extendset_info_e;

@@ -907,6 +907,7 @@ enum ts_kit_power_type {
 	TS_KIT_POWER_UNUSED = 0,
 	TS_KIT_POWER_LDO = 1,
 	TS_KIT_POWER_GPIO = 2,
+	TS_KIT_POWER_PMIC = 3,
 	TS_KIT_POWER_INVALID_TYPE,
 };
 
@@ -916,11 +917,18 @@ enum ts_kit_power_id {
 	TS_KIT_POWER_ID_MAX,
 };
 
+struct ts_kit_pmic_power_config {
+	unsigned int ldo_num;
+	unsigned int value;
+	unsigned int pmic_num;
+};
+
 struct ts_kit_power_supply {
 	int use_count;
 	int type;
 	int gpio;
 	int ldo_value;
+	struct ts_kit_pmic_power_config pmic_power;
 	struct regulator *regulator;
 };
 

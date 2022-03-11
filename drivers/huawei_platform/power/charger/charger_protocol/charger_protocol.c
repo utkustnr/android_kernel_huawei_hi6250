@@ -428,6 +428,22 @@ int adapter_get_max_current(int *cur)
 	return l_ops->get_max_current(cur);
 }
 
+int adapter_get_adp_type(int *type)
+{
+	struct adapter_protocol_ops *l_ops = NULL;
+
+	l_ops = adapter_get_protocol_ops();
+	if (!l_ops || !type)
+		return -1;
+
+	if (!l_ops->get_adp_type) {
+		hwlog_err("get_adp_type is null\n");
+		return -1;
+	}
+
+	return l_ops->get_adp_type(type);
+}
+
 int adapter_get_inside_temp(int *temp)
 {
 	struct adapter_protocol_ops *l_ops = NULL;
@@ -545,6 +561,27 @@ int adapter_set_default_state(void)
 	memset(&l_dev->info, 0, sizeof(l_dev->info));
 
 	return l_ops->set_default_state();
+}
+
+int adapter_set_default_param(void)
+{
+	struct adapter_protocol_ops *l_ops = NULL;
+	struct adapter_dev *l_dev = NULL;
+
+	l_dev = adapter_get_dev();
+	if (!l_dev)
+		return -1;
+
+	l_ops = adapter_get_protocol_ops();
+	if (!l_ops)
+		return -1;
+
+	if (!l_ops->set_default_param) {
+		hwlog_info("set_default_param is null\n");
+		return -1;
+	}
+
+	return l_ops->set_default_param();
 }
 
 int adapter_set_init_data(struct adapter_init_data *data)

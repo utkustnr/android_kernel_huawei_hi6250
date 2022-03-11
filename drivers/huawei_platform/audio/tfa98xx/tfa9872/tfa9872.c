@@ -810,7 +810,6 @@ static int tfa9872_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id 
 	}
 
 #ifdef TFA9872_DEBUG
-	/* Register the sysfs files for climax backdoor access */
 	ret = device_create_bin_file(&i2c->dev, &dev_attr_rw);
 	if (ret)
 		dev_info(&i2c->dev, "error creating sysfs files\n");

@@ -1,5 +1,6 @@
 obj-$(CONFIG_MT6370_PMU_DSV) += mtk_6730_poweric.o
 obj-$(CONFIG_LCD_KIT_MTK) 	+= tps65132.o
+obj-$(CONFIG_LCD_KIT_MTK)	+= rt4801h.o
 
 EXTRA_CFLAGS +=-Idrivers/staging/android \
 		-Idrivers/atfdriver \

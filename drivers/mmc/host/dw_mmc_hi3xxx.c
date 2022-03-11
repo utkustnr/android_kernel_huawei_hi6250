@@ -1447,11 +1447,36 @@ static int dw_mci_hs_get_dt_libra_pltfm_resource(struct dw_mci *host, struct dev
 *************************************************/
 static int dw_mci_hs_get_dt_cancer_pltfm_resource(struct dw_mci *host, struct device_node *of_node)
 {
+	u32 value_clock = 0;
+	struct device_node *np = host->dev->of_node;
+
 	host->scperctrls |= BIT_VOLT_OFFSET_CANCER;
 	host->bit_sdcard_o_sel18 |= BIT_VOLT_VALUE_18_CANCER;
 	host->sdio_rst |= BIT_HRST_SDIO_CANCER;
 	host->odio_sd_mask_bit = BIT_VOLT_VALUE_18_MASK_CANCER;
+
 	if (of_find_property(of_node, "cs_sd_timing_config_cancer", (int *)NULL)){
+		if (of_property_read_u32(np, "clock-frequency", &value_clock)) {
+			dev_info(host->dev, "no need to adjust clock\n");
+			value_clock = 0;
+		}
+		dev_info(host->dev, "value_clock = %d\n", value_clock);
+		if (MMC_CLOCK_FREQUENCY_137 == value_clock) {
+			hs_timing_config_cancer_cs[1][9][1] = 6;
+			hs_timing_config_cancer_cs[1][9][2] = 6;
+			hs_timing_config_cancer_cs[1][9][3] = 3;
+			hs_timing_config_cancer_cs[1][9][4] = 13;
+			hs_timing_config_cancer_cs[1][9][6] = 137000000;
+			dev_info(host->dev, "hs_timing_config_cancer_cs[1][9][6] = %d\n", hs_timing_config_cancer_cs[1][9][6]);
+		} else if (MMC_CLOCK_FREQUENCY_192 == value_clock) {
+			hs_timing_config_cancer_cs[1][9][1] = 4;
+			hs_timing_config_cancer_cs[1][9][2] = 4;
+			hs_timing_config_cancer_cs[1][9][3] = 2;
+			hs_timing_config_cancer_cs[1][9][4] = 9;
+			hs_timing_config_cancer_cs[1][9][6] = 192000000;
+			dev_info(host->dev, "hs_timing_config_cancer_cs[1][9][6] = %d\n", hs_timing_config_cancer_cs[1][9][6]);
+		}
+		dev_info(host->dev, "hs_timing_config_cancer_cs[1][9][6] = %d\n", hs_timing_config_cancer_cs[1][9][6]);
 		memcpy(hs_timing_config, hs_timing_config_cancer_cs, sizeof(hs_timing_config)); /* unsafe_function_ignore: memcpy */
 	} else  {
 		memcpy(hs_timing_config, hs_timing_config_cancer, sizeof(hs_timing_config)); /* unsafe_function_ignore: memcpy */
@@ -1962,7 +1987,6 @@ static int dw_mci_hs_parse_dt(struct dw_mci *host)
 	struct device_node *np = host->dev->of_node;
 	u32 value = 0;
 	int error = 0;
-	u32 value_clock = 0;
 
 	if (of_property_read_u32(np, "is-resetable", &host->is_reset_after_retry))
 		dev_info(host->dev, "is-resetable get value failed \n");
@@ -2040,23 +2064,6 @@ static int dw_mci_hs_parse_dt(struct dw_mci *host)
 	priv->cd_vol = value;
 	dev_info(host->dev, "dts cd-vol = %d \n", priv->cd_vol);
 
-	if (of_property_read_u32(np, "clock-frequency", &value_clock)) {
-		dev_info(host->dev, "no need to adjust clock\n");
-		value_clock = 0;
-	}
-	if (MMC_CLOCK_FREQUENCY_137 == value_clock) {
-		hs_timing_config[1][9][1] = 6;
-		hs_timing_config[1][9][2] = 6;
-		hs_timing_config[1][9][3] = 3;
-		hs_timing_config[1][9][4] = 13;
-		hs_timing_config[1][9][6] = 137000000;
-	} else if (MMC_CLOCK_FREQUENCY_192 == value_clock) {
-		hs_timing_config[1][9][1] = 4;
-		hs_timing_config[1][9][2] = 4;
-		hs_timing_config[1][9][3] = 2;
-		hs_timing_config[1][9][4] = 9;
-		hs_timing_config[1][9][6] = 192000000;
-	}
 #ifdef CONFIG_MMC_DW_MUX_SDSIM
 	value = 0;
 	if (of_property_read_u32(np, "mux-sdsim", &value)) {

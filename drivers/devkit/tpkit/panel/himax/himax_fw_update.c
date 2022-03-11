@@ -430,10 +430,12 @@ static void hx852xf_changeIref(int selected_iref){
 	}
 
 	//Register 0x45
-	cmd[0] = temp_iref[iref_number][0];
-	cmd[1] = temp_iref[iref_number][1];
-	cmd[2] = 0x17;
-	cmd[3] = 0x28;
+	if ((iref_number >= 0) && (iref_number < ARRAY_SIZE(temp_iref))) {
+		cmd[0] = temp_iref[iref_number][0];
+		cmd[1] = temp_iref[iref_number][1];
+		cmd[2] = 0x17;
+		cmd[3] = 0x28;
+	}
 
 	if( i2c_himax_write(HX_REG_SET_FLASH_DATA ,&cmd[0], 4, sizeof(cmd), DEFAULT_RETRY_CNT) < 0){
 		TS_LOG_ERR("%s: i2c access fail!\n", __func__);

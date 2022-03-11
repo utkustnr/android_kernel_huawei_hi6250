@@ -370,7 +370,7 @@ enum PS_NV_ID_ENUM
                  
 /* 2316 */      en_NV_Item_ENHANCED_OPERATOR_NAME_SRV_CFG = 2316,
 /* 2323 */      en_NV_Item_REFRESH_ALL_FILE_RESTART_CFG   = 2323,
-
+/* 2567 */      NV_ITEM_REJ_INFO_NOT_RPT_CFG = 2567,
 /* 16122 */     en_NV_Item_W_CPICH_POWER_MODE_CTRL        = 16122,               /* CPICH信道低功率模式新增NV-W-COMMON PROTOCOL */
 
                  /* Custom NV项 */

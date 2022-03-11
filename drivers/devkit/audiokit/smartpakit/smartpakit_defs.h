@@ -86,6 +86,8 @@ typedef enum smartpakit_chip_vendor {
 	SMARTPAKIT_CHIP_VENDOR_OTHER = SMARTPAKIT_CHIP_VENDOR_CS,  //other
 	SMARTPAKIT_CHIP_VENDOR_CUSTOMIZE,    // huawei customize
 	SMARTPAKIT_CHIP_VENDOR_RT,           // richtek
+	SMARTPAKIT_CHIP_VENDOR_AWINIC,       // aw88194
+	SMARTPAKIT_CHIP_VENDOR_FOURSEMI,     // fs1894
 
 	SMARTPAKIT_CHIP_VENDOR_MAX,
 } smartpakit_chip_vendor_t;

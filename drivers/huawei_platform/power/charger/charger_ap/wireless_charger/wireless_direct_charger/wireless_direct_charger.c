@@ -381,7 +381,7 @@ static int wldc_vrect_vout_diff_value_check(struct wldc_device_info *di)
 		vrect = wireless_charge_get_rx_vrect();
 		vout = wireless_charge_get_rx_vout();
 		hwlog_info("%s: vrect = %dmV, vout = %dmV, delta_th = %dmV\n",
-			__func__, vrect, vout, WLDC_DIFF_VOLT_CHECK_TH);
+			__func__, vrect, vout, di->vrect_vout_diff);
 		snprintf(tmp_buf, sizeof(tmp_buf), "check vdiff, vrect = %dmV, vout = %dmV\n", vrect, vout);
 		strncat(dsm_buf, tmp_buf, strlen(tmp_buf));
 		if (vrect - vout > di->vrect_vout_diff) {

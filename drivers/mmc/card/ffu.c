@@ -28,6 +28,8 @@
 #include <linux/swap.h>
 #include <linux/mmc/ffu.h>
 
+#include "mmc_hisi_card.h"
+
 /**
  * struct mmc_ffu_pages - pages allocated by 'alloc_pages()'.
  *  <at> page: first page in the allocation
@@ -459,6 +461,8 @@ exit:
 static int mmc_ffu_restart(struct mmc_card *card)
 {
 	struct mmc_host *host = card->host;
+	struct mmc_blk_data *main_md = NULL;
+	u8 part_config;
 	int err = 0;
 #ifdef CONFIG_HISI_MMC
 	(void)mmc_cache_ctrl(host,0);
@@ -473,7 +477,12 @@ static int mmc_ffu_restart(struct mmc_card *card)
 	}
 
 	err = mmc_power_restore_host(host);
-
+	main_md = dev_get_drvdata(&card->dev);
+	part_config = card->ext_csd.part_config;
+	part_config &= EXT_CSD_PART_CONFIG_ACC_MASK;
+	pr_info("ffu restart part_config = %d, part_curr = %d, part_type = %d\n",
+		part_config, main_md->part_curr, main_md->part_type);
+	main_md->part_curr = part_config;
 exit:
 
 	return err;

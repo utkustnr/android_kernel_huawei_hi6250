@@ -1274,19 +1274,21 @@ spi_err:
 	return -EINVAL;
 }
 
-#define HUNGTASK_LIST_LEN	13
-static const char* g_hungtask_monitor_list[HUNGTASK_LIST_LEN] = {
+static const char* g_hungtask_monitor_list[] = {
 	"system_server","fingerprintd", "atcmdserver", "keystore", "gatekeeperd",
 	"volisnotd", "secure_storage", "secure_storage_s", "mediaserver",
-	"vold", "tee_test_ut", "tee_test_secure_timer", "IFAAPluginThrea"};
+	"vold", 
+	"IFAAPluginThrea"};
 
 bool is_tee_hungtask(struct task_struct *t)
 {
-	uint32_t i;
+	int i;
+	int hungtask_num = sizeof(g_hungtask_monitor_list) / sizeof(g_hungtask_monitor_list[0]);
+
 	if (!t)
 		return false;
 
-	for (i=0; i < HUNGTASK_LIST_LEN; i++) {
+	for (i=0; i < hungtask_num; i++) {
 		if (!strcmp(t->comm, g_hungtask_monitor_list[i])) { /*lint !e421 */
 			tloge("tee_hungtask detected:the hungtask is %s\n",t->comm);
 			return true;

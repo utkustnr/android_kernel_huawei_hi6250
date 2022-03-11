@@ -87,6 +87,7 @@ extern int send_para_flag;
 extern struct charge_device_ops *g_ops;
 extern struct ps_external_ir_param ps_external_ir_param;
 extern struct ps_extend_platform_data ps_extend_platform_data;
+extern int ps_support_mode;
 #ifdef CONFIG_HUAWEI_CHARGER_SENSORHUB
 extern irqreturn_t fsa9685_irq_sh_handler(int irq, void *dev_id);
 #endif
@@ -206,6 +207,7 @@ struct sar_platform_data sar_pdata = {
 	.cfg = DEF_SENSOR_COM_SETTING,
 	.poll_interval = 200,
 	.calibrate_type = 5,
+	.gpio_int = 0,
 };
 
 static struct gps_4774_platform_data gps_4774_data = {
@@ -418,10 +420,19 @@ int read_cap_prox_calibrate_data_from_nv(void)
 		pkg_ap.wr_buf = (const void *)&sar_calibrate_datas;
 		pkg_ap.wr_len = sizeof(sar_calibrate_datas);
 		hwlog_info("sx9323:offset=%d, diff=%d length:%d %d\n",
-				sar_calibrate_datas.semtech_cali_data.offset,
-				sar_calibrate_datas.semtech_cali_data.diff,
-				sizeof(sar_calibrate_datas), pkg_ap.wr_len);
-	} 	else {
+			sar_calibrate_datas.semtech_cali_data.offset,
+			sar_calibrate_datas.semtech_cali_data.diff,
+			sizeof(sar_calibrate_datas), pkg_ap.wr_len);
+	} else if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,abovb-a96t3x6",
+			strlen("huawei,abovb-a96t3x6"))) {
+		memcpy((void *)&sar_calibrate_datas, user_info.nv_data, sizeof(sar_calibrate_datas));
+		pkg_ap.wr_buf = (const void *)&sar_calibrate_datas;
+		pkg_ap.wr_len = sizeof(sar_calibrate_datas);
+		hwlog_info("a96t3x6:offset=%d, diff=%d length:%d %d\n",
+			sar_calibrate_datas.abovb_cali_data.offset,
+			sar_calibrate_datas.abovb_cali_data.diff,
+			sizeof(sar_calibrate_datas), pkg_ap.wr_len);
+	} else {
 		pkg_ap.wr_buf = (const void *)&sar_calibrate_datas;
 		pkg_ap.wr_len = sizeof(sar_calibrate_datas);
 		memcpy(&sar_calibrate_datas, user_info.nv_data,
@@ -894,11 +905,23 @@ static void read_ps_data_from_dts(struct device_node *dn)
 		ps_data.ps_flag = temp;
 	}
 
+	if (of_property_read_u32(dn, "ps_support_mode", &temp)) {
+		ps_support_mode = 0;
+		hwlog_err("%s:read ps_support_mode fail\n", __func__);
+	} else {
+		ps_support_mode = temp;
+	}
+
 	if (of_property_read_u32(dn, "external_ir", &temp))
 		hwlog_err("%s:read mag min_proximity_value fail\n", __func__);
 	else if(temp == 1) {
 		ps_external_ir_param.external_ir = temp;
 		hwlog_err("%s:external_ir set value\n", __func__);
+
+		if (of_property_read_u32(dn, "external_ir_powermode", &temp))
+			hwlog_err("%s:read powermode fail\n", __func__);
+		else
+			ps_external_ir_param.external_ir_powermode = temp;
 
 		if (of_property_read_u32(dn, "external_ir_min_proximity_value", &temp))
 			hwlog_err("%s:read mag min_proximity_value fail\n", __func__);
@@ -914,6 +937,16 @@ static void read_ps_data_from_dts(struct device_node *dn)
 			hwlog_err("%s:read pwave_value fail\n", __func__);
 		else
 			ps_external_ir_param.external_ir_pwave_value = temp;
+
+		if (of_property_read_u32(dn, "external_ir_pwindows_ratio", &temp))
+			hwlog_err("%s:read pwindows_ratio fail\n", __func__);
+		else
+			ps_external_ir_param.external_ir_pwindows_ratio = temp;
+
+		if (of_property_read_u32(dn, "external_ir_pwave_ratio", &temp))
+			hwlog_err("%s:read pwave_ratio fail\n", __func__);
+		else
+			ps_external_ir_param.external_ir_pwave_ratio = temp;
 
 		if (of_property_read_u32(dn, "external_ir_threshold_value", &temp))
 			hwlog_err("%s:read threshold_value fail\n", __func__);
@@ -1111,6 +1144,47 @@ static void read_handpress_data_from_dts(struct device_node *dn)
 		   sensorlist[0] - 1);
 }
 
+static void read_abovb_sar_data_from_dts(struct device_node *dn)
+{
+	uint16_t abovb_phone_type = 0;
+	uint32_t ph = 0;
+	uint16_t *threshold_to_modem = NULL;
+	uint16_t *calibrate_thred = NULL;
+	int product_type_data = 0;
+
+	read_chip_info(dn, CAP_PROX);
+
+	if (of_property_read_u16(dn, "phone_type", &abovb_phone_type)) {
+		sar_pdata.sar_datas.abovb_data.phone_type = 0;
+		hwlog_err("%s:read phone_type fail.\n", __func__);
+	} else {
+		sar_pdata.sar_datas.abovb_data.phone_type = abovb_phone_type;
+		hwlog_info("%s:read phone_type:0x%x\n", __func__,
+			sar_pdata.sar_datas.abovb_data.phone_type);
+	}
+	if (of_property_read_u32(dn, "product_type", &product_type_data)) {
+		sar_pdata.sar_datas.abovb_data.product_type = 0;
+		hwlog_err("%s:read product_type fail.\n", __func__);
+	} else {
+		sar_pdata.sar_datas.abovb_data.product_type = product_type_data;
+		hwlog_info("%s:read product_type_data:0x%x\n", __func__,
+			sar_pdata.sar_datas.abovb_data.product_type);
+	}
+
+	calibrate_thred = sar_pdata.sar_datas.abovb_data.calibrate_thred;
+	if (of_property_read_u16_array(dn, "calibrate_thred",
+				calibrate_thred, CAP_CALIBRATE_THRESHOLE_LEN)) {
+		*calibrate_thred = 0;
+		*(calibrate_thred + 1) = 0;
+		*(calibrate_thred + 2) = 0;
+		*(calibrate_thred + 3) = 0;
+		hwlog_err("%s:read calibrate_thred fail\n", __func__);
+	}
+	hwlog_info("calibrate_thred:%u %u %u %u\n",
+		*calibrate_thred, *(calibrate_thred + 1),
+		*(calibrate_thred + 2), *(calibrate_thred + 3));
+}
+
 static void read_capprox_data_from_dts(struct device_node *dn)
 {
 	uint16_t threshold_to_ap = 0;
@@ -1127,6 +1201,22 @@ static void read_capprox_data_from_dts(struct device_node *dn)
 			 0x000b9905, 0x000c00e8, 0x000d0200, 0x000e0000,
 			 0x000f000C, 0x007a8000};
 	read_chip_info(dn, CAP_PROX);
+
+	temp = of_get_named_gpio(dn, "gpio_int", 0);
+	if (temp < 0)
+		hwlog_err("%s:read gpio_int1 fail\n", __func__);
+	else
+		sar_pdata.gpio_int = (uint8_t) temp;
+
+	if (of_property_read_u32(dn, "gpio_int_sh", &temp))
+		hwlog_err("%s:read gpio_int_sh fail\n", __func__);
+	else
+		sar_pdata.gpio_int2_sh = (uint8_t) temp;
+
+	if (of_property_read_u32(dn, "reg", &temp))
+		hwlog_err("%s:read cap_prox reg fail\n", __func__);
+	else
+		sar_pdata.cfg.i2c_address = (uint8_t)temp;
 
 	if (of_property_read_u32(dn, "poll_interval", &temp))
 		hwlog_err("%s:read poll_interval fail\n", __func__);
@@ -1273,6 +1363,9 @@ static void read_capprox_data_from_dts(struct device_node *dn)
 		        }
 		        hwlog_info("calibrate_thred:%d %d\n", *calibrate_thred, *(calibrate_thred+1));
 		}
+	} else if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,abovb-a96t3x6",
+			strlen("huawei,abovb-a96t3x6"))) {
+		read_abovb_sar_data_from_dts(dn);
 	}
 	read_sensorlist_info(dn, CAP_PROX);
 }

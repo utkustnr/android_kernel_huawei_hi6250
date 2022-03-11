@@ -2217,6 +2217,9 @@ static bool check_pctrl_trstop_flag(struct hisi_fb_data_type *hisifd)
 	int count;
 	uint32_t tmp = 0;
 	int time_count = 40;
+	if (hisifd->panel_info.mipiclk_updt_support_new) {
+		time_count = 10;
+	}
 
 	if (is_dual_mipi_panel(hisifd)) {
 		for(count = 0; count < time_count; count++) {
@@ -2246,8 +2249,14 @@ int mipi_dsi_bit_clk_upt_isr_handler(struct hisi_fb_data_type *hisifd)
 	struct mipi_dsi_phy_ctrl phy_ctrl = {0};
 	struct hisi_panel_info *pinfo;
 	uint32_t dsi_bit_clk_upt;
-	bool is_ready;
+	bool is_ready = false;
 	uint8_t esd_enable;
+
+	struct timeval tv0;
+	struct timeval tv1;
+	uint32_t timediff = 0;
+	uint32_t vfp_time;
+	uint64_t lane_byte_clk;
 
 	if (NULL == hisifd) {
 		HISI_FB_ERR("hisifd is null!\n");
@@ -2267,6 +2276,18 @@ int mipi_dsi_bit_clk_upt_isr_handler(struct hisi_fb_data_type *hisifd)
 
 	HISI_FB_DEBUG("fb%d +.\n", hisifd->index);
 
+	if (pinfo->mipiclk_updt_support_new) {
+		hisifb_get_timestamp(&tv0);
+		lane_byte_clk = hisifd->panel_info.dsi_phy_ctrl.lane_byte_clk;
+		vfp_time = (uint32_t)inp32(hisifd->mipi_dsi0_base + MIPIDSI_VID_HLINE_TIME_OFFSET) & 0x7fff;
+		if (lane_byte_clk != 0) {
+			vfp_time = vfp_time * (hisifd->panel_info.ldi.v_front_porch + 10) / ((uint32_t)(lane_byte_clk / 1000000));
+		} else {
+			HISI_FB_ERR("vfp_time == 0\n");
+			vfp_time = 80; // 80us
+		}
+	}
+
 	esd_enable = pinfo->esd_enable;
 	if (is_mipi_video_panel(hisifd)) {
 		pinfo->esd_enable = 0;
@@ -2284,7 +2305,16 @@ int mipi_dsi_bit_clk_upt_isr_handler(struct hisi_fb_data_type *hisifd)
 		set_reg(hisifd->pctrl_base + PERI_CTRL30, 1, 1, 19);
 	}
 
-	is_ready = check_pctrl_trstop_flag(hisifd);
+	if (pinfo->mipiclk_updt_support_new) {
+		while ((!is_ready) && (timediff < vfp_time)) {
+			is_ready = check_pctrl_trstop_flag(hisifd);
+			hisifb_get_timestamp(&tv1);
+			timediff = hisifb_timestamp_diff(&tv0, &tv1);
+		}
+		HISI_FB_INFO("timediff=%d us, vfp_time=%d us\n", timediff, vfp_time);
+	} else {
+		is_ready = check_pctrl_trstop_flag(hisifd);
+	}
 
 	set_reg(hisifd->pctrl_base + PERI_CTRL30, 0, 1, 0);
 	if (is_dual_mipi_panel(hisifd)) {

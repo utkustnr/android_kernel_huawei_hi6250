@@ -585,6 +585,11 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 #ifdef CONFIG_HW_VIP_THREAD
 		mutex_dynamic_vip_enqueue(lock, task);
 #endif
+#ifdef CONFIG_HW_QOS_THREAD
+		dynamic_qos_enqueue(READ_ONCE(lock->owner),
+			task, DYNAMIC_QOS_MUTEX);
+#endif
+
 		__set_task_state(task, state);
 
 		/* didn't get the lock, go to sleep: */
@@ -752,6 +757,9 @@ __mutex_unlock_common_slowpath(struct mutex *lock, int nested)
 
 #ifdef CONFIG_HW_VIP_THREAD
 	mutex_dynamic_vip_dequeue(lock, current);
+#endif
+#ifdef CONFIG_HW_QOS_THREAD
+	dynamic_qos_dequeue(current, DYNAMIC_QOS_MUTEX);
 #endif
 
 	if (!list_empty(&lock->wait_list)) {

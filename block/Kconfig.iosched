@@ -87,6 +87,15 @@ config ROW_OPTIMIZATION
 		row realtime priority and set the forground process to the
 		realtime priority.
 
+config ROW_VIP_QUEUE
+	bool "ROW scheduler add vip queue"
+	depends on DEFAULT_ROW && BLK_DEV_THROTTLING=y && HW_QOS_THREAD
+	default n
+	---help---
+		The row vip queue is to use the request REQ_VIP flag to
+		determine io priority and set the vip io to the realtime
+		priority.
+
 config DEFAULT_IOSCHED
 	string
 	default "deadline" if DEFAULT_DEADLINE

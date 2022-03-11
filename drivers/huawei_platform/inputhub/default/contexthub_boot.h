@@ -75,6 +75,7 @@
 #define DTS_COMP_EBBG_NT35596S_5P2 "ebbg_nt35596s_5p2_1080p_video"
 #define DTS_COMP_JDI_ILI7807E_5P2 "jdi_ili7807e_5p2_1080p_video"
 #define DTS_COMP_BOE_NT37700F "boe_nt37700f_vogue_6p47_1080plus_cmd"
+#define DTS_COMP_BOE_NT36672_6P26 "boe_nt36672a_6p26"
 #define DTS_COMP_LG_NT37280 "lg_nt37280_vogue_6p47_1080plus_cmd"
 #define DTS_COMP_BOE_NT37700F_EXT "boe_nt37700f_vogue_p_6p47_1080plus_cmd"
 #define DTS_COMP_LG_NT37280_EXT "lg_nt37280_vogue_p_6p47_1080plus_cmd"
@@ -187,25 +188,25 @@ typedef struct coul_core_info {
 	int r_coul_mohm;
 }coul_core_info_t;
 
-typedef struct {
-	u16 mipiData;
-	u16 brightData;
-	u32 timeStamp;
-} bright_data_als_ud_t;
+struct BrightData {
+	uint32_t mipiData;
+	uint32_t brightData;
+	uint64_t timeStamp;
+};
 
-typedef struct {
+struct ReadDataAlsUd{
 	float rdata;
 	float gdata;
 	float bdata;
 	float irdata;
-} read_data_als_ud_t;
+};
 
-typedef struct ALS_UD_CONFIG {
+struct AlsUdConfig{
 	u8 screen_status;
 	u64 als_rgb_pa;
-	bright_data_als_ud_t BrightData_input;
-	read_data_als_ud_t read_data_history;
-} als_ud_config_t;
+	struct BrightData BrightData_input;
+	struct ReadDataAlsUd read_data_history;
+};
 
 struct CONFIG_ON_DDR
 {
@@ -219,7 +220,9 @@ struct CONFIG_ON_DDR
 	timestamp_kernel_t timestamp_base;
 	timestamp_iomcu_base_t timestamp_base_iomcu;
 	coul_core_info_t coul_info;
-	als_ud_config_t als_ud_config;
+	struct AlsUdConfig als_ud_config;
+	u32 te_irq_tcs3701;
+	u32 old_dc_flag;
 };
 
 /*receive data from mcu,you should copy the buf each time.*/

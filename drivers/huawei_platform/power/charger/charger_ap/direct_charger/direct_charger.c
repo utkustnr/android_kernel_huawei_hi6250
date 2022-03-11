@@ -50,6 +50,7 @@ extern int coul_get_battery_voltage_uv(void);
 static int battery_temp_handler(int temp);
 static long c_offset_a;
 static long c_offset_b;
+int direct_charge_resistance_handler(int res);
 
 static inline void direct_charge_entry_func(struct direct_charge_device *di, int mode, int type)
 {
@@ -131,10 +132,18 @@ void direct_charge_check(void)
 	int sc_ret = 0;
 	int adap_mode = UNDEFINED_MODE;
 	int local_mode= 0;
+	int adp_type;
 	bool cc_vbus_short = false;
+	bool cc_moisture_status = false;
 	struct direct_charge_device *lvc_di = NULL;
 	struct direct_charge_device *sc_di = NULL;
 	enum charge_done_type charge_done_status = get_charge_done_type();
+	struct direct_charge_device *di = g_di;
+
+	if (!di) {
+		hwlog_err("di is NULL\n");
+		return;
+	}
 
 	if (CHARGE_DONE == charge_done_status) {
 		hwlog_info("charge done!");
@@ -166,6 +175,14 @@ void direct_charge_check(void)
 	local_mode = direct_charge_get_local_mode();
 	scp_adaptor_type_detect(&adap_mode);
 
+	if (di->adaptor_detect_by_voltage == 0) {
+		adp_type = direct_charge_get_adapter_type();
+		if (adp_type == ADAPTER_TYPE_20V3P25A) {
+			adap_mode = SC_MODE;
+			hwlog_info("65W adp, set adap_mode %d\n", SC_MODE);
+		}
+	}
+
 	if(UNDEFINED_MODE == adap_mode)
 	{
 		hwlog_info("undefined adaptor mode!");
@@ -179,9 +196,14 @@ void direct_charge_check(void)
 	if (cc_vbus_short)
 		hwlog_err("cc match rp3.0, can not do sc charge\n");
 
+	cc_moisture_status = pd_dpm_get_cc_moisture_status();
+	if (cc_moisture_status)
+		hwlog_err("cc moisture detected\n");
+
 	if (((local_mode & adap_mode) & SC_MODE) && sc_di &&
 		!sc_di->dc_err_report_flag &&
-		!cc_vbus_short) {
+		!cc_vbus_short &&
+		!cc_moisture_status) {
 		not_support_direct = false;
 		direct_charge_entry_func(sc_di, SC_MODE, TYPE_SC);
 	} else if (((local_mode & adap_mode) & LVC_MODE) && lvc_di && !lvc_di->dc_err_report_flag) {
@@ -193,6 +215,11 @@ void direct_charge_check(void)
 	}
 
 	return;
+}
+
+void direct_charge_set_adapter_default_param(void)
+{
+	adapter_set_default_param();
 }
 
 int direct_charge_disable_usbpd(bool disable)
@@ -389,6 +416,7 @@ void direct_charge_send_ico_uevent(void)
 	int max_current;
 	int cable_limit;
 	int bat_limit;
+	int adapter_type;
 
 	if (!g_di) {
 		hwlog_err("%s: g_di is NULL\n", __func__);
@@ -396,12 +424,22 @@ void direct_charge_send_ico_uevent(void)
 	}
 	di = g_di;
 
-	cable_limit = di->max_current_for_none_standard_cable;
+	if (pd_dpm_get_ctc_cable_flag())
+		cable_limit = di->max_current_for_ctc_cable;
+	else
+		cable_limit = di->max_current_for_none_standard_cable;
+
 	bat_limit = select_super_ico_bat_limit();
 	if (di->cc_cable_detect_enable && di->cc_cable_detect_ok == 0)
 		max_current = bat_limit < cable_limit ? bat_limit : cable_limit;
 	else
 		max_current = bat_limit;
+
+	adapter_type = direct_charge_get_adapter_type();
+	if (adapter_type == ADAPTER_TYPE_10V2A) {
+		direct_charge_send_quick_charge_uevent();
+		return;
+	}
 
 	if (max_current >= di->super_ico_current)
 		direct_charge_send_super_charge_uevent();
@@ -1137,9 +1175,12 @@ int _scp_adaptor_detect(struct direct_charge_device *di)
 void direct_charge_double_56k_cable_detect(void)
 {
 	int ret;
+	bool cc_moisture_status = false;
+	int adapter_type;
+	enum cur_cap c_cap;
 	struct direct_charge_device *di = NULL;
-	if (NULL == g_di)
-	{
+
+	if (!g_di) {
 		hwlog_err("%s g_di is NULL\n", __func__);
 		return ;
 	}
@@ -1152,12 +1193,29 @@ void direct_charge_double_56k_cable_detect(void)
 	if (di->cc_cable_detect_ok) {
 		return;
 	}
-	ret = di->direct_charge_cable_detect->direct_charge_cable_detect();
 
-	if (ret) {
+	/* 10v2a no need check cable */
+	adapter_type = direct_charge_get_adapter_type();
+	if (adapter_type == ADAPTER_TYPE_10V2A) {
+		di->cc_cable_detect_ok = 1; /* detect success flag */
+		di->full_path_res_threshold = di->standard_cable_full_path_res_max;
+		direct_charge_send_ico_uevent();
+		return;
+	}
+
+	ret = di->direct_charge_cable_detect->direct_charge_cable_detect();
+	cc_moisture_status = pd_dpm_get_cc_moisture_status();
+	c_cap = pd_dpm_get_cvdo_cur_cap();
+
+	if (ret && !cc_moisture_status && (c_cap < PD_DPM_CURR_5A)) {
 		di->cc_cable_detect_ok = 0;
-		di->full_path_res_threshold = di->full_path_res_max;
-		hwlog_info("%s:cable detect fail!\n",__func__);
+		if (pd_dpm_get_ctc_cable_flag())
+			di->full_path_res_threshold =
+				di->ctc_cable_full_path_res_max;
+		else
+			di->full_path_res_threshold =
+				di->full_path_res_max;
+		hwlog_info("%s: cable detect fail\n", __func__);
 		if (di->is_show_ico_first)
 			direct_charge_send_ico_uevent();
 	} else {
@@ -1438,6 +1496,7 @@ int direct_charge_gen_nl_init(struct platform_device *pdev)
 int do_adpator_antifake_check(void)
 {
 	int ret = 0;
+	int adapter_type;
 
 	struct direct_charge_device *di = NULL;
 
@@ -1449,6 +1508,11 @@ int do_adpator_antifake_check(void)
 	di = g_di;
 
 	if (!di->adaptor_antifake_check_enable)
+		return 0;
+
+	/* the type adp no need antifake check */
+	adapter_type = direct_charge_get_adapter_type();
+	if (adapter_type == ADAPTER_TYPE_10V2A)
 		return 0;
 
 	memset(dc_af_key, 0x00, DC_AF_KEY_LEN);
@@ -1538,6 +1602,7 @@ int do_full_path_resistance_check(void)
 	int sum = 0;
 	char dsm_buf[POWER_DSM_BUF_SIZE_1024] = { 0 };
 	char tmp_buf[ERR_NO_STRING_SIZE] = { 0 };
+	int resist_cur_max;
 
 	struct direct_charge_device *di = NULL;
 	if (NULL == g_di)
@@ -1609,12 +1674,23 @@ int do_full_path_resistance_check(void)
 		sum += r;
 	}
 	r = sum / 3;
+	r = r > 0 ? r : -r;
 	di->full_path_resistance = r;
 	hwlog_info("di->full_path_res_threshold = %d\n", di->full_path_res_threshold);
-	if (r >= -di->full_path_res_threshold && r <= di->full_path_res_threshold)
-	{
-		if (0 == di->cc_cable_detect_ok)
+	if (r <= di->full_path_res_threshold) {
+		resist_cur_max = direct_charge_resistance_handler(r);
+		hwlog_err("resist_cur_max=%d\n", resist_cur_max);
+		if ((di->cc_cable_detect_ok == 0) && (resist_cur_max != 0)) {
+			if (pd_dpm_get_ctc_cable_flag())
+				di->max_current_for_ctc_cable =
+					resist_cur_max;
+			else
+				di->max_current_for_none_standard_cable =
+					resist_cur_max;
+		}
+		if (di->cc_cable_detect_ok == 0)
 			direct_charge_send_ico_uevent();
+
 		return 0;
 	}
 	hwlog_err("full path resistance = %d is out of[%d, %d]\n", r, -di->full_path_res_threshold, di->full_path_res_threshold);
@@ -1940,6 +2016,7 @@ void scp_stop_charging_para_reset(struct direct_charge_device* di)
 		di->reverse_ocp_cnt = 0;
 		di->dc_open_retry_cnt = 0;
 		di->full_path_resistance = ERROR_RESISTANCE;
+		di->scp_adaptor_detect_flag = SCP_ADAPTOR_NOT_DETECT;
 		di->direct_charge_succ_flag = DIRECT_CHARGE_ERROR_ADAPTOR_DETECT;
 		di->quick_charge_flag = 0;
 		di->super_charge_flag = 0;
@@ -2072,6 +2149,13 @@ void scp_stop_charging(void)
 #ifdef CONFIG_WIRELESS_CHARGER
 		direct_charger_disconnect_event();
 #endif
+
+		/*
+		 * if pd not available, when pmic regn connected
+		 * do disconnect here
+		 */
+		if (pmic_vbus_is_connected())
+			pmic_vbus_disconnect_process();
 	}
 	else
 	{
@@ -2222,6 +2306,67 @@ void direct_charge_parse_std_resist_para(struct device_node *np,
 	}
 }
 
+static void direct_charge_parse_ctc_resist_para(struct device_node *np,
+	struct direct_charge_device *di)
+{
+	int i;
+	int row;
+	int col;
+	int ret;
+	int array_len;
+	int idata;
+	const char *tmp_string = NULL;
+
+	array_len = of_property_count_strings(np, "ctc_resist_para");
+	hwlog_info("ctc_resist_para array_len=%d\n", array_len);
+
+	if ((array_len <= 0) ||
+		(array_len % DC_RESIST_TOTAL != 0) ||
+		(array_len > DC_RESIST_LEVEL * DC_RESIST_TOTAL)) {
+		hwlog_err("ctc_resist_para invalid\n");
+		return;
+	}
+
+	for (i = 0; i < array_len; i++) {
+		ret = of_property_read_string_index(np, "ctc_resist_para",
+			i, &tmp_string);
+		if (ret) {
+			hwlog_err("ctc_resist_para dts read failed\n");
+			return;
+		}
+
+		/* 10: decimal base */
+		ret = kstrtoint(tmp_string, 10, &idata);
+		if (ret) {
+			hwlog_err("get kstrtoint failed\n");
+			return;
+		}
+
+		row = i / DC_RESIST_TOTAL;
+		col = i % DC_RESIST_TOTAL;
+
+		switch (col) {
+		case DC_RESIST_MIN:
+			di->ctc_resist_para[row].resist_min = idata;
+			break;
+
+		case DC_RESIST_MAX:
+			di->ctc_resist_para[row].resist_max = idata;
+			break;
+
+		case DC_RESIST_CUR_MAX:
+			di->ctc_resist_para[row].resist_cur_max = idata;
+			break;
+
+		default:
+			hwlog_err("get ctc_resist_para failed\n");
+			return;
+		}
+
+		hwlog_info("ctc_resist_para[%d][%d]=%d\n", row, col, idata);
+	}
+}
+
 void direct_charge_parse_bat_para(struct device_node* np, struct direct_charge_device* di)
 {
 	int array_len, i = 0, j = 0, k = 0, ret = 0, idata = 0;
@@ -2357,6 +2502,19 @@ void direct_charge_parse_volt_para(struct device_node* np, struct direct_charge_
 	di->stage_size = di->orig_volt_para_p[0].stage_size;
 }
 
+static void direct_charge_parse_gain_current_para(struct device_node *np,
+	struct direct_charge_device *di)
+{
+	int ret;
+
+	ret = of_property_read_u32(np, "gain_curr", &(di->gain_curr));
+	if (ret) {
+		hwlog_err("gain_curr dts read failed\n");
+		di->gain_curr = 0;
+	}
+	hwlog_info("gain_curr=%d\n", di->gain_curr);
+}
+
 int direct_charge_parse_dts(struct device_node* np, struct direct_charge_device* di)
 {
 	int ret = 0;
@@ -2429,6 +2587,16 @@ int direct_charge_parse_dts(struct device_node* np, struct direct_charge_device*
 	}
 	hwlog_info("max_current_for_none_standard_cable = %d\n", di->max_current_for_none_standard_cable);
 
+	ret = of_property_read_u32(np, "max_current_for_ctc_cable",
+		&(di->max_current_for_ctc_cable));
+	if (ret) {
+		hwlog_err("max_current_for_ctc_cable dts read failed\n");
+		di->max_current_for_ctc_cable =
+			di->max_current_for_none_standard_cable;
+	}
+	hwlog_info("max_current_for_ctc_cable=%d\n",
+		di->max_current_for_ctc_cable);
+
 	ret = of_property_read_u32(np, "super_ico_current", &(di->super_ico_current));
 	if (ret) {
 		hwlog_err("get super_ico_current failed\n");
@@ -2499,6 +2667,16 @@ int direct_charge_parse_dts(struct device_node* np, struct direct_charge_device*
 		return -EINVAL;
 	}
 	hwlog_info("full_path_res_max = %d\n", di->full_path_res_max);
+
+	ret = of_property_read_u32(np, "ctc_cable_full_path_res_max",
+		&(di->ctc_cable_full_path_res_max));
+	if (ret) {
+		hwlog_err("ctc_cable_full_path_res_max dts read failed\n");
+		di->ctc_cable_full_path_res_max = 320; /* default is 320mohm */
+	}
+	hwlog_info("ctc_cable_full_path_res_max=%d\n",
+		di->ctc_cable_full_path_res_max);
+
 	ret = of_property_read_u32(np, "adaptor_leakage_current_th", &(di->adaptor_leakage_current_th));
 	if (ret)
 	{
@@ -2609,6 +2787,7 @@ int direct_charge_parse_dts(struct device_node* np, struct direct_charge_device*
 	direct_charge_parse_volt_para(np, di);
 	direct_charge_parse_resist_para(np, di);
 	direct_charge_parse_std_resist_para(np, di);
+	direct_charge_parse_ctc_resist_para(np, di);
 
 	array_len = of_property_count_strings(np, "temp_para");
 	if ((array_len <= 0) || (array_len % DC_TEMP_TOTAL != 0))
@@ -2679,6 +2858,9 @@ int direct_charge_parse_dts(struct device_node* np, struct direct_charge_device*
 		hwlog_info("stage_need_to_jump[%d] = %d\n", i, idata);
 		di->stage_need_to_jump[i] = idata;
 	}
+
+	direct_charge_parse_gain_current_para(np, di);
+
 	return ret;
 }
 
@@ -2803,7 +2985,14 @@ int direct_charge_resistance_handler(int res)
 	}
 
 	di = g_di;
-	if (di->cc_cable_detect_ok == 0) {
+
+	if (pd_dpm_get_ctc_cable_flag()) {
+		for (i = 0; i < DC_RESIST_LEVEL; ++i) {
+			if ((res >= di->ctc_resist_para[i].resist_min) &&
+				(res < di->ctc_resist_para[i].resist_max))
+				return di->ctc_resist_para[i].resist_cur_max;
+		}
+	} else if (di->cc_cable_detect_ok == 0) {
 		for (i = 0; i < DC_RESIST_LEVEL; ++i) {
 			if (res >= di->resist_para[i].resist_min &&
 				res < di->resist_para[i].resist_max)
@@ -2894,6 +3083,7 @@ void select_direct_charge_param(void)
 	int full_path_resist_cur_max;
 	int full_path_resistance;
 	int bat_temp = 0;
+	int adapter_type;
 
 	struct direct_charge_device *di = NULL;
 	if (NULL == g_di)
@@ -2919,6 +3109,12 @@ void select_direct_charge_param(void)
 	max_adaptor_cur = get_adaptor_max_current();
 	if (max_adaptor_cur < 0)
 		return;
+
+	/* the type adp support gain curr */
+	adapter_type = direct_charge_get_adapter_type();
+	if (adapter_type == ADAPTER_TYPE_10V2A)
+		max_adaptor_cur += di->gain_curr;
+
 	if(di->use_5A)
 	{
 		if (max_adaptor_cur == 4500)
@@ -2945,7 +3141,16 @@ void select_direct_charge_param(void)
 	cur_th_high = di->volt_para[di->cur_stage/2].cur_th_high;
 	if (di->cc_cable_detect_enable) {
 		if (0 == di->cc_cable_detect_ok) {
-			cur_th_high = di->volt_para[di->cur_stage/2].cur_th_high > di->max_current_for_none_standard_cable ? di->max_current_for_none_standard_cable : di->volt_para[di->cur_stage/2].cur_th_high;
+			if (pd_dpm_get_ctc_cable_flag())
+				cur_th_high = (di->volt_para[di->cur_stage / 2].cur_th_high >
+					di->max_current_for_ctc_cable) ?
+					di->max_current_for_ctc_cable :
+					di->volt_para[di->cur_stage / 2].cur_th_high;
+			else
+				cur_th_high = (di->volt_para[di->cur_stage / 2].cur_th_high >
+					di->max_current_for_none_standard_cable) ?
+					di->max_current_for_none_standard_cable :
+					di->volt_para[di->cur_stage / 2].cur_th_high;
 		} else {
 			cur_th_high = di->volt_para[di->cur_stage/2].cur_th_high;
 		}
@@ -3421,6 +3626,36 @@ int direct_charge_get_local_mode(void)
 {
 	return direct_charge_mode;
 }
+
+int direct_charge_get_adapter_type(void)
+{
+	int support_mode = 0;
+	int adapter_type = 0;
+
+	adapter_get_support_mode(&support_mode);
+	hwlog_info("support_mode=%d\n", support_mode);
+
+	/* 1st check 10v2a & 20V3P25A */
+	if (support_mode & SC_MODE) {
+		adapter_get_adp_type(&adapter_type);
+		if (adapter_type == ADP_B_TYPE1)
+			return ADAPTER_TYPE_10V2A;
+
+		if (adapter_type == ADP_B_TYPE1_65W)
+			return ADAPTER_TYPE_20V3P25A;
+	}
+
+	/* 2nd check 10v4a */
+	if ((support_mode & SC_MODE) && (support_mode & LVC_MODE))
+		return ADAPTER_TYPE_10V4A;
+
+	/* 3st check 5v5a */
+	if (support_mode & LVC_MODE)
+		return ADAPTER_TYPE_5V5A;
+
+	return ADAPTER_TYPE_UNKNOWN;
+}
+
 enum direct_charge_mode direct_charge_get_adaptor_mode(void)
 {
 	if (g_di) {
@@ -3483,6 +3718,7 @@ void direct_charge_stop_charging_para_reset(struct direct_charge_device *di)
 {
 	if (di) {
 		di->full_path_resistance = ERROR_RESISTANCE;
+		di->scp_adaptor_detect_flag = SCP_ADAPTOR_NOT_DETECT;
 		di->direct_charge_succ_flag = DIRECT_CHARGE_ERROR_ADAPTOR_DETECT;
 		di->scp_stop_charging_flag_error = 0;
 		di->scp_stop_charging_flag_info = 0;

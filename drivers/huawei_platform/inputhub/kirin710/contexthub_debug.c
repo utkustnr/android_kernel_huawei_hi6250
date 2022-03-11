@@ -990,6 +990,13 @@ static int change_sar_mode(int tag, int argv[], int argc)
 			hwlog_err("%s: Input incorrect mode.\n", __FUNCTION__);
 			return -1;
 		}
+	} else if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,abov-a96t3x6",
+		strlen("huawei,abov-a96t3x6"))) {
+		if ((argc != 1) || ((argv[0] != SAR_DEBUG_MODE) &&
+			(argv[0] != SAR_NORMAL_MODE))) {
+			hwlog_err("%s: Input incorrect mode\n", __FUNCTION__);
+			return -1;
+		}
 	} else {
 		hwlog_err("%s: This sar does not support the operation.\n", __FUNCTION__);
 		return -1;

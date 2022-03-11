@@ -90,6 +90,16 @@ void hisi_blpwm_bl_regisiter(int (*set_bl)(int bl_level))
 	return;
 }
 
+bool hisi_get_bl_slope_status(void)
+{
+	return false;
+}
+
+int i2c_work_around_ops_register(struct i2c_work_around_ops *ops)
+{
+	return 0;
+}
+
 static int __init early_parse_bias_ic_cmdline(char *arg)
 {
     int len = 0;

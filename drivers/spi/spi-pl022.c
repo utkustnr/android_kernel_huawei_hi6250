@@ -1364,6 +1364,12 @@ static irqreturn_t pl022_interrupt_handler(int irq, void *dev_id)
 		if (readw(SSP_SR(pl022->virtbase)) & SSP_SR_MASK_RFF)
 			dev_err(&pl022->adev->dev,
 				"RXFIFO is full\n");
+#if defined CONFIG_HISI_SPI
+		if (pl022->cur_chip->enable_dma){
+			dmaengine_terminate_all(pl022->dma_rx_channel);
+			dmaengine_terminate_all(pl022->dma_tx_channel);
+		}
+#endif
 
 		/*
 		 * Disable and clear interrupts, disable SSP,
@@ -1896,7 +1902,7 @@ static int calculate_effective_freq(struct pl022 *pl022, int freq, struct
 	/* cpsdvsr = 254 & scr = 255 */
 	min_tclk = spi_rate(rate, CPSDVR_MAX, SCR_MAX);
 
-	if (freq > max_tclk)
+	if (freq > max_tclk) //lint !e574
 		dev_warn(&pl022->adev->dev,
 			"Max speed that can be programmed is %d Hz, you requested %d\n",
 			max_tclk, freq);
@@ -2190,7 +2196,7 @@ static int pl022_setup(struct spi_device *spi)
 		tmp = SSP_CLK_POL_IDLE_HIGH;
 	else
 		tmp = SSP_CLK_POL_IDLE_LOW;
-	SSP_WRITE_BITS(chip->cr0, tmp, SSP_CR0_MASK_SPO, 6);
+	SSP_WRITE_BITS(chip->cr0, tmp, SSP_CR0_MASK_SPO, 6); /*lint !e647*/
 
 	if (spi->mode & SPI_CPHA)
 		tmp = SSP_CLK_SECOND_EDGE;

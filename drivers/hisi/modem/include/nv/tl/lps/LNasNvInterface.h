@@ -1234,6 +1234,33 @@ typedef struct
 }LNAS_LMM_NV_EAB_CONFIG_STRU;
 
 /*Added for DATA RETRY PHASEIII 2016-06-21 end*/
+/*****************************************************************************
+结构体名    :LNAS_LMM_NV_COMPATIBLE_OPTIMIZE_FOR_PROTCL_AND_NET_STRU
+使用说明    :网络兼容性问题优化控制开关
+*****************************************************************************/
+typedef struct
+{
+    VOS_UINT8                           ucSelectPlmnWhenAuthInTauCtrl;/*共享网络下TAU过程中发生鉴权，鉴权参数PLMN的选择开关，1-打开，0-关闭， 默认打开*/
+    VOS_UINT8                           ucRsv2;
+    VOS_UINT8                           ucRsv3;
+    VOS_UINT8                           ucRsv4;
+    VOS_UINT8                           ucRsv5;
+    VOS_UINT8                           ucRsv6;
+    VOS_UINT8                           ucRsv7;
+    VOS_UINT8                           ucRsv8;
+    VOS_UINT8                           ucRsv9;
+    VOS_UINT8                           ucRsv10;
+    VOS_UINT8                           ucRsv11;
+    VOS_UINT8                           ucRsv12;
+    VOS_UINT8                           ucRsv13;
+    VOS_UINT8                           ucRsv14;
+    VOS_UINT8                           ucRsv15;
+    VOS_UINT8                           ucRsv16;
+    VOS_UINT8                           ucRsv17;
+    VOS_UINT8                           ucRsv18;
+    VOS_UINT8                           ucRsv19;
+    VOS_UINT8                           ucRsv20;
+}LNAS_LMM_NV_COMPATIBLE_OPTIMIZE_FOR_PROTCL_AND_NET_STRU;
 
 /* Added  for DATA RETRY PHASEIV, 2016-07-25, begin */
 /*****************************************************************************
@@ -1438,6 +1465,30 @@ typedef struct
 }LNAS_LMM_NV_MT_DETACH_WITH_OPTIMZIE_CONFIG_STRU;
 /*Added for MT-DETACH issue 2017-04-13 end*/
 
+/*****************************************************************************
+结构名称    :LNAS_ESM_NV_COMPATIBILITY_CONFIG_STRU
+使用说明    :
+*****************************************************************************/
+typedef struct
+{
+    VOS_UINT8                           ucApnTotalLengthCheckCompaSwitch;     /* 0关闭，1打开 */
+    VOS_UINT8                           ucDelPfLengthCheckCompaSwitch;
+    VOS_UINT8                           ucRsv1;
+    VOS_UINT8                           ucRsv2;
+    VOS_UINT8                           ucRsv3;
+    VOS_UINT8                           ucRsv4;
+    VOS_UINT8                           ucRsv5;
+    VOS_UINT8                           ucRsv6;
+    VOS_UINT8                           ucRsv7;
+    VOS_UINT8                           ucRsv8;
+    VOS_UINT8                           ucRsv9;
+    VOS_UINT8                           ucRsv10;
+    VOS_UINT8                           ucRsv11;
+    VOS_UINT8                           ucRsv12;
+    VOS_UINT8                           ucRsv13;
+    VOS_UINT8                           ucRsv14;
+}LNAS_ESM_NV_COMPATIBILITY_CONFIG_STRU;
+
 
 /*****************************************************************************
 结构名称    :LNAS_LMM_NV_ACDC_APP_LIST_STRU
@@ -1490,8 +1541,8 @@ typedef struct
     VOS_UINT8                           ucRsv2;
     VOS_UINT8                           ucRsv3;
     VOS_UINT8                           ucAllowUplinkPFmodifyToZeroFlag;/* 网络承载修改导致上行PF为0，是否按照协议回复#44拒绝，0:按照协议回复#44拒绝，1:不回#44拒绝，默认为0*/
-    VOS_UINT8                           ucRsv5;
-    VOS_UINT8                           ucRsv6;
+    VOS_UINT8                           ucIgnorePfPrecedenceCollisionFlag;/* 忽略PF优先级冲突开关，0:关闭 1:打开，默认为0 */
+    VOS_UINT8                           ucNotAllowNullApnAttachFlag;/* 在无APN可用时，是否禁止使用空APN尝试注册 0:    关闭1:    打开,默认为0     */
     VOS_UINT8                           ucRsv7;
     VOS_UINT8                           ucRsv8;
     VOS_UINT8                           ucRsv9;

@@ -2542,66 +2542,66 @@ VOS_UINT32  MN_MSG_DecodeDcs(
     if (0x84 == ucDcsData)
     {
         pstDcs->enMsgCoding = MN_MSG_MSG_CODING_8_BIT;
+        return MN_ERR_NO_ERROR;
     }
-    else
+
+    switch (ucCodingGroup)
     {
-        switch (ucCodingGroup)
-        {
-            /*(pattern 00xx xxxx)*/
-            case 1:
-                /*Message Marked for Automatic Deletion Group*/
-                pstDcs->enMsgWaiting = MN_MSG_MSG_WAITING_AUTO_DELETE;
-                /* fall through */
-            case 0:
-        
+        /*(pattern 00xx xxxx)*/
+        case 1:
+            /*Message Marked for Automatic Deletion Group*/
+            pstDcs->enMsgWaiting = MN_MSG_MSG_WAITING_AUTO_DELETE;
+            /* fall through */
+        case 0:
+
+            /*lint -e961*/
+            /* Bit 5  if set to 0, indicates the text is uncompressed */
+            MSG_GET_COMPRESSED(pstDcs->bCompressed, ucDcsData);
+            /*lint +e961*/
+
+            /* Bit 3 Bit2 Character set:*/
+            MSG_GET_CHARSET(pstDcs->enMsgCoding, ucDcsData);
+            /* Bit 4, if set to 0, indicates that bits 1 to 0 are reserved and have no message class*/
+            if (0 != (ucDcsData & 0x10)) /*(bit 4)*/
+            {
+                MSG_GET_MSGCLASS(pstDcs->enMsgClass, ucDcsData);
+            }
+            /*数据损失引入点*/
+            break;
+        case 3:
+            if ((ucDcsData & 0x30) == 0x30) /*(pattern 1111 xxxx)*/
+            {
+                pstDcs->enMsgWaiting = MN_MSG_MSG_WAITING_NONE_1111;
+                MSG_GET_MSGCODING(pstDcs->enMsgCoding, ucDcsData);
+                MSG_GET_MSGCLASS(pstDcs->enMsgClass, ucDcsData);
+                /*bit3 默认为0，数据损失引入点*/
+            }
+            else
+            {
+                /*bit2 默认为0，数据损失引入点*/
                 /*lint -e961*/
-                /* Bit 5  if set to 0, indicates the text is uncompressed */
-                MSG_GET_COMPRESSED(pstDcs->bCompressed, ucDcsData);
+                MSG_GET_INDSENSE(pstDcs->bWaitingIndiActive, ucDcsData);
+                MSG_GET_INDTYPE(pstDcs->enMsgWaitingKind, ucDcsData);
                 /*lint +e961*/
-        
-                /* Bit 3 Bit2 Character set:*/
-                MSG_GET_CHARSET(pstDcs->enMsgCoding, ucDcsData);
-                /* Bit 4, if set to 0, indicates that bits 1 to 0 are reserved and have no message class*/
-                if (0 != (ucDcsData & 0x10)) /*(bit 4)*/
+
+                if ((ucDcsData & 0x30) == 0x00)/*(pattern 1100 xxxx)*/
                 {
-                    MSG_GET_MSGCLASS(pstDcs->enMsgClass, ucDcsData);
-                }
-                /*数据损失引入点*/
-                break;
-            case 3:
-                if ((ucDcsData & 0x30) == 0x30) /*(pattern 1111 xxxx)*/
-                {
-                    pstDcs->enMsgWaiting = MN_MSG_MSG_WAITING_NONE_1111;
-                    MSG_GET_MSGCODING(pstDcs->enMsgCoding, ucDcsData);
-                    MSG_GET_MSGCLASS(pstDcs->enMsgClass, ucDcsData);
-                    /*bit3 默认为0，数据损失引入点*/
+                    pstDcs->enMsgWaiting = MN_MSG_MSG_WAITING_DISCARD;
                 }
                 else
                 {
-                    /*bit2 默认为0，数据损失引入点*/
-                    /*lint -e961*/
-                    MSG_GET_INDSENSE(pstDcs->bWaitingIndiActive, ucDcsData);
-                    MSG_GET_INDTYPE(pstDcs->enMsgWaitingKind, ucDcsData);
-                    /*lint +e961*/
-        
-                    if ((ucDcsData & 0x30) == 0x00)/*(pattern 1100 xxxx)*/
+                    pstDcs->enMsgWaiting = MN_MSG_MSG_WAITING_STORE;
+                    if ((ucDcsData & 0x30) == 0x20)
                     {
-                        pstDcs->enMsgWaiting = MN_MSG_MSG_WAITING_DISCARD;
-                    }
-                    else
-                    {
-                        pstDcs->enMsgWaiting = MN_MSG_MSG_WAITING_STORE;
-                        if ((ucDcsData & 0x30) == 0x20)
-                        {
-                            pstDcs->enMsgCoding = MN_MSG_MSG_CODING_UCS2;
-                        }
+                        pstDcs->enMsgCoding = MN_MSG_MSG_CODING_UCS2;
                     }
                 }
-                break;
-            default:
-                MN_WARN_LOG("MN_MSG_DecodeDcs: invalid coding group.");
-                return MN_ERR_CLASS_SMS_INVALID_CODING_GRP;
-        }
+            }
+            break;
+        default:
+            
+            MN_ERR_LOG("MN_MSG_DecodeDcs: ucCodingGroup is Reserve.");
+            break;
     }
 
     return MN_ERR_NO_ERROR;

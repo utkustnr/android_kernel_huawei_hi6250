@@ -1695,21 +1695,17 @@ static ssize_t _DrvKObjectPacketShow(struct kobject *pKObj, struct kobj_attribut
 
     if (strcmp(pAttr->attr.name, "packet") == 0) {
         if (tskit_mstar_data->fw_mode == MSG28XX_FIRMWARE_MODE_DEMO_MODE) {
-            if (tskit_mstar_data->demo_packet != NULL) {
-                TS_LOG_INFO("tskit_mstar_data->fw_mode=%x, g_demo_packet[0]=%x, g_demo_packet[1]=%x\n", tskit_mstar_data->fw_mode,
-                        tskit_mstar_data->demo_packet[0], tskit_mstar_data->demo_packet[1]);
-                TS_LOG_INFO("g_demo_packet[2]=%x, g_demo_packet[3]=%x\n", tskit_mstar_data->demo_packet[2],
-                        tskit_mstar_data->demo_packet[3]);
-                TS_LOG_INFO("g_demo_packet[4]=%x, g_demo_packet[5]=%x\n", tskit_mstar_data->demo_packet[4],
-                        tskit_mstar_data->demo_packet[5]);
+			TS_LOG_INFO("tskit_mstar_data->fw_mode=%x, g_demo_packet[0]=%x, g_demo_packet[1]=%x\n", tskit_mstar_data->fw_mode,
+				tskit_mstar_data->demo_packet[0], tskit_mstar_data->demo_packet[1]);
+			TS_LOG_INFO("g_demo_packet[2]=%x, g_demo_packet[3]=%x\n", tskit_mstar_data->demo_packet[2],
+				tskit_mstar_data->demo_packet[3]);
+			TS_LOG_INFO("g_demo_packet[4]=%x, g_demo_packet[5]=%x\n", tskit_mstar_data->demo_packet[4],
+				tskit_mstar_data->demo_packet[5]);
 
-                memcpy(pBuf, tskit_mstar_data->demo_packet, MUTUAL_DEMO_MODE_PACKET_LENGTH);
+			memcpy(pBuf, tskit_mstar_data->demo_packet, MUTUAL_DEMO_MODE_PACKET_LENGTH);
 
-                nLength = MUTUAL_DEMO_MODE_PACKET_LENGTH;
-                TS_LOG_INFO("nLength = %d\n", nLength);
-            } else {
-                TS_LOG_INFO("g_demo_packet is NULL\n");
-            }
+			nLength = MUTUAL_DEMO_MODE_PACKET_LENGTH;
+			TS_LOG_INFO("nLength = %d\n", nLength);
         } else
         {
 			TS_LOG_INFO("tskit_mstar_data->fw_mode=%x, g_log_packet[0]=%x, g_log_packet[1]=%x\n", tskit_mstar_data->fw_mode,

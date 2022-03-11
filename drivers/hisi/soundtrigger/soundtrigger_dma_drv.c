@@ -743,10 +743,7 @@ static int32_t dma_start(struct st_fast_status * fast_status)
 	logi("fast slimbus_params.rate[%d]\n",slimbus_params.rate);
 
 	if (CODEC_HI6402 == dma_drv_info->type) {
-		if (hi6402_normal_tran_rate == HI6402_4SMARTPA_NORMAL_TRAN_RATE)
-			slimbus_params.channels = 1;
-		else
-			slimbus_params.channels = 2;
+		slimbus_params.channels = 1;
 		device_type = SLIMBUS_DEVICE_HI6402;
 		track_type = SLIMBUS_TRACK_SOUND_TRIGGER;
 	} else if (CODEC_HI6403 == dma_drv_info->type) {
@@ -1020,8 +1017,8 @@ static int32_t dma_fops_release(struct inode *finode, struct file *fd)
 static int32_t dma_get_max_read_len(enum codec_hifi_type codec_type, size_t *max_read_len, size_t count)
 {
 	if (CODEC_HI6402 == codec_type) {
-		*max_read_len = (RINGBUFFER_SIZE > (HI6402_NORMAL_FRAME_LENGTH * VALID_BYTE_COUNT)) ?
-			RINGBUFFER_SIZE : (HI6402_NORMAL_FRAME_LENGTH * VALID_BYTE_COUNT);
+		*max_read_len = (RINGBUFFER_SIZE > (hi6402_normal_frame_length * VALID_BYTE_COUNT)) ?
+			RINGBUFFER_SIZE : (hi6402_normal_frame_length * VALID_BYTE_COUNT); /*lint !e647*/
 	} else if (CODEC_HI6403 == codec_type) {
 		*max_read_len = (RINGBUFFER_SIZE > (HI6403_NORMAL_FRAME_LENGTH * VALID_BYTE_COUNT)) ?
 			RINGBUFFER_SIZE : (HI6403_NORMAL_FRAME_LENGTH * VALID_BYTE_COUNT);
@@ -1382,7 +1379,7 @@ static uint16_t *alloc_temp_buffer(enum codec_hifi_type codec_type)
 	uint16_t *temp_buf = NULL;
 
 	if (CODEC_HI6402 == codec_type) {
-		temp_buf = (uint16_t *)kzalloc(HI6402_NORMAL_FRAME_LENGTH * VALID_BYTE_COUNT, GFP_KERNEL);
+		temp_buf = (uint16_t *)kzalloc(hi6402_normal_frame_length * VALID_BYTE_COUNT, GFP_KERNEL); /*lint !e647*/
 	} else if (CODEC_HI6403 == codec_type) {
 		temp_buf = (uint16_t *)kzalloc(HI6403_NORMAL_FRAME_LENGTH * VALID_BYTE_COUNT, GFP_KERNEL);
 	}

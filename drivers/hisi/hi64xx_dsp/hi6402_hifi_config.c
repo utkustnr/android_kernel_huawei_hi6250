@@ -370,10 +370,14 @@ static void hi6402_soundtrigger_fasttrans_ctrl_4smartpa(bool enable, bool fm)
 	if (enable) {
 		hi64xx_hifi_write_reg(HI6402_SLIM_CTRL_5, 0x66);/*S3_OL_PGA 16K*/
 		hi64xx_hifi_write_reg(HI6402_DSP_S3_CTRL_L, 0x0e);/*S3_CTRL*/
+		/* DSP IF 1 */
+		hi64xx_hifi_write_reg(HI6402_DSP_S1_CTRL_H, 0x14);/* 16K */
+		/* Slimbus u1,u2 sample rate */
+		hi64xx_hifi_write_reg(HI6402_SLIM_CTRL_1, 0x44);/* 48K */
 		hi64xx_hifi_write_reg(HI6402_SLIM_UP_EN, 0xFF);/*SLIMBUS INPUT ENABLE*/
 	} else {
 		hi64xx_hifi_write_reg(HI6402_SLIM_CTRL_5, 0x00);/*S3_OL_PGA 16K*/
-		hi64xx_hifi_write_reg(HI6402_DSP_S3_CTRL_L, 0x00);
+		hi64xx_hifi_write_reg(HI6402_DSP_S3_CTRL_L, 0x04);
 		hi64xx_hifi_write_reg(HI6402_SLIM_UP_EN, 0xAA);
 	}
 

@@ -716,6 +716,11 @@ typedef struct display_engine_amoled_param {
 	int Lowac_DBV_XCCThres;
 	int Lowac_DBV_XCC_MinThres;
 	int Lowac_Fixed_DBVThres;
+	int DC_Brightness_Dimming_Enable;
+	int DC_Brightness_Dimming_Enable_Real;
+	int Lowac_DBV_Thre_DC;
+	int Lowac_Fixed_DBV_Thres_DC;
+	int DC_Backlight_Delayus;
 } display_engine_amoled_param_t;
 
 typedef struct display_engine_blc_param {

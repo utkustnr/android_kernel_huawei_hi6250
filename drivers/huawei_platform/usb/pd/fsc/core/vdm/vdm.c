@@ -107,7 +107,12 @@ FSC_S32 requestDiscoverIdentity(SopType sop) {
 		sendVdmMessageWithTimeout(sop, __arr, __length, __n_pe);
 	} else if (	(sop == SOP_TYPE_SOP1) &&		// allow cable discovery in special earlier states
 				((PolicyState == peSourceStartup) ||
-				 (PolicyState == peSourceSendCaps))) {
+				 (PolicyState == peSourceSendCaps)
+#ifdef FSC_HAVE_CUSTOM_SRC2
+				|| ((PolicyState == peDisabled) &&
+					pd_dpm_get_is_support_smart_holder())
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
+				)) {
 		originalPolicyState = PolicyState;
 		__n_pe = peSrcVdmIdentityRequest;
 		__vdmh.SVDM.SVID		= PD_SID;					// PD SID to be used for Discover Identity command
@@ -388,6 +393,10 @@ FSC_S32 processDiscoverIdentity(SopType sop, FSC_U32* arr_in, FSC_U32 length_in)
 						(PolicyState == peDfpCblVdmIdentityAcked) ||
 						(PolicyState == peSrcVdmIdentityAcked);
 		vdmm.inform_id(__result, sop, __id);
+#ifdef FSC_HAVE_CUSTOM_SRC2
+		if (pd_dpm_get_is_support_smart_holder())
+			vdmm.inform_raw_vdo_data(__result, sop, __id, arr_in);
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 		ExpectingVdmResponse = FALSE;
 		PolicyState = originalPolicyState;
 		platform_set_timer(&VdmTimer, 0);

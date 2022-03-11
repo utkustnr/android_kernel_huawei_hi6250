@@ -3906,11 +3906,6 @@ static int mp_start_test(void)
             TS_LOG_ERR("MP OPEN TEST Fail, Retry %d\n", retry + 1);
         }
 
-        if(retry >= 3) {
-            mp_test_result->nDeltacResult = ITO_TEST_FAIL;
-            mp_test_result->nOpenResult = ITO_TEST_FAIL;
-        }
-
         for (i = 0; i < MAX_MUTUAL_NUM; i++)
         {
             mp_test_result->pGolden_CH[i] = mp_test_data->Goldensample_CH_0[i];
@@ -3935,10 +3930,6 @@ static int mp_start_test(void)
                 break;
             }
             TS_LOG_ERR("MP SHORT TEST Fail, Retry %d\n", retry + 1);
-        }
-
-        if(retry >= 3) {
-            mp_test_result->nShortResult = ITO_TEST_FAIL;
         }
     }
     else

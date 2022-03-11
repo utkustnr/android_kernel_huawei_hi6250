@@ -520,6 +520,13 @@ int send_cap_prox_calibrate_data_to_mcu(void)
 	} else if(!strncmp(sensor_chip_info[CAP_PROX], "huawei,semtech-sx9323", strlen("huawei,semtech-sx9323"))){
 		hwlog_info("sx9323:offset=%d, diff=%d length:%ld %ld\n", sar_calibrate_datas.semtech_cali_data.offset,
 				sar_calibrate_datas.semtech_cali_data.diff, sizeof(sar_calibrate_datas), sizeof(sar_calibrate_datas));
+	} else if (!strncmp(sensor_chip_info[CAP_PROX], "huawei,abov-a96t3x6",
+		strlen("huawei,abov-a96t3x6"))) {
+		hwlog_info("a96t3x6:offset=%d, diff=%d length:%ld %ld diff2=%d len:%ld\n",
+			sar_calibrate_datas.abov_cali_data.offset,
+			sar_calibrate_datas.abov_cali_data.diff,
+			sizeof(sar_calibrate_datas),
+			sizeof(sar_calibrate_datas));
 	} else {
 		hwlog_info("CAP_PROX cal_offset[0],digi_offset[0]:%x,%x\n",
 			sar_calibrate_datas.cap_cali_data.cal_offset[0],sar_calibrate_datas.cap_cali_data.digi_offset[0]);
@@ -835,11 +842,10 @@ void set_tsl2591_als_extend_prameters(void)
 	unsigned int i = 0;
 	for(i=0; i<ARRAY_SIZE(tsl2591_als_para_diff_tp_color_table);i++)
 	{
-		if((tsl2591_als_para_diff_tp_color_table[i].phone_type == als_data.als_phone_type)
-			&& (tsl2591_als_para_diff_tp_color_table[i].phone_version == als_data.als_phone_version)
-			&& ((tsl2591_als_para_diff_tp_color_table[i].tp_manufacture == tp_manufacture)
-				||(tsl2591_als_para_diff_tp_color_table[i].tp_manufacture == TS_PANEL_UNKNOWN)))
-		{
+		if((tsl2591_als_para_diff_tp_color_table[i].phone_type == als_data.als_phone_type) &&
+			(tsl2591_als_para_diff_tp_color_table[i].phone_version == als_data.als_phone_version) &&
+			((tsl2591_als_para_diff_tp_color_table[i].tp_manufacture == tplcd_manufacture) ||
+				(tsl2591_als_para_diff_tp_color_table[i].tp_manufacture == TS_PANEL_UNKNOWN))) {
 			tsl2591_als_para_table = i;
 			break;
 		}

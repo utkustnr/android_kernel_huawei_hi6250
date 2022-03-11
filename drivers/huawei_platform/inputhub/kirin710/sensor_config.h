@@ -46,7 +46,7 @@ extern int vishay_vcnl36832_als_flag;
 #define APDS9999_PARA_SIZE (24)
 #define TMD3702_PARA_SIZE (29)
 #define VCNL36658_PARA_SIZE (31)
-#define TSL2591_PARA_SIZE (14)
+#define TSL2591_PARA_SIZE 15
 #define BH1726_PARA_SIZE (16)
 #define MAX_PARA_SIZE (33)
 #define APDS9308_PARA_SIZE (14)
@@ -99,10 +99,17 @@ struct sar_semtech_calibrate_data {
 	uint16_t offset;
 	uint16_t diff;
 };
+
+struct sar_abov_calibrate_data {
+	uint16_t offset;
+	uint16_t diff;
+};
+
 union sar_calibrate_data {
 	struct sar_cap_proc_calibrate_data cap_cali_data;
 	struct sar_cypress_calibrate_data cypres_cali_data;
 	struct sar_semtech_calibrate_data semtech_cali_data;
+	struct sar_abov_calibrate_data abov_cali_data;
 };
 
 typedef struct _BH1745_ALS_PARA_TABLE {

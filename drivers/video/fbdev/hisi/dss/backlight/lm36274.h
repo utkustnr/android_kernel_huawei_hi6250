@@ -8,6 +8,11 @@
 *
 */
 
+#if defined(CONFIG_HUAWEI_DSM)
+#include <dsm/dsm_pub.h>
+extern struct dsm_client *lcd_dclient;
+#endif
+
 #ifndef __LINUX_LM36274_H
 #define __LINUX_LM36274_H
 
@@ -201,6 +206,24 @@ enum resume_type {
 #define BL_CONFIG_ENABLE_REG_NUM 1
 #define BL_LOWER_POW_DELAY 6
 #define BL_MAX_PREFLASHING_TIMER 800
+
+#define FLAG_CHECK_NUM         3
+enum {
+	OVP_FAULT_FLAG = 0x02,
+	OCP_FAULT_FLAG = 0x01,
+	TSD_FAULT_FLAG = 0x40,
+};
+
+struct lm36274_check_flag {
+	u8 flag;
+	int err_no;
+};
+
+static struct lm36274_check_flag err_table[] = {
+	{OVP_FAULT_FLAG, DSM_LCD_OVP_ERROR_NO},
+	{OCP_FAULT_FLAG, DSM_LCD_BACKLIGHT_OCP_ERROR_NO},
+	{TSD_FAULT_FLAG, DSM_LCD_BACKLIGHT_TSD_ERROR_NO},
+};
 
 /* bl_mode_config reg */
 #define BL_MAX_CONFIG_REG_NUM 3

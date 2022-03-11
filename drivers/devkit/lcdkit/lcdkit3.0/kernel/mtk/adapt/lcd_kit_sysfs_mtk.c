@@ -327,9 +327,10 @@ static ssize_t lcd_test_config_store(struct device* dev, struct device_attribute
 {
 	int ret = LCD_KIT_OK;
 
-	if (common_ops->set_test_config) {
+	if (common_ops->set_test_config)
 		ret = common_ops->set_test_config(buf);
-	}
+
+	LCD_KIT_INFO("set test config is %d\n", ret);
 	return count;
 }
 

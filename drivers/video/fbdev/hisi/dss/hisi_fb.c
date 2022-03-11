@@ -102,6 +102,10 @@ uint64_t g_pxl_clk_rate = 0;
 uint8_t g_prefix_ce_support = 0;
 uint8_t g_prefix_sharpness1D_support = 0;
 uint8_t g_prefix_sharpness2D_support = 0;
+/* dc brightness dimming */
+int delta_bl_delayed = 0;
+bool blc_enable_delayed = false;
+bool dc_switch_xcc_updated = false;
 int g_debug_enable_lcd_sleep_in = 0;
 uint32_t g_err_status = 0;
 
@@ -1497,6 +1501,35 @@ static void hisifb_sysfs_remove(struct platform_device *pdev)
 	hisifb_sysfs_init(hisifd);
 }
 
+static ssize_t hisi_fb_read(struct fb_info *info, char __user *buf,
+	size_t count, loff_t *ppos)
+{
+	return 0;
+}
+
+static ssize_t hisi_fb_write(struct fb_info *info, const char __user *buf,
+	size_t count, loff_t *ppos)
+{
+	int err;
+
+	if (!info)
+		return -ENODEV;
+
+	if (!lock_fb_info(info))
+		return -ENODEV;
+
+	if (!info->screen_base) {
+		unlock_fb_info(info);
+		return -ENODEV;
+	}
+
+	err = fb_sys_write(info, buf, count, ppos);
+
+	unlock_fb_info(info);
+
+	return err;
+}
+
 /*******************************************************************************
 **
 */
@@ -1504,8 +1537,8 @@ static struct fb_ops hisi_fb_ops = {
 	.owner = THIS_MODULE,
 	.fb_open = hisi_fb_open,
 	.fb_release = hisi_fb_release,
-	.fb_read = NULL,
-	.fb_write = NULL,
+	.fb_read = hisi_fb_read,
+	.fb_write = hisi_fb_write,
 	.fb_cursor = NULL,
 	.fb_check_var = hisi_fb_check_var,
 	.fb_set_par = hisi_fb_set_par,

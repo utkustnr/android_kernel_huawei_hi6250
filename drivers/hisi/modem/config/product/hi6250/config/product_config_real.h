@@ -1,4 +1,4 @@
-/* MD5: ff1954abb9efff3ca6c23b4d7b667bc2*/
+/* MD5: cc78ec2c33d65bfb5331d67ce5ff28b5*/
 #if !defined(__PRODUCT_CONFIG_REAL_H__)
 #define __PRODUCT_CONFIG_REAL_H__
 
@@ -23,11 +23,11 @@
 #endif 
 
 #ifndef PRODUCT_VERSION_STR
-#define PRODUCT_VERSION_STR "Dallas V100R001C60B269SPC006" 
+#define PRODUCT_VERSION_STR "Dallas V100R001C60B269SPC008" 
 #endif 
 
 #ifndef PRODUCT_FULL_VERSION_STR
-#define PRODUCT_FULL_VERSION_STR "Dallas V100R001C60B269SPC006" 
+#define PRODUCT_FULL_VERSION_STR "Dallas V100R001C60B269SPC008" 
 #endif 
 
 #ifndef PRODUCT_FILE_VERSION_STR
@@ -35,7 +35,7 @@
 #endif 
 
 #ifndef PRODUCT_DLOAD_SOFTWARE_VER		
-#define PRODUCT_DLOAD_SOFTWARE_VER		 "21C60B269S006C000" 
+#define PRODUCT_DLOAD_SOFTWARE_VER		 "21C60B269S008C000" 
 #endif 
 
 #ifndef PLATFORM
@@ -57,7 +57,7 @@
 #endif 
 
 #ifndef OS_PATH
-#define OS_PATH config/product/hi6250/os //lint !e773
+#define OS_PATH config/product/hi6250/os 
 #endif 
 
 #ifndef OS_IMG_FILE
@@ -1242,11 +1242,11 @@
 #endif 
 
 #ifndef LD_MAP_PATH
-#define LD_MAP_PATH hi6250-cphy-asic-bbe16-lsp_DallasSFt  //lint !e773
+#define LD_MAP_PATH hi6250-cphy-asic-bbe16-lsp_DallasSFt 
 #endif 
 
 #ifndef XTENSA_CORE_X_SYSTEM
-#define XTENSA_CORE_X_SYSTEM RD-2012.5  //lint !e773 
+#define XTENSA_CORE_X_SYSTEM RD-2012.5 
 #endif 
 
 #ifndef XTENSA_CORE				
@@ -1254,23 +1254,23 @@
 #endif 
 
 #ifndef XTENSA_SYSTEM			
-#define XTENSA_SYSTEM			 $(ROOT_XTENSA_PATH_W)/XtDevTools/install/builds/RD-2012.5-linux/$(CFG_XTENSA_CORE)/config   //lint !e773
+#define XTENSA_SYSTEM			 $(ROOT_XTENSA_PATH_W)/XtDevTools/install/builds/RD-2012.5-linux/$(CFG_XTENSA_CORE)/config 
 #endif 
 
 #ifndef TENSILICA_BUILDS	
-#define TENSILICA_BUILDS	 $(ROOT_XTENSA_PATH_W)/XtDevTools/install/builds/RD-2012.5-linux  //lint !e773
+#define TENSILICA_BUILDS	 $(ROOT_XTENSA_PATH_W)/XtDevTools/install/builds/RD-2012.5-linux 
 #endif 
 
 #ifndef TENSILICA_TOOLS	
-#define TENSILICA_TOOLS	 $(ROOT_XTENSA_PATH_W)/XtDevTools/install/tools/RD-2012.5-linux  //lint !e773
+#define TENSILICA_TOOLS	 $(ROOT_XTENSA_PATH_W)/XtDevTools/install/tools/RD-2012.5-linux 
 #endif 
 
 #ifndef TENSILICA_BUILDS_HIFI
-#define TENSILICA_BUILDS_HIFI $(ROOT_XTENSA_PATH_W)/XtDevTools/install/builds/RD-2012.5-linux  //lint !e773
+#define TENSILICA_BUILDS_HIFI $(ROOT_XTENSA_PATH_W)/XtDevTools/install/builds/RD-2012.5-linux 
 #endif 
 
 #ifndef TENSILICA_TOOLS_HIFI
-#define TENSILICA_TOOLS_HIFI $(ROOT_XTENSA_PATH_W)/XtDevTools/install/tools/RD-2012.5-linux  //lint !e773
+#define TENSILICA_TOOLS_HIFI $(ROOT_XTENSA_PATH_W)/XtDevTools/install/tools/RD-2012.5-linux 
 #endif 
 
 #ifndef LPHY_PUB_DTCM_BASE	
@@ -1382,7 +1382,7 @@
 #endif 
 
 #ifndef GU_INC_PATH
-#define GU_INC_PATH COMM_CODE_GU/Balong_GU_Inc/GUL_CS //lint !e773
+#define GU_INC_PATH COMM_CODE_GU/Balong_GU_Inc/GUL_CS 
 #endif 
 
 #ifndef GU_PRODUCT_VERSION
@@ -1413,7 +1413,7 @@
 #endif 
 
 #ifndef GU_FEATURE_CONFIG_PATH
-#define GU_FEATURE_CONFIG_PATH config/product/hi6250_udp/include_gu //lint !e773
+#define GU_FEATURE_CONFIG_PATH config/product/hi6250_udp/include_gu 
 #endif 
 
 #ifndef TL_PS_MAX_TRCH_NUM_8

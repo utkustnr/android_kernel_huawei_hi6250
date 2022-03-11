@@ -647,7 +647,9 @@ static int gt1x_cache_roidata_device(struct gt1x_ts_roi *roi)
 		return -EINVAL;
 	}
 
+	mutex_lock(&roi->mutex);
 	roi->data_ready = false;
+	mutex_unlock(&roi->mutex);
 
 	ret = gt1x_i2c_read(ts->gt1x_roi_data_add, status, ROI_HEAD_LEN);
 	if (ret) {
@@ -1639,7 +1641,7 @@ static int gt1x_parse_dts(void)
 		value = IC_TYPE_9PT;
 	}
 	ts->ic_type = value;
-	TS_LOG_INFO("%s: ic_type = %s  \n", __func__,ts->ic_type);
+	TS_LOG_INFO("%s: ic_type = %d\n", __func__, ts->ic_type);
 
 	ret = of_property_read_u32(device, FW_ONLY_DEPEND_ON_LCD, &value);
 	if (ret) {

@@ -14,7 +14,7 @@ enum {
 
 extern int dubai_update_gpu_info(unsigned long freq, unsigned long busy_time,
 	unsigned long total_time, unsigned long cycle_ms);
-extern void dubai_update_wakeup_info(const char *name, int gpio);
+extern void dubai_update_wakeup_info(const char *tag, const char *fmt, ...);
 extern void dubai_update_brightness(uint32_t brightness);
 extern void dubai_log_kworker(unsigned long address, unsigned long long enter_time);
 extern void dubai_log_uevent(const char *devpath, unsigned int action);

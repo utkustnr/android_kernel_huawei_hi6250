@@ -203,6 +203,14 @@ struct ustat {
 	char			f_fpack[6];
 };
 
+#ifdef CONFIG_HW_QOS_THREAD
+struct transact_qos {
+	atomic_t *qos;
+	pid_t trans_from;
+	unsigned int trans_type;
+};
+#endif
+
 /**
  * struct callback_head - callback structure for use with RCU and task_work
  * @next: next update requests in a list

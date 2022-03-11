@@ -47,20 +47,20 @@ typedef enum
 #define EMCOM_LOGD(fmt, ...) \
     do { \
         if (EMCOM_DEBUG) { \
-            hwlog_info("%s"fmt"\n", __func__, ##__VA_ARGS__); \
+            hwlog_info("%s "fmt"\n", __func__, ##__VA_ARGS__); \
         } \
     } while (0)
 
 #define EMCOM_LOGI(fmt, ...) \
     do { \
         if (EMCOM_INFO) { \
-            hwlog_info("%s"fmt"\n", __func__, ##__VA_ARGS__); \
+            hwlog_info("%s "fmt"\n", __func__, ##__VA_ARGS__); \
         } \
     } while (0)
 
 #define EMCOM_LOGE(fmt, ...) \
     do { \
-            hwlog_err("%s"fmt"\n", __func__, ##__VA_ARGS__); \
+            hwlog_err("%s "fmt"\n", __func__, ##__VA_ARGS__); \
     } while (0)
 
 bool Emcom_Is_Modem_Support( void );

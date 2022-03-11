@@ -43,15 +43,19 @@ static struct smpl_device_info* g_smpl_devinfo = NULL;
 static unsigned int smpl_happened = 0;
 static int __init early_parse_normal_reset_type_cmdline(char * p)
 {
-    if (p)
-    {
-        if (!strncmp(p,"AP_S_SMPL", strlen("AP_S_SMPL") + 1))
-        {
-            smpl_happened = 1;
-        }
-    }
-    hwlog_info("smpl happened = %d\n", smpl_happened);
-    return 0;
+	if (!p) {
+		hwlog_err("cmdline is null\n");
+		return 0;
+	}
+
+	hwlog_info("normal_reset_type=%s\n", p);
+
+	/* AP_S_SMPL = 0x51  BR_POWERON_BY_SMPL = 0x26 */
+	if (strstr(p, "SMPL"))
+		smpl_happened = 1;
+
+	hwlog_info("smpl happened=%d\n", smpl_happened);
+	return 0;
 }
 early_param("normal_reset_type", early_parse_normal_reset_type_cmdline);
 

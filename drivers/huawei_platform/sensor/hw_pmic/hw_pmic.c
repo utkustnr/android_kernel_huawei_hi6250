@@ -302,6 +302,7 @@ static int hw_pmic_get_dt_data(struct hw_pmic_ctrl_t *pmic_ctrl)
 {
 	struct device_node *dev_node = NULL;
 	struct hw_pmic_info *pmic_info = NULL;
+	static bool gpio_req_status = false;
 	int rc = -EPERM;
 
 	hwlog_info("%s enter\n", __func__);
@@ -329,12 +330,16 @@ static int hw_pmic_get_dt_data(struct hw_pmic_ctrl_t *pmic_ctrl)
 		rc = 0;
 	} else {
 		hwlog_info("enable boost-pin = %d\n", pmic_info->boost_en_pin);
-		rc = gpio_request(pmic_info->boost_en_pin, "fan53880_boost_en");
-		if (rc < 0) {
-			hwlog_err("%s fail req boost en = %d\n", __func__, rc);
-			return -EPERM;
+		if (!gpio_req_status) {
+			rc = gpio_request(pmic_info->boost_en_pin,
+				"hw_pmic_boost_en");
+			if (rc < 0) {
+				hwlog_err("fail req boost en = %d\n", rc);
+				return -EPERM;
+			}
+			gpio_direction_output(pmic_info->boost_en_pin, 1);
+			gpio_req_status = true;
 		}
-		gpio_direction_output(pmic_info->boost_en_pin, 1);
 	}
 
 	return rc;

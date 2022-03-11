@@ -109,7 +109,12 @@
 #define BATTERY_TEMPERATURE_0_C             (0)
 #define BATTERY_TEMPERATURE_5_C             (5)
 
+#define BATT_BRAND_STRING_MAX                32
+#define BATT_BRAND_NUM_MAX                   5
+
 #define CHARGING_WORK_TIMEOUT                (30000)
+#define CHARGING_WORK_PDTOSCP_TIMEOUT        1000
+#define CHARGING_WORK_WAITPD_TIMEOUT         2000
 #define MIN_CHARGING_CURRENT_OFFSET          (-10)
 #define BATTERY_FULL_CHECK_TIMIES            (2)
 #define IIN_AVG_SAMPLES                      (10)
@@ -507,7 +512,7 @@ struct charge_switch_ops {
 
 struct fcp_adapter_device_ops {
 	int (*get_adapter_output_current)(void);
-	int (*set_adapter_output_vol)(int *);
+	int (*set_adapter_output_vol)(int);
 	int (*detect_adapter)(void);
 	int (*is_support_fcp)(void);
 	int (*switch_chip_reset)(void);
@@ -646,11 +651,20 @@ struct ccafc_charge_pattern {
 #define WEAKSOURCE_TRUE  (1)
 #define WEAKSOURCE_FALSE (0)
 #define FCP_DETECT_DELAY_IN_POWEROFF_CHARGE 2000
+#define ASW_PROTECT_IIN_LIMIT  100
 /****************variable and function declarationn area******************/
 extern struct blocking_notifier_head charge_wake_unlock_list;
 extern struct atomic_notifier_head fault_notifier_list;
 extern struct device *charge_dev;
 extern unsigned int get_pd_charge_flag(void);
+#ifdef CONFIG_HISI_ASW
+extern int asw_get_iin_limit(void);
+#else
+static inline int asw_get_iin_limit(void)
+{
+	return 0;
+}
+#endif /* CONFIG_HISI_ASW */
 
 int water_detect_ops_register(struct water_detect_ops *ops);
 void water_detect(void);
@@ -684,9 +698,11 @@ void wireless_charge_connect_send_uevent(void);
 #endif
 int disable_chargers(int charger_type, int disable, int role);
 int set_charger_disable_flags(int, int);
+int set_charger_disable_flags_sh(unsigned int, enum disable_charger_type);
 extern struct blocking_notifier_head charger_event_notify_head;
 
 int charge_get_vbus(void);
+void charge_set_charger_type(enum huawei_usb_charger_type type);
 void charger_source_sink_event(enum charger_event_type event);
 void send_water_intrused_event(bool flag);
 bool get_stop_charge_sync_flag(void);
@@ -699,5 +715,5 @@ void charge_set_batfet_disable(int val);
 int is_ccafc_supported(int *flag);
 int get_ccafc_pattern(struct ccafc_charge_pattern *pattern);
 int get_ccafc_sample_status(void);
-
+void emark_detect_complete(void);
 #endif

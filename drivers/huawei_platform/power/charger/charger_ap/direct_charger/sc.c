@@ -507,6 +507,7 @@ static ssize_t direct_charge_sysfs_store(struct device *dev,
 		hwlog_info("set resistance threshold = %ld\n", val);
 		di->standard_cable_full_path_res_max = val;
 		di->full_path_res_max = val;
+		di->ctc_cable_full_path_res_max = val;
 		break;
 	case DIRECT_CHARGE_SYSFS_SET_CHARGETYPE_PRIORITY:
 		if ((strict_strtol(buf, 10, &val) < 0) || (val < 0) || (val > MAX_RESISTANCE))

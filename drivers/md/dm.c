@@ -22,6 +22,7 @@
 #include <linux/wait.h>
 #include <linux/pr.h>
 #include <linux/vmalloc.h>
+#include "dm-exception-store.h"
 
 #define DM_MSG_PREFIX "core"
 
@@ -62,6 +63,16 @@ static DECLARE_WORK(deferred_remove_work, do_deferred_remove);
 
 static struct workqueue_struct *deferred_remove_workqueue;
 
+#ifdef CONFIG_DM_SNAPSHOT
+extern int snapshot_read_sector_fix(struct dm_target *ti,
+				    struct bio *bio,
+				    sector_t sector,
+				    unsigned int sector_num,
+				    unsigned int *count);
+#endif
+#ifndef BIO_MAX_SECTORS
+#define BIO_MAX_SECTORS ((BIO_MAX_PAGES << PAGE_SHIFT) >> SECTOR_SHIFT)
+#endif
 /*
  * One of these is allocated per bio.
  */
@@ -1269,6 +1280,8 @@ static int __split_and_process_non_flush(struct clone_info *ci)
 	struct dm_target *ti;
 	unsigned len;
 	int r;
+	unsigned int ret = 0;
+	unsigned int count = 0;
 
 	if (unlikely(bio_op(bio) == REQ_OP_DISCARD))
 		return __send_discard(ci);
@@ -1279,8 +1292,20 @@ static int __split_and_process_non_flush(struct clone_info *ci)
 	if (!dm_target_is_valid(ti))
 		return -EIO;
 
+#ifdef CONFIG_DM_SNAPSHOT
+	if (!strcmp(ti->type->name, "snapshot_read")) {
+		ret = snapshot_read_sector_fix(ti, bio, ci->sector,
+					       ci->sector_count, &count);
+		if (!ret) {
+			len = min_t(sector_t, BIO_MAX_SECTORS, count);
+			goto clone_and_map;
+		}
+	}
+#endif
+
 	len = min_t(sector_t, max_io_len(ci->sector, ti), ci->sector_count);
 
+clone_and_map:
 	r = __clone_and_map_data_bio(ci, ti, ci->sector, &len);
 	if (r < 0)
 		return r;

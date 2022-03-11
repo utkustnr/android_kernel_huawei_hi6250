@@ -1392,6 +1392,7 @@ void ams_tcs3707_store_calibrate(struct colorDriver_chip *chip, at_color_sensor_
 
 		if(NULL == ctx){
 			hwlog_err("%s ctx null\n", __func__);
+			AMS_MUTEX_UNLOCK(&chip->lock);
 			return;
 		}
 		ctx->algCtx.als_data.gain = ams_tcs3707_alsGain_conversion[CAL_STATE_GAIN_1];

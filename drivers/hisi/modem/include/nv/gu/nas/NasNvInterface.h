@@ -1,13 +1,50 @@
-/******************************************************************************
-
-  Copyright(C)2008,Hisilicon Co. LTD.
-
- ******************************************************************************
-  File Name       : NasNvInterface.h
-  Description     : NasNvInterface.h header file
-  History         :
-
-******************************************************************************/
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2012-2021. All rights reserved.
+ * foss@huawei.com
+ *
+ * If distributed as part of the Linux kernel, the following license terms
+ * apply:
+ *
+ * * This program is free software; you can redistribute it and/or modify
+ * * it under the terms of the GNU General Public License version 2 and
+ * * only version 2 as published by the Free Software Foundation.
+ * *
+ * * This program is distributed in the hope that it will be useful,
+ * * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * * GNU General Public License for more details.
+ * *
+ * * You should have received a copy of the GNU General Public License
+ * * along with this program; if not, write to the Free Software
+ * * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA
+ *
+ * Otherwise, the following license terms apply:
+ *
+ * * Redistribution and use in source and binary forms, with or without
+ * * modification, are permitted provided that the following conditions
+ * * are met:
+ * * 1) Redistributions of source code must retain the above copyright
+ * *    notice, this list of conditions and the following disclaimer.
+ * * 2) Redistributions in binary form must reproduce the above copyright
+ * *    notice, this list of conditions and the following disclaimer in the
+ * *    documentation and/or other materials provided with the distribution.
+ * * 3) Neither the name of Huawei nor the names of its contributors may
+ * *    be used to endorse or promote products derived from this software
+ * *    without specific prior written permission.
+ *
+ * * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 
 #ifndef __NASNVINTERFACE_H__
 #define __NASNVINTERFACE_H__
@@ -70,6 +107,7 @@ extern "C" {
 #define NAS_MMC_MAX_BLACK_LOCK_PLMN_WITH_RAT_NUM            (8)                 /* 禁止接入技术的PLMN ID的最大个数 */
 #define NAS_MMC_NVIM_MAX_USER_CFG_EXT_EHPLMN_NUM              (8)                /* 扩展的NV项的EHplmn组的最大个数*/
 #define NAS_MMC_NVIM_MAX_USER_CFG_FORB_PLMN_GROUP_NUM         (8)                /* 用户配置的forb plmn的最大组数 */
+#define NAS_NVIM_MAX_REJ_INFO_NOT_RPT_GROUP_NUM               (8)             /* rejInfo不上报的组数 */
 
 #define NAS_MMC_NVIM_MAX_USER_OPLMN_VERSION_LEN               (8)               /* 用户配置的OPLMN版本号最大长度 */
 #define NAS_MMC_NVIM_MAX_USER_OPLMN_IMSI_NUM                  (6)               /* 用户配置的OPLMN最多可支持的USIM/SIM卡的个数 */
@@ -1862,6 +1900,24 @@ typedef struct
     VOS_UINT8                           ucReserved2;
     VOS_UINT8                           ucReserved3;
 }NAS_MSCC_NVIM_CTCC_ROAM_EMC_CALL_CFG_STRU;
+
+
+typedef struct
+{
+    VOS_UINT16                          usRejCauseBegin;                        /* RejCause begin */
+    VOS_UINT16                          usRejCauseEnd;                          /* RejCause end */
+    VOS_UINT32                          ulRptInterval;                          /* 不上报时间间隔 */
+}NAS_NVIM_REJ_INFO_GROUP_CFG_STRU;
+
+
+typedef struct
+{
+    VOS_UINT8                           ucEnableFlg;                                                          /* RejInfo 不上报使能 */
+    VOS_UINT8                           ucAvailNum;                                                           /* 有效配置组数 */
+    VOS_UINT8                           ucReserved1;                                                          /* 保留位1 */
+    VOS_UINT8                           ucReserved2;                                                          /* 保留位2 */
+    NAS_NVIM_REJ_INFO_GROUP_CFG_STRU    astRejInfoGroupCfg[NAS_NVIM_MAX_REJ_INFO_NOT_RPT_GROUP_NUM];          /* 8组配置，CauseBegin CauseEnd 不上报时间间隔 */
+}NAS_NVIM_REJ_INFO_NOT_RPT_CFG_STRU;
 
 
 typedef struct

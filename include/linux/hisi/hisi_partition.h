@@ -130,6 +130,10 @@ enum {
 #define PART_VERSION                   "version"
 #define PART_PRODUCT                   "product"
 #define PART_PRELOAD                   "preload"
+#define PART_PREAS                     "preas"
+#define PART_PREAVS                    "preavs"
+#define PART_PRETS                     "prets"
+#define PART_PRETVS                    "pretvs"
 /*AB*/
 #define PART_PTABLE_LU2                "ptable_lu2"
 #define PART_PTABLE_LU3                "ptable_lu3"

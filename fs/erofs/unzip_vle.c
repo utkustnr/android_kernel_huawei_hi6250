@@ -892,10 +892,17 @@ static void z_erofs_vle_unzip_kickoff(void *ptr, int bios)
 	struct z_erofs_vle_unzip_io *io = tagptr_unfold_ptr(t);
 	bool background = tagptr_unfold_tags(t);
 
-	if (atomic_add_return(bios, &io->pending_bios))
-		return;
+	if (!background) {
+		unsigned long flags;
 
-	if (background) {
+		spin_lock_irqsave(&io->u.wait.lock, flags);
+		if (!atomic_add_return(bios, &io->pending_bios))
+			wake_up_locked(&io->u.wait);
+		spin_unlock_irqrestore(&io->u.wait.lock, flags);
+		return;
+	}
+
+	if (!atomic_add_return(bios, &io->pending_bios)) {
 #ifdef CONFIG_PREEMPT_COUNT
 		if (in_atomic() || irqs_disabled())
 			queue_work(z_erofs_workqueue, &io->u.work);
@@ -904,13 +911,7 @@ static void z_erofs_vle_unzip_kickoff(void *ptr, int bios)
 #else
 		queue_work(z_erofs_workqueue, &io->u.work);
 #endif
-	} else {
-		wake_up(&io->u.wait);
-
-		smp_mb();
-		atomic_set(&io->pending_bios, Z_EROFS_PENDING_BIOS_FINAL);
 	}
-
 }
 
 
@@ -1587,14 +1588,10 @@ static void z_erofs_submit_and_unzip(struct z_erofs_vle_frontend *f,
 
 	/* wait until all bios are completed */
 	io_wait_event(io[__FSIO_1].u.wait,
-		      !atomic_read(&io[__FSIO_1].pending_bios) ||
-		      atomic_read(&io[__FSIO_1].pending_bios) == Z_EROFS_PENDING_BIOS_FINAL);
+		      !atomic_read(&io[__FSIO_1].pending_bios));
 
 	/* let's synchronous decompression */
 	z_erofs_vle_unzip_all(sb, &io[__FSIO_1], pagepool);
-
-	while(atomic_read(&io[__FSIO_1].pending_bios) != Z_EROFS_PENDING_BIOS_FINAL)
-		cpu_relax();
 }
 
 static int z_erofs_vle_normalaccess_readpage(struct file *file,

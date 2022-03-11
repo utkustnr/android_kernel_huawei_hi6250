@@ -229,7 +229,7 @@ static int thp_fts_get_frame(struct thp_device *tdev,
 	}
 
 	if ((!len) || (len >= THP_MAX_FRAME_SIZE - 1)) {
-		THP_LOG_INFO("%s: read len(%d) illegal\n", __func__, len);
+		THP_LOG_INFO("%s: read len: %u illegal\n", __func__, len);
 		return -ENOMEM;
 	}
 

@@ -486,6 +486,9 @@ struct sock {
 #endif /* CONFIG_HW_NETWORK_MEASUREMENT */
 #ifdef CONFIG_HUAWEI_XENGINE
 	int			hicom_flag;
+	u8	snd_pkt_cnt;
+	u8	is_mp_flow:1,
+	    is_download_flow:1;
 #endif
 #ifdef CONFIG_HW_DPIMARK_MODULE
 	unsigned long	sk_born_stamp;

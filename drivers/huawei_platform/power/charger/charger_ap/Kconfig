@@ -21,6 +21,16 @@ config BQ25892_CHARGER
 config RT9466_CHARGER
 	bool "rt9466 charger"
 	default n
+config HL7019_CHARGER
+	bool "hl7019 charger"
+	default n
+	help
+	  Say Y here to enable support for batteries with hl7019 chip.
+config RT9471_CHARGER
+	bool "rt9471 charger"
+	default n
+	help
+	  Say Y here to enable support for batteries with rt9471 chip.
 config DUAL_CHARGER
 	bool "dual charger"
 	default n

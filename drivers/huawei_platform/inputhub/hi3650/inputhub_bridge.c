@@ -749,6 +749,11 @@ void write_timestamp_base_to_sharemem(void)
 	return;
 }
 
+void save_light_to_sensorhub(uint32_t mipi_level, uint32_t bl_level)
+{
+	return;
+}
+
 static int inputhub_mcu_init(void)
 {
     int ret;

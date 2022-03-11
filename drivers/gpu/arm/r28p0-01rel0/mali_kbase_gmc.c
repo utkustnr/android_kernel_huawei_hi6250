@@ -757,7 +757,6 @@ static int kbase_gmc_walk_kctx(struct kbase_context *kctx, struct kbase_gmc_arg 
 		kctx->set_pt_flag = true;
 
 	kbase_gmc_walk_each_reg(&(kctx->reg_rbtree_same),arg,&nr_pages_to_compressed);
-	kbase_gmc_walk_each_reg(&(kctx->reg_rbtree_custom),arg,&nr_pages_to_compressed);
 	kbase_gmc_walk_each_reg(&(kctx->reg_rbtree_exec),arg,&nr_pages_to_compressed);
 
 	while (atomic_read(&n_gmc_workers) > 0) {
@@ -810,7 +809,7 @@ int kbase_gmc_walk_device(struct kbase_device *kbdev, pid_t pid, struct kbase_gm
 	mutex_lock(&kbdev->kctx_list_lock);
 	list_for_each_entry_safe(element, tmp, &kbdev->kctx_list, link) {
 		struct kbase_context *kctx = element->kctx;
-		if (kctx->tgid == pid || pid == GMC_HANDLE_ALL_KCTXS) {
+		if ((kctx->filp != NULL) && (kctx->tgid == pid || pid == GMC_HANDLE_ALL_KCTXS)) {
 			ret = kbase_gmc_walk_kctx(kctx, arg);
 			if (ret)
 				goto out;

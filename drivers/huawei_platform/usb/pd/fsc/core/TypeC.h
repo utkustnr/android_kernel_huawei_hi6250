@@ -87,6 +87,11 @@ void InitializeRegisters(void);
 void InitializeTypeCVariables(void);
 void InitializeTypeC(void);
 
+#ifdef FSC_HAVE_CUSTOM_SRC2
+int get_emarker_detect_status(void);
+void set_emarker_detect_status(FSC_BOOL status);
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
+
 void DisableTypeCStateMachine(void);
 void EnableTypeCStateMachine(void);
 
@@ -101,6 +106,9 @@ void StateMachineAttachWaitSink(void);
 void StateMachineAttachedSink(void);
 void StateMachineTryWaitSink(void);
 void StateMachineDebugAccessorySink(void);
+#ifdef FSC_HAVE_CUSTOM_SRC2
+void StateMachineEmarkerCheck(void);
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 #endif // FSC_HAVE_SNK
 
 #if (defined(FSC_HAVE_DRP) || (defined(FSC_HAVE_SNK) && defined(FSC_HAVE_ACCMODE)))
@@ -141,6 +149,9 @@ void SetStateUnattached(void);
 void SetStateAttachWaitSink(void);
 void SetStateAttachedSink(void);
 void SetStateDebugAccessorySink(void);
+#ifdef FSC_HAVE_CUSTOM_SRC2
+void SetStateEmarkCheck(void);
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 #ifdef FSC_HAVE_DRP
 void RoleSwapToAttachedSink(void);
 #endif // FSC_HAVE_DRP

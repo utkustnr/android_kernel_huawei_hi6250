@@ -7,5 +7,11 @@ config HISI_CAMERA_FPGA_ICE40
     ---help---
         ice40 camera fpga driver
 
+config HISI_CAMERA_FPGA_STM32
+    tristate "stm32 camera fpga driver"
+    depends on HISI_CAMERA_FPGA
+    default n
+    ---help---
+        stm32 camera fpga driver
 endif
 

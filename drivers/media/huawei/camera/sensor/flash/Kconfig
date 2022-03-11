@@ -16,6 +16,20 @@ config HISI_CAMERA_LM3642
     ---help---
         LM3642 camera flash driver
 
+config HISI_CAMERA_SY7804
+    tristate "SY7804  flash driver"
+    depends on HISI_CAMERA_FLASH
+    default n
+    ---help---
+        SY7804 camera flash driver
+
+config HISI_CAMERA_LM3644
+    tristate "LM3644  flash driver"
+    depends on HISI_CAMERA_FLASH
+    default n
+    ---help---
+        LM3644 camera flash driver
+
 config HISI_CAMERA_LM3642_FRONT
     tristate "LM3642 front flash driver"
     depends on HISI_CAMERA_FLASH

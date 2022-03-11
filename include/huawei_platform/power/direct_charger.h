@@ -255,6 +255,9 @@
 #define C_OFFSET_A_MAX                          1200000
 #define C_OFFSET_A_MIN                          800000
 
+#define ADP_B_TYPE1                             3
+#define ADP_B_TYPE1_65W                         5
+
 #define MAX_RESIST_STR_SIZE                     (10)
 
 enum direct_charge_mode{
@@ -533,6 +536,7 @@ struct direct_charge_device {
 	struct dc_temp_para_info temp_para[DC_TEMP_LEVEL];
 	struct dc_resist_para_info resist_para[DC_RESIST_LEVEL];
 	struct dc_resist_para_info std_resist_para[DC_RESIST_LEVEL];
+	struct dc_resist_para_info ctc_resist_para[DC_RESIST_LEVEL];
 	struct adaptor_info adp_info;
 	struct nty_data *fault_data;
 	int stage_need_to_jump[2*DC_VOLT_LEVEL];
@@ -589,6 +593,7 @@ struct direct_charge_device {
 	int vol_err_th;
 	int full_path_res_max;
 	int standard_cable_full_path_res_max;
+	int ctc_cable_full_path_res_max;
 	int full_path_res_threshold;
 	int adaptor_leakage_current_th;
 	int adaptor_detect_by_voltage;
@@ -600,6 +605,7 @@ struct direct_charge_device {
 	int cc_cable_detect_enable;
 	int cc_cable_detect_ok;
 	int max_current_for_none_standard_cable;
+	int max_current_for_ctc_cable;
 	enum direct_charge_fault_type charge_fault;
 	int adaptor_vendor_id;
 	int scp_work_on_charger;
@@ -628,6 +634,7 @@ struct direct_charge_device {
 	int iin_thermal_default;
 	int can_stop_kick_wdt;
 	int last_basp_level;
+	int gain_curr;
 	int reset_adap_volt_enabled;
 };
 
@@ -696,6 +703,7 @@ int direct_charge_get_sc_di(struct direct_charge_device **di);
 void direct_charge_lvc_check(void);
 void direct_charge_sc_check(void);
 int direct_charge_get_local_mode(void);
+int direct_charge_get_adapter_type(void);
 int scp_adaptor_type_detect(int *mode);
 void direct_charge_set_di(struct direct_charge_device *di);
 int cable_detect_ops_register(struct direct_charge_cable_detect_ops*);
@@ -720,6 +728,7 @@ int get_super_charge_flag(void);
 int is_direct_charge_failed(void);
 int is_in_scp_charging_stage(void);
 void direct_charge_send_quick_charge_uevent(void);
+void direct_charge_set_adapter_default_param(void);
 #ifdef CONFIG_SCHARGER_V300
 #define HI6523_CV_CUT 150
 extern bool is_hi6523_cv_limit(void);

@@ -424,6 +424,8 @@ VOS_INT __init RNIC_InitNetCard(VOS_VOID)
         /* 给设备配置MAC地址,以后需要填固定值 */
         memcpy(pstDev->dev_addr, RNIC_GET_DST_MAC_ADDR(ucIndex), RNIC_MAC_ADDR_LEN);/* unsafe_function_ignore: memcpy */
 
+        pstDev->flags &= ~(IFF_BROADCAST | IFF_MULTICAST);
+
         /* 设置默认的MTU值 */
         pstDev->mtu = RNIC_DEFAULT_MTU;
 

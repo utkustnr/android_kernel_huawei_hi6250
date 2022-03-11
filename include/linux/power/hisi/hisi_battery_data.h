@@ -142,6 +142,7 @@ struct hisi_coul_battery_data {
     int default_rbatt_mohm;
     int delta_rbatt_mohm;
     unsigned int vbatt_max;
+	unsigned int vbatt_max_backup;
     int ifull;
     struct chrg_para_lut *chrg_para;
     char *batt_brand;

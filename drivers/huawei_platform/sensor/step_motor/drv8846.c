@@ -37,6 +37,9 @@
 #ifdef CONFIG_PWM
 #include <linux/pwm.h>
 #endif
+#include <linux/regulator/consumer.h>
+#include <linux/regulator/driver.h>
+#include <linux/regulator/machine.h>
 #ifdef HWLOG_TAG
 #undef HWLOG_TAG
 #endif
@@ -197,6 +200,15 @@ enum step_gen_manner {
 	GPIO_STEP,
 	PWM_STEP
 };
+
+enum step_voltage_type {
+	LOW_VOLTAGE,
+	NORMAR_VOLTAGE,
+	HIGI_VOLTAGE,
+
+	/* voltage type num, must be at end */
+	VOLTAGE_TYPE_NUM
+};
 /*
  * struct drv_data
  * @pdev: device struct pointer
@@ -267,6 +279,11 @@ struct drv_data {
 	int gpio_st_en;
 	int ic_vendor;
 	int direction;
+
+	/* vdd */
+	struct regulator *ldo;
+	int current_voltage;
+	bool support_set_voltage;
 };
 
 static const struct of_device_id g_drv8846_match[] = {
@@ -274,6 +291,10 @@ static const struct of_device_id g_drv8846_match[] = {
 	{},
 };
 enum drv_step_mode g_step_work_mode;
+static int vout_voltage_map[VOLTAGE_TYPE_NUM] = { 2700000, 3100000, 3300000 };
+
+static void step_motor_set_vdd_voltage(struct drv_data *di,
+	unsigned int value);
 
 /*
  * Print timestamp, used for debug.
@@ -2113,6 +2134,13 @@ static ssize_t drv8846_param_set_value(struct device *dev,
 		return count;
 	}
 
+	if (strcmp("set_voltage", name) == 0) {
+		mutex_lock(&di->cmd_mutex);
+		step_motor_set_vdd_voltage(di, val);
+		mutex_unlock(&di->cmd_mutex);
+		return count;
+	}
+
 #ifdef STEP_MOTOR_DEBUG
 	if (drv8846_handle_gpio_set(di, name, val))
 		return count;
@@ -2350,6 +2378,140 @@ static void step_motor_set_direction(struct drv_data *di)
 		di->direction = 0;
 	hwlog_info("step_direction is %d, temp is 0x%x", di->direction, temp);
 }
+
+static void step_motor_set_vdd_voltage(struct drv_data *di,
+						unsigned int value)
+{
+	int ret;
+
+#ifdef STEP_MOTOR_DEBUG
+	hwlog_info("factor not support change voltage\n");
+	return;
+#endif
+
+	if (di == NULL) {
+		hwlog_err("ste_motor_set_vdd_voltage invalid data\n");
+		return;
+	}
+
+	if (value >= VOLTAGE_TYPE_NUM) {
+		hwlog_err("set_vdd_voltage value error, value = %d\n", value);
+		return;
+	}
+
+	if (!(di->support_set_voltage)) {
+		hwlog_info("not support set voltage, no need\n");
+		return;
+	}
+
+	if (di->ldo == NULL) {
+		hwlog_err("ldo is null, cannot set voltage\n");
+		return;
+	}
+
+	if (vout_voltage_map[value] == di->current_voltage) {
+		hwlog_info("voltage is ok, no need set\n");
+		return;
+	}
+
+	/* change voltage need disable first */
+	ret = regulator_disable(di->ldo);
+	if (ret != 0) {
+		hwlog_err("regulator_disable fail.\n");
+		return;
+	}
+
+	ret = regulator_set_voltage(di->ldo,
+		vout_voltage_map[value], vout_voltage_map[value]);
+	if (ret != 0) {
+		hwlog_err("regulator_set_voltage fail.\n");
+		return;
+	}
+	di->current_voltage = vout_voltage_map[value];
+	msleep(5); // wait 5ms when disable to enable
+
+	ret = regulator_enable(di->ldo);
+	if (ret != 0) {
+		hwlog_err("regulator_enable fail.\n");
+		return;
+	}
+	mdelay(1); // wait for voltage enable ok
+	hwlog_info("set voltage suc! current voltage = %d\n",
+		di->current_voltage);
+}
+
+static void step_motor_get_vdd(struct drv_data *di)
+{
+	int ret;
+	u32 tmp = 0;
+	struct device_node *np = NULL;
+	u16 vol_temp[VOLTAGE_TYPE_NUM] = {0};
+	int i;
+
+	np = di->pdev->of_node;
+	ret = of_property_read_u32(np, "support_set_voltage", &tmp);
+	if (ret != 0) {
+		hwlog_err("read support_set_voltage fail\n");
+		di->support_set_voltage = false;
+		return;
+	}
+
+	di->support_set_voltage = (bool)tmp;
+	if (!(di->support_set_voltage)) {
+		hwlog_info("not support_set_voltage\n");
+		return;
+	}
+
+	di->ldo = devm_regulator_get(di->pdev, "motor-vdd");
+	if (IS_ERR(di->ldo)) {
+		devm_regulator_put(di->ldo);
+		di->ldo = NULL;
+		hwlog_err("devm_regulator_get fail\n");
+		return;
+	}
+
+	ret = of_property_read_u16_array(np, "vout_voltage",
+		vol_temp, VOLTAGE_TYPE_NUM);
+	if (ret != 0) {
+		hwlog_err("read vout_voltage fail, use default value");
+	} else {
+		for (i = 0; i < VOLTAGE_TYPE_NUM; i++)
+			/* mv change to uv */
+			vout_voltage_map[i] = (int)vol_temp[i] * 1000;
+	}
+
+	/* use low voltage */
+	di->current_voltage = vout_voltage_map[LOW_VOLTAGE];
+	hwlog_info("current voltage = %d\n", di->current_voltage);
+
+	ret = regulator_set_voltage(di->ldo,
+		di->current_voltage, di->current_voltage);
+	if (ret != 0) {
+		hwlog_err("regulator_set_voltage fail\n");
+		return;
+	}
+
+	ret = regulator_enable(di->ldo);
+	if (ret != 0) {
+		hwlog_err("regulator_enable fail\n");
+		return;
+	}
+	hwlog_info("step motor get vdd succ.\n");
+}
+
+static void step_motor_remove_vdd(struct drv_data *di)
+{
+	if (di == NULL) {
+		hwlog_err("step_motor_set_vdd invalid data\n");
+		return;
+	}
+
+	if (di->ldo != NULL) {
+		devm_regulator_put(di->ldo);
+		di->ldo = NULL;
+	}
+}
+
 /*
  * Device probe routine for driver.
  *
@@ -2381,7 +2543,7 @@ static int drv8846_probe(struct platform_device *pdev)
 		return -EFAULT;
 	drv8846_param_set_default_val(di);
 	step_motor_set_direction(di);
-
+	step_motor_get_vdd(di);
 	mutex_init(&di->start_stop_mutex);
 	mutex_init(&di->cmd_mutex);
 	spin_lock_init(&di->state_change_lock);
@@ -2426,6 +2588,7 @@ static int drv8846_remove(struct platform_device *pdev)
 #ifdef CONFIG_PWM
 	pwm_put(di->step_device);
 #endif
+	step_motor_remove_vdd(di);
 	mutex_destroy(&di->start_stop_mutex);
 	mutex_destroy(&di->cmd_mutex);
 	devm_free_irq(di->pdev, di->irq_fault, NULL);

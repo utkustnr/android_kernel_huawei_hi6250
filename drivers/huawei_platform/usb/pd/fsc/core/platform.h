@@ -303,5 +303,7 @@ FSC_BOOL platform_enter_mode_supported(void);
 FSC_BOOL platform_discover_svid_supported(void);
 FSC_U32 platform_sink_pdo_number(void);
 void platform_double_56k_cable(void);
-
+#ifdef FSC_HAVE_CUSTOM_SRC2
+void platform_double_22k_cable(void);
+#endif /* FSC_HAVE_CUSTOM_SRC2 */
 #endif  // _FSC_PLATFORM_H_

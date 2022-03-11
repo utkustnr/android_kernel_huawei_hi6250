@@ -1,3 +1,50 @@
+/*
+ * Copyright (C) Huawei Technologies Co., Ltd. 2012-2021. All rights reserved.
+ * foss@huawei.com
+ *
+ * If distributed as part of the Linux kernel, the following license terms
+ * apply:
+ *
+ * * This program is free software; you can redistribute it and/or modify
+ * * it under the terms of the GNU General Public License version 2 and
+ * * only version 2 as published by the Free Software Foundation.
+ * *
+ * * This program is distributed in the hope that it will be useful,
+ * * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * * GNU General Public License for more details.
+ * *
+ * * You should have received a copy of the GNU General Public License
+ * * along with this program; if not, write to the Free Software
+ * * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307,
+ *
+ * Otherwise, the following license terms apply:
+ *
+ * * Redistribution and use in source and binary forms, with or without
+ * * modification, are permitted provided that the following conditions
+ * * are met:
+ * * 1) Redistributions of source code must retain the above copyright
+ * *    notice, this list of conditions and the following disclaimer.
+ * * 2) Redistributions in binary form must reproduce the above copyright
+ * *    notice, this list of conditions and the following disclaimer in the
+ * *    documentation and/or other materials provided with the distribution.
+ * * 3) Neither the name of Huawei nor the names of its contributors may
+ * *    be used to endorse or promote products derived from this software
+ * *    without specific prior written permission.
+ *
+ * * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/fs.h>
@@ -52,7 +99,7 @@ static struct class *act_class = NULL;
 static int act_major = 0;
 
 
-s32 act_msgProc(u32 channel_id , u32 len, void* context)
+unsigned int act_msgProc(unsigned int channel_id, int len)
 {
     struct act_cdev_data *data = NULL;
     unsigned long flags    = 0;
@@ -117,6 +164,10 @@ s32 act_msgProc(u32 channel_id , u32 len, void* context)
 static int act_open(struct inode *node, struct file *filp)
 {
     int ret = 0;
+    if (NULL == filp)
+    {
+        return -EINVAL;
+    }
 
     filp->private_data = act_cdevp;
 
@@ -165,6 +216,10 @@ static size_t act_read(struct file *filp, char __user *buf, size_t size, loff_t 
 
     printk(KERN_INFO "Enter act_read size_t(%d).\n", size);
 
+    if (NULL == filp ||NULL == buf)
+    {
+        return -EINVAL;
+    }
     while(!hasData)
     {
         if (filp->f_flags & O_NONBLOCK)
@@ -188,7 +243,7 @@ static size_t act_read(struct file *filp, char __user *buf, size_t size, loff_t 
         data = list_first_entry(&(act_cdevp->msg_list), struct act_cdev_data, msg_list);
 
         /*read data to user space*/
-        if (copy_to_user(buf, (void*)(data->data), data->len))
+        if (data->len > size || copy_to_user(buf, (void*)(data->data), data->len))
         {
             ret = -EFAULT;
             printk(KERN_ERR "act_read error\n");
@@ -219,6 +274,11 @@ static size_t act_write(struct file *filp, const char __user *buf, size_t size, 
 {
     size_t len = size;
     u8 data[BUFFERSIZE];
+
+    if (NULL == filp)
+    {
+        return -EINVAL;
+    }
 
     if (BUFFERSIZE <= size)
     {
@@ -252,6 +312,11 @@ static unsigned int act_poll(struct file* filp, poll_table *wait)
 {
     unsigned int mask = 0;
 
+    if (NULL == filp)
+    {
+        return -EINVAL;
+    }
+
     printk(KERN_INFO "Enter act_poll.\n");
    /*put the queue into poll_table*/
     poll_wait(filp, &(act_cdevp->inq), wait);
@@ -280,6 +345,11 @@ static void act_cdev_setup( struct act_cdev *dev,  int index)
 {
     int err = 0;
     dev_t devno = MKDEV(act_major, index); 
+
+    if (NULL == dev)
+    {
+        return -EINVAL;
+    }
 
     printk(KERN_INFO "Enter act_cdev_setup.");
 
@@ -375,9 +445,6 @@ static void __exit act_cdev_exit(void)
     dev_t devno = MKDEV(act_major, 0);
 
     printk(KERN_INFO "Enter act_cdev_exit.");
-
-    //bsp_icc_event_unregister(VT_AP_CP_CHID);
-    //	mdrv_icc_close(MDRV_ICC_VT_VOIP);
 
     //release device file
     cdev_del(&(act_cdevp->cdev));

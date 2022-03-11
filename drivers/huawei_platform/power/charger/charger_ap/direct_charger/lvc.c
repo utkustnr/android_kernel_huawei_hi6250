@@ -470,6 +470,7 @@ static ssize_t direct_charge_sysfs_store(struct device *dev,
 		hwlog_info("set resistance threshold = %ld\n", val);
 		di->standard_cable_full_path_res_max = val;
 		di->full_path_res_max = val;
+		di->ctc_cable_full_path_res_max = val;
 		break;
 	default:
 		hwlog_err("(%s)NODE ERR!!HAVE NO THIS NODE:(%d)\n", __func__, info->name);

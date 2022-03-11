@@ -174,6 +174,7 @@ extern unsigned int mdrv_nv_writeex(unsigned int modemid,
 extern unsigned int mdrv_nv_readex(unsigned int modemid,
         unsigned int itemid, void *pdata, unsigned int ulLength);
 extern unsigned int mdrv_nv_get_length(unsigned int itemid, unsigned int *pulLength);
+extern unsigned int mdrv_nv_flush(void);
 
 #else
 static unsigned int mdrv_nv_writeex(unsigned int modemid,
@@ -191,6 +192,11 @@ static unsigned int mdrv_nv_readex(unsigned int modemid,
 static unsigned int mdrv_nv_get_length(unsigned int itemid, unsigned int *pulLength)
 {
     hwlog_err("mdrv_nv_get_length is null ,depend on HISI_BALONG_MODEM\n");
+    return 1;
+}
+static unsigned int mdrv_nv_flush(void)
+{
+    hwlog_err("mdrv_nv_flush is null ,depend on HISI_BALONG_MODEM\n");
     return 1;
 }
 #endif
@@ -458,6 +464,15 @@ static int madapt_parse_and_writeatonv(char *ptr, int len)
         ptr += nv_item_size;
     } while (len > 0);
     vfree(nv_buffer);
+
+    /* flush all nv into file system */
+    ret = mdrv_nv_flush();
+    if (ret != 0) {
+        hwlog_err("write mdrv_nv_flush error, ret = %d\n", ret);
+        return BSP_ERR_MADAPT_WRITE_NV_ERR;
+    }
+    hwlog_err("write mdrv_nv_flush success, ret = %d\n", ret);
+
     return BSP_ERR_MADAPT_OK;
 }
 
@@ -516,6 +531,14 @@ static int madapt_parse_and_writenv(char *ptr, int len, unsigned int modem_id)
         len -= (sizeof(struct madapt_item_hdr_type)
             + nv_header.nv_item_size);
     } while (len > 0);
+
+    /* flush all nv into file system */
+    ret = mdrv_nv_flush();
+    if (ret != 0) {
+        hwlog_err("write mdrv_nv_flush error, ret = %d\n", ret);
+        return BSP_ERR_MADAPT_WRITE_NV_ERR;
+    }
+    hwlog_err("write mdrv_nv_flush success, ret = %d\n", ret);
 
     return BSP_ERR_MADAPT_OK;
 }

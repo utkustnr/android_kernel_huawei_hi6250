@@ -106,6 +106,10 @@
 #ifdef CONFIG_HW_VIP_THREAD
 #include <chipset_common/hwcfs/hwcfs_common.h>
 #endif
+#ifdef CONFIG_HW_QOS_THREAD
+#include <chipset_common/hwqos/hwqos_common.h>
+#include <chipset_common/hwqos/hwqos_fork.h>
+#endif
 
 #ifdef CONFIG_HISI_CPU_ISOLATION
 #include "hisi_cpuiso.c"
@@ -2606,6 +2610,9 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 
 	p->numa_group = NULL;
 #endif /* CONFIG_NUMA_BALANCING */
+#ifdef CONFIG_HW_QOS_THREAD
+	init_task_qos_info(p);
+#endif
 }
 
 DEFINE_STATIC_KEY_FALSE(sched_numa_balancing);

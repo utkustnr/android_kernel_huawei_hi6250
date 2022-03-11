@@ -1397,14 +1397,8 @@ int tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
 		bAccelerate = Emcom_Xengine_Hook_Ul_Stub( sk );
 	}
 
-	if( bAccelerate )
-	{
-		EMCOM_XENGINE_SetAccState(sk, EMCOM_XENGINE_ACC_HIGH);
-	}
-	else
-	{
+	if (!bAccelerate)
 		EMCOM_XENGINE_SetAccState(sk, EMCOM_XENGINE_ACC_NORMAL);
-	}
 #else
 #ifdef CONFIG_HUAWEI_BASTET
 	BST_FG_Hook_Ul_Stub(sk, msg);
@@ -2317,6 +2311,10 @@ void tcp_set_state(struct sock *sk, int state)
 		dest_addr = htonl(inet_temp->inet_daddr);
 		dest_port = htons(inet_temp->inet_dport);
 	}
+#endif
+
+#ifdef CONFIG_HUAWEI_XENGINE
+	emcom_xengine_mpflow_fallback(sk, EMCOM_MPFLOW_FALLBACK_NOPAYLOAD, state);
 #endif
 
 	switch (state) {
@@ -4009,6 +4007,7 @@ void __init tcp_init(void)
 	unsigned long limit;
 	unsigned int i;
 
+	BUILD_BUG_ON(TCP_MIN_SND_MSS <= MAX_TCP_OPTION_SPACE);
 	BUILD_BUG_ON(sizeof(struct tcp_skb_cb) >
 		     FIELD_SIZEOF(struct sk_buff, cb));
 

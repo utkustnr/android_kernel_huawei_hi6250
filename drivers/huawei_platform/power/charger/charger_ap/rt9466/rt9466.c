@@ -57,10 +57,12 @@
 #define DELAY_1500MS            1500
 #define VOLT_THRES_7P5          7500 /* mv, 9V detect threshold */
 #define RETRY_MAX3              3
+#define MIN_CV                  4350
 
 static int huawei_force_hz = 0; /* for huawei force enable hz */
 static struct i2c_client *g_rt9466_i2c;
 static int hiz_iin_limit_flag = HIZ_IIN_FLAG_FALSE;
+static int g_rt9466_cv;
 /* ======================= */
 /* RT9466 Parameter        */
 /* ======================= */
@@ -1461,18 +1463,27 @@ static inline int rt9466_irq_init(struct rt9466_info *info)
 
 static bool rt9466_is_hw_exist(struct rt9466_info *info)
 {
-	int ret = 0;
-	u8 vendor_id = 0, chip_rev = 0;
+	int vendor_id;
+	u8 chip_rev;
+	int vendor_id_ex;
 
-	ret = i2c_smbus_read_byte_data(info->client, RT9466_REG_DEVICE_ID);
-	if (ret < 0)
+	vendor_id = i2c_smbus_read_byte_data(info->client,
+		RT9466_REG_DEVICE_ID);
+	if (vendor_id < 0)
 		return false;
 
-	vendor_id = ret & 0xF0;
-	chip_rev = ret & 0x0F;
-	if (vendor_id != RT9466_VENDOR_ID) {
-		dev_err(info->dev, "%s: vendor id is incorrect (0x%02X)\n",
-			__func__, vendor_id);
+	vendor_id_ex = i2c_smbus_read_byte_data(info->client,
+		RT9466_REG_DEVICE_ID_EX);
+	if (vendor_id_ex < 0)
+		return false;
+
+	vendor_id &= 0xFF;
+	chip_rev = vendor_id & 0x0F;
+	vendor_id_ex &= 0xFF;
+
+	if (vendor_id_ex != RT9466_VENDOR_ID_EX) {
+		dev_err(info->dev, "%s: vendor id is incorrect vid: 0x%02x\n",
+			__func__, vendor_id_ex);
 		return false;
 	}
 
@@ -1641,7 +1652,7 @@ static inline int rt9466_enable_safety_timer(struct rt9466_info *info, bool en)
 
 static int __rt9466_set_ieoc(struct rt9466_info *info, u32 ieoc)
 {
-	int ret = 0;
+	int ret;
 	u8 reg_ieoc = 0;
 
 	/* IEOC workaround */
@@ -1656,6 +1667,8 @@ static int __rt9466_set_ieoc(struct rt9466_info *info, u32 ieoc)
 
 	ret = rt9466_i2c_update_bits(info, RT9466_REG_CHG_CTRL9,
 		reg_ieoc << RT9466_SHIFT_IEOC, RT9466_MASK_IEOC);
+	if (ret)
+		dev_info(info->dev, "update bits fail\n");
 
 	/* Store IEOC */
 	return rt9466_get_ieoc(info, &info->ieoc);
@@ -1880,6 +1893,12 @@ static int rt9466_parse_dt(struct rt9466_info *info, struct device *dev)
 		dev_err(info->dev, "%s: no hiz_iin_limit\n", __func__);
 	}
 	dev_info(info->dev, "%s: hiz_iin_limit = %d\n", __func__,desc->hiz_iin_limit);
+
+	if (of_property_read_u32(np, "custom_cv", &g_rt9466_cv) < 0) {
+		g_rt9466_cv = 0;
+		dev_err(info->dev, "%s: no custom_cv\n", __func__);
+	}
+	dev_info(info->dev, "custom_cv=%d\n", g_rt9466_cv);
 	desc->en_te = of_property_read_bool(np, "en_te");
 	desc->en_wdt = of_property_read_bool(np, "en_wdt");
 	desc->en_irq_pulse = of_property_read_bool(np, "en_irq_pulse");
@@ -2056,8 +2075,18 @@ static int rt9466_set_ichg(int ichg)
 
 static int rt9466_set_cv(int cv)
 {
-	u8 reg_cv = 0;
+	u8 reg_cv;
 	struct rt9466_info *info = i2c_get_clientdata(g_rt9466_i2c);
+
+	if (!info) {
+		dev_err(info->dev, "info is NULL\n");
+		return -1;
+	}
+
+	if ((g_rt9466_cv > MIN_CV) && (cv > g_rt9466_cv)) {
+		dev_info(info->dev, "set cv to custom_cv=%d\n", g_rt9466_cv);
+		cv = g_rt9466_cv;
+	}
 
 	reg_cv = rt9466_closest_reg(RT9466_CV_MIN, RT9466_CV_MAX,
 		RT9466_CV_STEP, cv);
@@ -2731,12 +2760,8 @@ static int rt9466_fcp_get_adapter_output_current(void)
 	return 0;
 }
 
-static int rt9466_fcp_set_adapter_output_vol(int *output_vol)
+static int rt9466_fcp_set_adapter_output_vol(int output_vol)
 {
-	if (!output_vol)
-		return -1;
-
-	*output_vol = VOLTAGE9V;
 	return 0;
 }
 

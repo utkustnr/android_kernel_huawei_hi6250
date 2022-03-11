@@ -26,6 +26,8 @@
 #define LED_TWO 2
 #define LED_THREE 3
 
+#define GPIO_PULL_UP 1
+#define GPIO_PULL_DOWN 0
 
 enum backlight_ctrl_mode
 {
@@ -67,6 +69,7 @@ struct backlight_reg_info
 
 struct lcdkit_bl_ic_info
 {
+	unsigned int   bl_ic_numb;
 	unsigned int   bl_level;
 	unsigned int   bl_ctrl_mod;
 	unsigned int   ic_type;
@@ -74,6 +77,7 @@ struct lcdkit_bl_ic_info
     unsigned int   ic_init_delay;
     unsigned int   ovp_check_enable;
     unsigned int   fake_lcd_ovp_check;
+	unsigned int   bl_ic_en_gpio_disable;
 	struct backlight_ic_cmd init_cmds[LCD_BACKLIGHT_INIT_CMD_NUM];
 	unsigned int   num_of_init_cmds;
 	struct backlight_reg_info bl_lsb_reg_cmd;
@@ -117,6 +121,8 @@ struct lcdkit_bl_ic_info
 	unsigned int   bl_ocp_fault_bit;
 	unsigned int   bl_ovp_fault_bit;
 	unsigned int   bl_tsd_bit;
+	/* panel backlight slope */
+	struct backlight_ic_cmd backlight_slope;
 };
 
 struct lcdkit_bl_ic_device {
@@ -129,6 +135,7 @@ struct lcdkit_bl_ic_device {
 	struct hrtimer bl_resume_hrtimer;
 };
 
+bool hisi_get_bl_slope_status(void);
 int lcdkit_backlight_ic_inital(void);
 int lcdkit_backlight_ic_set_brightness(unsigned int level);
 int lcdkit_backlight_ic_enable_brightness(void);

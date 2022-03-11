@@ -274,6 +274,7 @@ typedef enum{
 	SUB_CMD_UPDATE_BL_LEVEL,
 	SUB_CMD_UPDATE_RGB_DATA,
 	SUB_CMD_GET_FACTORY_PARA,
+	SUB_CMD_CHANGE_DC_STATUS,
 
 	/*motion*/
 	SUB_CMD_MOTION_ATTR_ENABLE_REQ = 0x20,
@@ -919,7 +920,7 @@ typedef struct {
 } swing_req_t;
 
 typedef struct{
-	uint32_t sample_start_time;
+	uint64_t sample_start_time;
 	uint32_t sample_interval;
 	uint32_t integ_time;
 }als_run_stop_para_t;
@@ -1111,9 +1112,7 @@ enum {
 	FILE_TCS3701_PS,//118
 	FILE_GOODIX_UD_G2_FP,//119
 	FILE_SOLOMON_TP_UD,//120
-	FILE_BMI260_ACC,  // 121
-	FILE_BMI260_GYRO, // 122
-	FILE_GOODIX3206_FP, //123
+	FILE_GOODIX3206_FP = 123, // 123
 	FILE_SX9335_CAP_PROX,//124
 	FILE_MMC5603_MAG,//125
 	FILE_POSTURE,//126
@@ -1129,7 +1128,10 @@ enum {
 	FILE_ET525_FP, // 136
 	FILE_A96T3X6_CAP_PROX,
 	FILE_TCS3701_EXT_ALS, // 138
-	FILE_ID_MAX = 139, // MAX VALID FILE ID
+	FILE_VD6281_ALS, // 139
+	FILE_BMI260_ACC = 156,
+	FILE_BMI260_GYRO = 157,
+	FILE_ID_MAX = 158, // MAX VALID FILE ID
 };
 
 #endif

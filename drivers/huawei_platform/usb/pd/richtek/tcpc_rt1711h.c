@@ -105,6 +105,7 @@ struct rt1711_chip {
 	int irq;
 	int chip_id;
 	struct wake_lock rt1711h_wakelock;
+	unsigned int pd_remove_cc_open;
 };
 
 static void rt1711h_wake_lock(struct rt1711_chip* chip)
@@ -1182,6 +1183,10 @@ int tcpm_is_cust_src2_cable(void)
 	uint32_t vdos[VDO_MAX_SIZE];
 	int ret;
 
+	if (pd_dpm_smart_holder_without_emark()) {
+		hwlog_info("this is smart holder without emark\n");
+		return 1;
+	}
 	memset(vdos, 0, VDO_MAX_SIZE);
 	ret = tcpm_inquire_cust_src2_cable_vdo(g_chip_for_reg_read->tcpc, vdos, VDO_MAX_SIZE);
 	if(ret)
@@ -1191,8 +1196,7 @@ int tcpm_is_cust_src2_cable(void)
 			hwlog_info("this is smart holder");
 			return 1;
 		}
-	} else
-	{
+	} else {
 		hwlog_info("inquire vdo failed!\n");
 	}
 	return 0;
@@ -1373,7 +1377,19 @@ int rt1711h_set_intrst(struct tcpc_device *tcpc_dev, bool en)
 static int rt1711_tcpc_deinit(struct tcpc_device *tcpc_dev)
 {
 #ifdef CONFIG_TCPC_SHUTDOWN_CC_DETACH
+	bool pd_finish = FALSE;
+	struct rt1711_chip *chip = tcpc_get_dev_data(tcpc_dev);
+
+	if (!chip) {
+		hwlog_info("rt1711_chip is NULL!\n");
+		return -EINVAL;
+	}
+
+	if (chip->pd_remove_cc_open == TRUE)
+		pd_finish = pd_dpm_get_pd_finish_flag();
+
 	rt1711_set_cc(tcpc_dev, TYPEC_CC_DRP);
+	if ((chip->pd_remove_cc_open != TRUE) || (pd_finish == TRUE))
 	rt1711_set_cc(tcpc_dev, TYPEC_CC_OPEN);
 
 	rt1711_i2c_write8(tcpc_dev,
@@ -1685,6 +1701,9 @@ static int rt1711_tcpcdev_init(struct rt1711_chip *chip, struct device *dev)
 			break;
 		}
 	}
+
+	of_property_read_u32(np, "rt-tcpc,pd_remove_cc_open",
+		&chip->pd_remove_cc_open);
 	of_property_read_string(np, "rt-tcpc,name", (char const **)&name);
 
 	len = strlen(name);

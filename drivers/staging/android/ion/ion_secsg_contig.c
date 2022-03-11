@@ -160,7 +160,7 @@ out:
 	return ret;
 }
 
-static int secsg_cma_alloc(struct ion_secsg_heap *secsg_heap,
+static int __add_cma_to_pool(struct ion_secsg_heap *secsg_heap,
 			   unsigned long user_alloc_size)
 {
 	int ret = 0;
@@ -196,11 +196,7 @@ static int secsg_cma_alloc(struct ion_secsg_heap *secsg_heap,
 		return -ENOMEM;
 	}
 
-	/* we allocated more than 1M for SMMU page table before.
-	 * then, for the last cma alloc , there is no 64M in
-	 * cma pool. So, we allocate as much contiguous memory
-	 * as we can.
-	 */
+	/* we allocate as much contiguous memory as we can. */
 	count = size >> PAGE_SHIFT;
 
 	pg = __secsg_cma_alloc(secsg_heap, (size_t)count, size,
@@ -252,6 +248,8 @@ static int secsg_cma_alloc(struct ion_secsg_heap *secsg_heap,
 		memset(page_address(pg), 0x0, size);/* unsafe_function_ignore: memset */
 		ion_flush_all_cpus_caches();
 	}
+
+	secsg_heap->cma_alloc_size +=  size;
 	gen_pool_free(secsg_heap->pool, page_to_phys(pg), size);
 	secsg_debug("out %s %llu MB memory(ret = %d).\n",
 		    __func__, size / SZ_1M, ret);
@@ -264,6 +262,44 @@ err_out2:
 	kfree(alloc);
 err_out1:
 	__secsg_cma_release(secsg_heap, pg, count, size);
+	return ret;
+}
+
+void secsg_pre_alloc_wk_func(struct work_struct *work)
+{
+	struct ion_secsg_heap *secsg_heap;
+	int ret = 0;
+
+	secsg_heap = container_of(work, struct ion_secsg_heap, pre_alloc_work);
+	mutex_lock(&secsg_heap->pre_alloc_mutex);
+	/*
+	 * For HEAP_SECURE attr, we want to pre-allocate every time.
+	 */
+	if (secsg_heap->cma_alloc_size < secsg_heap->heap_size) {
+		ret = __add_cma_to_pool(secsg_heap, secsg_heap->per_alloc_sz);
+		if (ret)
+			pr_err("pre alloc cma to fill heap pool failed!"
+			"cma allocated sz(0x%lx), per alloc sz(0x%llx)\n",
+			secsg_heap->cma_alloc_size, secsg_heap->per_alloc_sz);
+	}
+	mutex_unlock(&secsg_heap->pre_alloc_mutex);
+}
+
+static int add_cma_to_pool(struct ion_secsg_heap *secsg_heap,
+			   unsigned long size)
+{
+	int ret = 0;
+
+	if (secsg_heap->pre_alloc_attr) {
+		mutex_lock(&secsg_heap->pre_alloc_mutex);
+		if (gen_pool_avail(secsg_heap->pool) < size &&
+			secsg_heap->cma_alloc_size < secsg_heap->heap_size)
+			ret = __add_cma_to_pool(secsg_heap, size);
+		mutex_unlock(&secsg_heap->pre_alloc_mutex);
+	} else {
+		ret = __add_cma_to_pool(secsg_heap, size);
+	}
+
 	return ret;
 }
 
@@ -385,7 +421,7 @@ int __secsg_alloc_contig(struct ion_secsg_heap *secsg_heap,
 	/*align size*/
 	offset = gen_pool_alloc(secsg_heap->pool, size);
 	if (!offset) {
-		ret = secsg_cma_alloc(secsg_heap, size);
+		ret = add_cma_to_pool(secsg_heap, size);
 		if (ret)
 			goto err_out2;
 		offset = gen_pool_alloc(secsg_heap->pool, size);
@@ -395,6 +431,10 @@ int __secsg_alloc_contig(struct ion_secsg_heap *secsg_heap,
 			goto err_out2;
 		}
 	}
+
+	if (secsg_heap->pre_alloc_attr &&
+		    secsg_heap->cma_alloc_size < secsg_heap->heap_size)
+		schedule_work(&secsg_heap->pre_alloc_work);
 
 	page = pfn_to_page(PFN_DOWN(offset));
 	if (secsg_heap->heap_attr == HEAP_NORMAL)
@@ -497,7 +537,10 @@ void __secsg_free_contig(struct ion_secsg_heap *secsg_heap,
 	WARN_ON(secsg_heap->alloc_size < buffer->size);
 	secsg_heap->alloc_size -= buffer->size;
 	if (!secsg_heap->alloc_size) {
+		if (secsg_heap->pre_alloc_attr)
+			cancel_work_sync(&secsg_heap->pre_alloc_work);
 		__secsg_pool_release(secsg_heap);
+		secsg_heap->cma_alloc_size = 0;
 		if (secsg_heap->water_mark &&
 		    __secsg_fill_watermark(secsg_heap))
 			pr_err("__secsg_fill_watermark failed!\n");

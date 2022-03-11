@@ -77,6 +77,8 @@ enum rt9466_reg_addr {
 #define RT9466_CHIP_REV_E2                 (0x02)
 #define RT9466_CHIP_REV_E3                 (0x03)
 #define RT9466_CHIP_REV_E4                 (0x04)
+#define RT9466_VENDOR_ID_EX                0x00
+#define RT9466_REG_DEVICE_ID_EX            0x00
 
 /* uA */
 #define RT9466_ICHG_NUM                    (64)

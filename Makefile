@@ -1036,6 +1036,11 @@ endif
 ifeq ($(SET_SYSTEM_PARTITION), internal)
     KBUILD_CFLAGS += -DCONFIG_MARKET_INTERNAL
 endif
+
+ifeq ($(BUILD_WITH_HARMONY), true)
+    KBUILD_CFLAGS += -DCONFIG_HARMONY_PERFORMANCE
+endif
+
 include scripts/Makefile.kasan
 include scripts/Makefile.extrawarn
 include scripts/Makefile.ubsan

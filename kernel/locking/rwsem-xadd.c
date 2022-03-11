@@ -259,7 +259,9 @@ struct rw_semaphore __sched *rwsem_down_read_failed(struct rw_semaphore *sem)
 #ifdef CONFIG_HW_VIP_THREAD
 	rwsem_dynamic_vip_enqueue(tsk, waiter.task, READ_ONCE(sem->owner), sem);
 #endif
-
+#ifdef CONFIG_HW_QOS_THREAD
+	rwsem_dynamic_qos_enqueue(READ_ONCE(sem->owner), waiter.task);
+#endif
 	raw_spin_unlock_irq(&sem->wait_lock);
 	wake_up_q(&wake_q);
 
@@ -529,6 +531,9 @@ __rwsem_down_write_failed_common(struct rw_semaphore *sem, int state)
 #ifdef CONFIG_HW_VIP_THREAD
 	rwsem_dynamic_vip_enqueue(waiter.task, current, READ_ONCE(sem->owner), sem);
 #endif
+#ifdef CONFIG_HW_QOS_THREAD
+	rwsem_dynamic_qos_enqueue(READ_ONCE(sem->owner), waiter.task);
+#endif
 
 	/* wait until we successfully acquire the lock */
 	set_current_state(state);
@@ -657,6 +662,9 @@ locked:
 
 #ifdef CONFIG_HW_VIP_THREAD
 	rwsem_dynamic_vip_dequeue(sem, current);
+#endif
+#ifdef CONFIG_HW_QOS_THREAD
+	rwsem_dynamic_qos_dequeue(current);
 #endif
 
 	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);

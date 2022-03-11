@@ -2817,6 +2817,7 @@ enum RF_NV_ID_ENUM
     en_NV_Item_RF_GPIO_COMM_CFG                                  = 18022,
     en_NV_Item_RF_MIPI_COMM_CFG                                  = 18023,
     en_NV_Item_RF_KEY_REG_PROTECT                                = 18025,
+    en_NV_Item_RF_EFUSE_CFG                                      = 18029,
 
     en_NV_Item_RF_INIT_CONFIG_NEW_RAM                            = 18200,
     en_NV_Item_RF_VERSION                                        = 18201,

@@ -55,6 +55,14 @@ enum adapter_support_mode {
 	ADAPTER_SUPPORT_SCP_A = 0x3,
 };
 
+enum adapter_type {
+	ADAPTER_TYPE_UNKNOWN = 0x0,
+	ADAPTER_TYPE_5V5A = 0x1,
+	ADAPTER_TYPE_10V4A = 0x2,
+	ADAPTER_TYPE_10V2A = 0x3,
+	ADAPTER_TYPE_20V3P25A = 0x4,
+};
+
 enum adapter_detect_error_code {
 	ADAPTER_DETECT_OTHER = -1,
 	ADAPTER_DETECT_SUCC = 0,
@@ -115,8 +123,10 @@ struct adapter_protocol_ops {
 	int (*auth_encrypt_release)(void);
 	int (*set_usbpd_enable)(int enable);
 	int (*set_default_state)(void);
+	int (*set_default_param)(void);
 	int (*set_init_data)(struct adapter_init_data *data);
 	int (*get_protocol_register_state)(void);
+	int (*get_adp_type)(int *type);
 };
 
 struct adapter_dev {
@@ -155,8 +165,10 @@ int adapter_auth_encrypt_start(int key, unsigned char *hash, int size);
 int adapter_auth_encrypt_release(void);
 int adapter_set_usbpd_enable(int enable);
 int adapter_set_default_state(void);
+int adapter_set_default_param(void);
 int adapter_set_init_data(struct adapter_init_data *data);
 int adapter_get_protocol_register_state(void);
+int adapter_get_adp_type(int *type);
 
 #else
 
@@ -292,12 +304,22 @@ static inline int adapter_set_default_state(void)
 	return -1;
 }
 
+static inline int adapter_set_default_param(void)
+{
+	return -1;
+}
+
 static inline int adapter_set_init_data(struct adapter_init_data *data)
 {
 	return -1;
 }
 
 static inline int adapter_get_protocol_register_state(void)
+{
+	return -1;
+}
+
+static inline int adapter_get_adp_type(int *type)
 {
 	return -1;
 }

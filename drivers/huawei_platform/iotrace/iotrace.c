@@ -3085,7 +3085,7 @@ static int io_count_thread_fn(void *data)
 #ifdef CONFIG_SCSI_UFS_HI1861_VCMD
 static int apr_work_thread_fn(void *data)
 {
-    unsigned int ret;
+    int ret;
     //struct timespec curr_time;
     char file_name[128];
     static struct file *fsr_filp = NULL;

@@ -97,8 +97,10 @@ struct coul_core_info_sh {
 	int v_offset_b;
 	int c_offset_a;
 	int c_offset_b;
-    struct ntc_temp_compensation_para_data ntc_temp_compensation_para[COMPENSATION_PARA_LEVEL];
+	struct ntc_temp_compensation_para_data ntc_temp_compensation_para[COMPENSATION_PARA_LEVEL];
 	struct battery_aging_safe_policy basp_policy[BASP_LEVEL_CNT];
+	unsigned int nondc_volt_set_flag;
+	unsigned int nondc_volt_dec_value;
 };
 
 struct polar_calc_info {
@@ -176,6 +178,11 @@ struct hisi_coul_ops {
     int (*get_coul_calibration_status)(void);
     int (*battery_removed_before_boot)(void);
     int (*get_qmax)(void);
+	int (*get_ndcvolt_dec_nv)(unsigned int *volt_dec);
+	int (*set_ndcvolt_dec_apk)(unsigned int volt_dec);
+#ifdef CONFIG_HISI_ASW
+	int (*asw_refresh_fcc)(void);
+#endif /* CONFIG_HISI_ASW */
 };
 
 
@@ -233,5 +240,13 @@ extern int hisi_coul_chip_temperature(void);
 extern int hisi_battery_cc_uah(void);
 extern int hisi_battery_removed_before_boot(void);
 extern int hisi_battery_get_qmax(void);
+#ifdef CONFIG_HISI_ASW
+extern int hisi_asw_refresh_fcc(void);
+#else
+static inline int hisi_asw_refresh_fcc(void)
+{
+	return 0;
+}
+#endif /* CONFIG_HISI_ASW */
 
 #endif

@@ -70,6 +70,7 @@ HWLOG_REGIST();
 #define AK09970_FST_DATA_BUF_SIZE 100
 #define AK09970_FST_DRDY_RETRY_MAX 10
 #define AKM_BASE_NUM 10
+#define CALI_DATA_NUM 6
 /*
  * AK09970_REG_SDR_VALUE (spec 12.3.6)
  * 0x00 : Low noise drive
@@ -158,6 +159,31 @@ HWLOG_REGIST();
 #define make_s16(u8h, u8l) \
 	((int16_t)(((uint16_t)(u8h) << 8) | (uint16_t)(u8l)))
 
+#define data_error(data, max, min) \
+	(((data) > (max)) || ((data) < (min)))
+
+#ifndef fabs
+#define fabs(a) ((a) > 0 ? (a) : (-(a)))
+#endif
+
+#define STEP_COUNT 3
+#define STEP_START_CLOSE 0
+#define STEP_INTER_OPEN 1
+#define STEP_STOP_CLOSE 2
+#define CALIBRATE_DATA_COUNT 30
+#define SELF_TEST_DATA_COUNT 5
+#define THRESHOLD_SCALE 65536
+#define CALIBRATE_THRESHOLD_RANGE_MIN (-30000)
+#define CALIBRATE_THRESHOLD_RANGE_MAX 30000
+#define CALIBRATE_THRESHOLD_RANGE_COUNT 6
+#define SELF_TEST_THRESHOLD_RANGE_COUNT 9
+#define RANGE_INDEX_X_MIN 0
+#define RANGE_INDEX_X_MAX 1
+#define RANGE_INDEX_Y_MIN 2
+#define RANGE_INDEX_Y_MAX 3
+#define RANGE_INDEX_Z_MIN 4
+#define RANGE_INDEX_Z_MAX 5
+
 #define AK09970_FST_STEP_1_1 0x0101
 #define AK09970_FST_STEP_1_2 0x0102
 #define AK09970_FST_STEP_1_3 0x0103
@@ -214,6 +240,17 @@ struct type_mag_data {
 	int16_t z;
 };
 
+struct type_calibration_info {
+	int result;
+	int close_threshold_min[AXIS_COUNT];
+	int close_threshold_max[AXIS_COUNT];
+	int open_threshold_min[AXIS_COUNT];
+	int open_threshold_max[AXIS_COUNT];
+	int open_avg_mag[AXIS_COUNT];
+	int close_avg_mag[AXIS_COUNT];
+	int step_avg_mag[STEP_COUNT][AXIS_COUNT];
+};
+
 #ifdef CONFIG_HUAWEI_DSM
 static struct dsm_dev dsm_vibrator = {
 	.name = "dsm_vibrator",
@@ -228,6 +265,13 @@ struct dsm_client *vibrator_dclient = NULL;
 
 static struct type_device_data *ak09970_dev_data = NULL;
 static int ak09970_gpio_rst;
+static struct type_calibration_info ak09970_calibration_info;
+static int self_test_threshold[STEP_COUNT][AXIS_COUNT] = {
+	{ 3000, 3000, 3000 },
+	{ 3000, 3000, 3000 },
+	{ 3000, 3000, 3000 },
+};
+static int cali_default_data[CALI_DATA_NUM] = {0};
 
 void dmd_log_report(int dmd_mark, const char *err_func, const char *err_msg)
 {
@@ -915,6 +959,372 @@ static int ak09970_fst_run(const struct type_device_data *akm_ak09970)
 	return AK09970_RETCODE_SUCCESS;
 }
 
+static int write_calibration_data(struct type_device_data *akm_ak09970,
+	const struct type_calibration_info *info)
+{
+	int ret;
+
+	if (akm_ak09970 == NULL || info == NULL) {
+		hwlog_err("%s: invalid value\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+
+	mutex_lock(&akm_ak09970->nv_mutex);
+	akm_ak09970->written_calibrate_data.close_x =
+		info->close_avg_mag[AXIS_X];
+	akm_ak09970->written_calibrate_data.close_y =
+		info->close_avg_mag[AXIS_Y];
+	akm_ak09970->written_calibrate_data.close_z =
+		info->close_avg_mag[AXIS_Z];
+	akm_ak09970->written_calibrate_data.open_x =
+		info->open_avg_mag[AXIS_X];
+	akm_ak09970->written_calibrate_data.open_y =
+		info->open_avg_mag[AXIS_Y];
+	akm_ak09970->written_calibrate_data.open_z =
+		info->open_avg_mag[AXIS_Z];
+	akm_ak09970->nvwrite_finish_flag = false;
+	akm_ak09970->nvwrite_success_flag = false;
+	mutex_unlock(&akm_ak09970->nv_mutex);
+	queue_work(akm_ak09970->nvwrite_queue,
+		&akm_ak09970->nvwrite_work.work);
+	ret = wait_event_interruptible_timeout(akm_ak09970->nvwrite_waitq,
+		akm_ak09970->nvwrite_finish_flag,
+		msecs_to_jiffies(NV_WRITE_TIME_COST_MS));
+	if ((ret == 0) || (ret == -ERESTARTSYS)) { // timeout or interrupt
+		hwlog_err("%s: nv_write wait timeout/interrupt\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	if (akm_ak09970->nvwrite_success_flag == false) {
+		hwlog_err("%s: nv_write fail\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	return AK09970_RETCODE_SUCCESS;
+}
+
+static int get_calibration_threshold_info(
+	const struct type_device_data *akm_ak09970,
+	struct type_calibration_info *info)
+{
+	struct device_node *dp = NULL;
+	int16_t threshold_data[CALIBRATE_THRESHOLD_RANGE_COUNT];
+	int32_t threshold_q16[CALIBRATE_THRESHOLD_RANGE_COUNT];
+	int i;
+
+	if (akm_ak09970 == NULL || akm_ak09970->i2c == NULL ||
+		akm_ak09970->i2c->dev.of_node == NULL) {
+		hwlog_err("%s: NULL pointer input\n", __func__);
+		return AK09970_RETCODE_NULL_POINT_ERR;
+	}
+	dp = akm_ak09970->i2c->dev.of_node;
+
+	if (of_property_read_u16_array(dp, "calibration_close_range",
+		(uint16_t *)threshold_data,
+		CALIBRATE_THRESHOLD_RANGE_COUNT) != 0) {
+		hwlog_err("%s: of_property_read_u16_array calibration_close_range fail",
+			__func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	for (i = 0; i < CALIBRATE_THRESHOLD_RANGE_COUNT; i++) {
+		threshold_q16[i] = threshold_data[i] * THRESHOLD_SCALE;
+		hwlog_info("%s: close threshold_data = %d",
+			__func__, threshold_data[i]);
+
+	}
+	info->close_threshold_min[AXIS_X] = threshold_q16[RANGE_INDEX_X_MIN];
+	info->close_threshold_max[AXIS_X] = threshold_q16[RANGE_INDEX_X_MAX];
+	info->close_threshold_min[AXIS_Y] = threshold_q16[RANGE_INDEX_Y_MIN];
+	info->close_threshold_max[AXIS_Y] = threshold_q16[RANGE_INDEX_Y_MAX];
+	info->close_threshold_min[AXIS_Z] = threshold_q16[RANGE_INDEX_Z_MIN];
+	info->close_threshold_max[AXIS_Z] = threshold_q16[RANGE_INDEX_Z_MAX];
+
+	if (of_property_read_u16_array(dp, "calibration_open_range",
+		(uint16_t *)threshold_data,
+		CALIBRATE_THRESHOLD_RANGE_COUNT) != 0) {
+		hwlog_err("%s: of_property_read_u16_array calibration_open_range fail",
+			__func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	for (i = 0; i < CALIBRATE_THRESHOLD_RANGE_COUNT; i++) {
+		threshold_q16[i] = threshold_data[i] * THRESHOLD_SCALE;
+		hwlog_info("%s: open threshold_data = %d",
+			__func__, threshold_data[i]);
+	}
+	info->open_threshold_min[AXIS_X] = threshold_q16[RANGE_INDEX_X_MIN];
+	info->open_threshold_max[AXIS_X] = threshold_q16[RANGE_INDEX_X_MAX];
+	info->open_threshold_min[AXIS_Y] = threshold_q16[RANGE_INDEX_Y_MIN];
+	info->open_threshold_max[AXIS_Y] = threshold_q16[RANGE_INDEX_Y_MAX];
+	info->open_threshold_min[AXIS_Z] = threshold_q16[RANGE_INDEX_Z_MIN];
+	info->open_threshold_max[AXIS_Z] = threshold_q16[RANGE_INDEX_Z_MAX];
+
+	return AK09970_RETCODE_SUCCESS;
+}
+
+static int check_calibration_data(
+	const struct type_device_data *akm_ak09970,
+	struct type_calibration_info *info)
+{
+	int ret;
+	int i;
+	bool check_result = true;
+
+	if (akm_ak09970 == NULL || info == NULL) {
+		hwlog_err("%s: invalid value\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+
+	ret = get_calibration_threshold_info(akm_ak09970, info);
+	if (ret < 0) {
+		hwlog_err("%s: get_threshold_info fail", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+
+	for (i = 0; i < AXIS_COUNT; i++) {
+		info->close_avg_mag[i] =
+			info->step_avg_mag[STEP_START_CLOSE][i] / 2 +
+			info->step_avg_mag[STEP_STOP_CLOSE][i] / 2;
+		info->open_avg_mag[i] = info->step_avg_mag[STEP_INTER_OPEN][i];
+		hwlog_info("%s: close_data = %d, open_data = %d", __func__,
+			info->close_avg_mag[i] / THRESHOLD_SCALE,
+			info->open_avg_mag[i] / THRESHOLD_SCALE);
+		if (data_error(info->close_avg_mag[i],
+			info->close_threshold_max[i],
+			info->close_threshold_min[i])) {
+			hwlog_err("%s: close data is error", __func__);
+			check_result = false;
+		}
+		if (data_error(info->open_avg_mag[i],
+			info->open_threshold_max[i],
+			info->open_threshold_min[i])) {
+			hwlog_err("%s: open data is error", __func__);
+			check_result = false;
+		}
+	}
+	if (check_result == false) {
+		hwlog_err("%s: check data is error", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+
+	return AK09970_RETCODE_SUCCESS;
+}
+static int read_averge_mag_data(struct type_device_data *akm_ak09970,
+	unsigned int nums, int32_t *mag_data, unsigned int data_size)
+{
+	const int MAX_FAIL_COUNT = 3;
+	const int TIMEOUT_MS = 20;
+	unsigned int data_count = 0;
+	unsigned int fail_count = 0;
+	long long int sum_mag_data[AXIS_COUNT] = {0};
+	int ret;
+
+	if (akm_ak09970 == NULL || mag_data == NULL ||
+		data_size != AXIS_COUNT) {
+		hwlog_err("%s: invalid value\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+
+	mutex_lock(&akm_ak09970->val_mutex);
+	akm_ak09970->odr = AK09970_ODR_100HZ;
+	akm_ak09970->enable_flag = true;
+	mutex_unlock(&akm_ak09970->val_mutex);
+	ak09970_poll_delay_set(akm_ak09970);
+	ak09970_enable_set(akm_ak09970);
+
+	while ((data_count < nums) && (fail_count < MAX_FAIL_COUNT)) {
+		ret = wait_event_interruptible_timeout(akm_ak09970->read_waitq,
+			akm_ak09970->data_refresh_flag,
+			msecs_to_jiffies(TIMEOUT_MS));
+		if (ret == 0) { // timeout
+			fail_count++;
+			hwlog_err("%s: time out, enable_flag=%d, fail_count=%d\n",
+				__func__, akm_ak09970->enable_flag, fail_count);
+			continue;
+		} else if (ret == -ERESTARTSYS) {
+			hwlog_err("%s: interrupt, enable_flag=%d, fail_count=%d\n",
+				__func__, akm_ak09970->enable_flag, fail_count);
+			return AK09970_RETCODE_COMMON_ERR;
+		}
+		mutex_lock(&akm_ak09970->sensor_mutex);
+		sum_mag_data[AXIS_X] += akm_ak09970->sensor_data[AXIS_X];
+		sum_mag_data[AXIS_Y] += akm_ak09970->sensor_data[AXIS_Y];
+		sum_mag_data[AXIS_Z] += akm_ak09970->sensor_data[AXIS_Z];
+		akm_ak09970->data_refresh_flag = false;
+		hwlog_info("%s: mag data = %d, %d, %d\n", __func__,
+			akm_ak09970->sensor_data[AXIS_X] / THRESHOLD_SCALE,
+			akm_ak09970->sensor_data[AXIS_Y] / THRESHOLD_SCALE,
+			akm_ak09970->sensor_data[AXIS_Z] / THRESHOLD_SCALE);
+		mutex_unlock(&akm_ak09970->sensor_mutex);
+		data_count++;
+	}
+	if (fail_count >= MAX_FAIL_COUNT) {
+		hwlog_err("%s: too many read data fail\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	mag_data[AXIS_X] = sum_mag_data[AXIS_X] / nums;
+	mag_data[AXIS_Y] = sum_mag_data[AXIS_Y] / nums;
+	mag_data[AXIS_Z] = sum_mag_data[AXIS_Z] / nums;
+	hwlog_info("%s; average data = %d, %d, %d\n", __func__,
+		mag_data[AXIS_X] / THRESHOLD_SCALE,
+		mag_data[AXIS_Y] / THRESHOLD_SCALE,
+		mag_data[AXIS_Z] / THRESHOLD_SCALE);
+
+	mutex_lock(&akm_ak09970->val_mutex);
+	akm_ak09970->enable_flag = false;
+	mutex_unlock(&akm_ak09970->val_mutex);
+	ak09970_enable_set(akm_ak09970);
+
+	return AK09970_RETCODE_SUCCESS;
+}
+static int calibration_process(struct type_device_data *akm_ak09970,
+	unsigned long step, struct type_calibration_info *info)
+{
+	int ret;
+
+	if (info == NULL || akm_ak09970 == NULL) {
+		hwlog_err("%s: invalid value\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+
+	switch (step) {
+	case STEP_START_CLOSE:
+		memset(info, 0, sizeof(*info));
+		ret = read_averge_mag_data(akm_ak09970, CALIBRATE_DATA_COUNT,
+			info->step_avg_mag[STEP_START_CLOSE], AXIS_COUNT);
+		if (ret < 0) {
+			hwlog_err("%s: read_averge_mag_data failed\n",
+				__func__);
+			info->result = 0; // fail
+			return ret;
+		}
+		break;
+	case STEP_INTER_OPEN:
+		ret = read_averge_mag_data(akm_ak09970, CALIBRATE_DATA_COUNT,
+			info->step_avg_mag[STEP_INTER_OPEN], AXIS_COUNT);
+		if (ret < 0) {
+			hwlog_err("%s: read_averge_mag_data failed\n",
+				__func__);
+			info->result = 0; // fail
+			return ret;
+		}
+		break;
+	case STEP_STOP_CLOSE:
+		ret = read_averge_mag_data(akm_ak09970, CALIBRATE_DATA_COUNT,
+			info->step_avg_mag[STEP_STOP_CLOSE], AXIS_COUNT);
+		if (ret < 0) {
+			hwlog_err("%s: read_averge_mag_data failed\n",
+				__func__);
+			info->result = 0; // fail
+			return ret;
+		}
+		ret = check_calibration_data(akm_ak09970, info);
+		if (ret < 0) {
+			hwlog_err("%s: check_calibration_data failed\n",
+				__func__);
+			info->result = 0; // fail
+			return ret;
+		}
+		ret = write_calibration_data(akm_ak09970, info);
+		if (ret < 0) {
+			hwlog_err("%s: check_calibration_data failed\n",
+				__func__);
+			info->result = 0; // fail
+			return ret;
+		}
+		hwlog_info("%s: step_hall calibration succ!\n",
+			__func__);
+		info->result = 1; // succ
+		break;
+	}
+	return AK09970_RETCODE_SUCCESS;
+}
+static void get_self_test_threshold(
+	const struct type_device_data *akm_ak09970)
+{
+	struct device_node *dp = NULL;
+	uint16_t threshold_data[SELF_TEST_THRESHOLD_RANGE_COUNT];
+	int i;
+
+	if (akm_ak09970 == NULL || akm_ak09970->i2c == NULL ||
+		akm_ak09970->i2c->dev.of_node == NULL) {
+		hwlog_err("%s: NULL pointer input\n", __func__);
+		return;
+	}
+	dp = akm_ak09970->i2c->dev.of_node;
+
+	if (of_property_read_u16_array(dp, "self_test_threshold",
+		threshold_data,
+		SELF_TEST_THRESHOLD_RANGE_COUNT) != 0) {
+		hwlog_err("%s: of_property_read_u16_array self_test_threshold fail",
+			__func__);
+		return;
+	}
+
+	for (i = 0; i < SELF_TEST_THRESHOLD_RANGE_COUNT; i++)
+		self_test_threshold[i / STEP_COUNT][i % AXIS_COUNT] = threshold_data[i];
+}
+static int self_test_process(struct type_device_data *akm_ak09970,
+	const unsigned long step)
+{
+	int32_t mag_data[AXIS_COUNT] = {0};
+	int32_t mag_gap_data[AXIS_COUNT] = {0};
+	int ret;
+	int i;
+	struct type_nv_data nv_para;
+	static bool get_threashold;
+
+	if (akm_ak09970 == NULL || step > STEP_COUNT) {
+		hwlog_err("%s: invalid value\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+
+	if (!get_threashold) {
+		get_self_test_threshold(akm_ak09970);
+		get_threashold = true;
+	}
+
+	ret = read_averge_mag_data(akm_ak09970, SELF_TEST_DATA_COUNT,
+			mag_data, AXIS_COUNT);
+	if (ret < 0) {
+		hwlog_err("%s: read_averge_mag_data failed\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	ret = read_calibrate_data_from_nv(POS_HALL_NV_NUM, POS_HALL_NV_SIZE,
+			POS_HALL_NV_NAME, &nv_para);
+	if (ret < 0) {
+		hwlog_err("%s: read_calibrate_data_from_nv failed\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+
+	switch (step) {
+	case STEP_START_CLOSE:
+		//fall through
+	case STEP_STOP_CLOSE:
+		mag_gap_data[AXIS_X] = fabs(mag_data[AXIS_X] - nv_para.close_x);
+		mag_gap_data[AXIS_Y] = fabs(mag_data[AXIS_Y] - nv_para.close_y);
+		mag_gap_data[AXIS_Z] = fabs(mag_data[AXIS_Z] - nv_para.close_z);
+		break;
+	case STEP_INTER_OPEN:
+		mag_gap_data[AXIS_X] = fabs(mag_data[AXIS_X] - nv_para.open_x);
+		mag_gap_data[AXIS_Y] = fabs(mag_data[AXIS_Y] - nv_para.open_y);
+		mag_gap_data[AXIS_Z] = fabs(mag_data[AXIS_Z] - nv_para.open_z);
+		break;
+	}
+	for (i = 0; i < AXIS_COUNT; i++) {
+		hwlog_info("%s: mag_data = %d, mag_gap_data = %d, threshold = %d\n",
+			__func__,
+			mag_data[i] / THRESHOLD_SCALE,
+			mag_gap_data[i] / THRESHOLD_SCALE,
+			self_test_threshold[step][i]);
+		if ((mag_gap_data[i] / THRESHOLD_SCALE) >
+			self_test_threshold[step][i]) {
+			hwlog_err("%s: check self threshold failed\n",
+				__func__);
+			return AK09970_RETCODE_COMMON_ERR;
+		}
+	}
+	hwlog_info("%s: step_hall self test succ! step = %ld\n",
+		__func__, step);
+	return AK09970_RETCODE_SUCCESS;
+}
 static ssize_t ak09970_enable_show(struct device *dev,
 	struct device_attribute *attr,
 	char *buf)
@@ -1128,6 +1538,51 @@ static ssize_t ak09970_self_test_show(struct device *dev,
 	return scnprintf(buf, PAGE_SIZE, "%d\n", result);
 }
 
+static ssize_t ak09970_self_test_store(struct device *dev,
+	struct device_attribute *attr,
+	const char *buf, size_t size)
+{
+	unsigned long step = 0;
+	struct type_device_data *akm_ak09970 = NULL;
+	int ret;
+
+	if ((dev == NULL) || (attr == NULL) || (buf == NULL)) {
+		hwlog_err("%s: input NULL!!\n", __func__);
+		return -EINVAL;
+	}
+	akm_ak09970 = dev_get_drvdata(dev);
+	if (akm_ak09970 == NULL) {
+		hwlog_err("%s: input NULL!!\n", __func__);
+		return -EINVAL;
+	}
+	if (size == 0) {
+		hwlog_err("%s: input data size is 0\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	if (strict_strtol(buf, AKM_BASE_NUM, &step) != 0)
+		return -EINVAL;
+	hwlog_info("%s: step = %ld\n", __func__, step);
+	if (step >= STEP_COUNT) {
+		hwlog_err("%s: input invalid value\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	ret = self_test_process(akm_ak09970, step);
+	if (ret < 0) {
+		hwlog_err("%s: self_test fail\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	return size;
+}
+
+static bool is_nv_data_error(struct type_nv_data nv_para)
+{
+	if (nv_para.open_x == 0 && nv_para.open_y == 0 &&
+		nv_para.open_z == 0 && nv_para.close_x == 0 &&
+		nv_para.close_y == 0 && nv_para.close_z == 0)
+		return true;
+	return false;
+}
+
 static ssize_t ak09970_nv_data_show(struct device *dev,
 	struct device_attribute *attr,
 	char *buf)
@@ -1144,6 +1599,13 @@ static ssize_t ak09970_nv_data_show(struct device *dev,
 		POS_HALL_NV_SIZE, POS_HALL_NV_NAME, &nv_para) !=
 		AK09970_RETCODE_SUCCESS)
 		return AK09970_RETCODE_COMMON_ERR;
+
+	if (is_nv_data_error(nv_para)) {
+		hwlog_err("%s: not calibration, use defalut data.\n", __func__);
+		if (sizeof(nv_para) >= sizeof(cali_default_data))
+			memcpy(&nv_para, cali_default_data,
+				sizeof(cali_default_data));
+	}
 
 	return scnprintf(buf, PAGE_SIZE, "%d,%d,%d,%d,%d,%d\n",
 		nv_para.close_x,nv_para.close_y,nv_para.close_z,
@@ -1204,6 +1666,61 @@ static ssize_t ak09970_nv_data_store(struct device *dev,
 	}
 	return size;
 }
+static ssize_t ak09970_calibration_show(struct device *dev,
+	struct device_attribute *attr,
+	char *buf)
+{
+	if ((dev == NULL) || (attr == NULL) || (buf == NULL)) {
+		hwlog_err("%s: input NULL!!\n", __func__);
+		return -EINVAL;
+	}
+	return scnprintf(buf, PAGE_SIZE, "result=%d,data=%d,%d,%d,%d,%d,%d\n",
+		ak09970_calibration_info.result,
+		ak09970_calibration_info.close_avg_mag[AXIS_X],
+		ak09970_calibration_info.close_avg_mag[AXIS_Y],
+		ak09970_calibration_info.close_avg_mag[AXIS_Z],
+		ak09970_calibration_info.open_avg_mag[AXIS_X],
+		ak09970_calibration_info.open_avg_mag[AXIS_Y],
+		ak09970_calibration_info.open_avg_mag[AXIS_Z]);
+}
+
+static ssize_t ak09970_calibration_store(struct device *dev,
+	struct device_attribute *attr,
+	const char *buf, size_t size)
+{
+	unsigned long step = 0;
+	struct type_device_data *akm_ak09970 = NULL;
+	int ret;
+
+	if ((dev == NULL) || (attr == NULL) || (buf == NULL)) {
+		hwlog_err("%s: input NULL!!\n", __func__);
+		return -EINVAL;
+	}
+	akm_ak09970 = dev_get_drvdata(dev);
+	if (akm_ak09970 == NULL) {
+		hwlog_err("%s: input NULL!!\n", __func__);
+		return -EINVAL;
+	}
+	if (size == 0) {
+		hwlog_err("%s: input data size is 0\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	if (strict_strtol(buf, AKM_BASE_NUM, &step) != 0)
+		return -EINVAL;
+	hwlog_info("%s: step = %ld\n", __func__, step);
+	if (step >= STEP_COUNT) {
+		hwlog_err("%s: input invalid value\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	ret = calibration_process(akm_ak09970,
+		step, &ak09970_calibration_info);
+	if (ret < 0) {
+		hwlog_err("%s: calibration_process fail\n", __func__);
+		return AK09970_RETCODE_COMMON_ERR;
+	}
+	return size;
+}
+
 
 DEVICE_ATTR(ak09970_enable, 0660,
 	ak09970_enable_show, ak09970_enable_store);
@@ -1211,10 +1728,12 @@ DEVICE_ATTR(ak09970_odr, 0660,
 	ak09970_odr_show, ak09970_odr_store);
 DEVICE_ATTR(ak09970_mag_data, 0440,
 	ak09970_mag_data_show, NULL);
-DEVICE_ATTR(ak09970_self_test, 0440,
-	ak09970_self_test_show, NULL);
+DEVICE_ATTR(ak09970_self_test, 0660,
+	ak09970_self_test_show, ak09970_self_test_store);
 DEVICE_ATTR(ak09970_nv_data, 0660,
 	ak09970_nv_data_show, ak09970_nv_data_store);
+DEVICE_ATTR(ak09970_calibration, 0660,
+	ak09970_calibration_show, ak09970_calibration_store);
 
 static struct attribute *ak09970_attributes[] = {
 	&dev_attr_ak09970_enable.attr,
@@ -1222,6 +1741,7 @@ static struct attribute *ak09970_attributes[] = {
 	&dev_attr_ak09970_mag_data.attr,
 	&dev_attr_ak09970_self_test.attr,
 	&dev_attr_ak09970_nv_data.attr,
+	&dev_attr_ak09970_calibration.attr,
 	NULL,
 };
 
@@ -1476,6 +1996,32 @@ static void deinit_ak09970_device(struct i2c_client *client)
 	}
 }
 
+static void get_default_calibration_data(struct i2c_client *client)
+{
+	struct device_node *node = NULL;
+	int16_t data[CALI_DATA_NUM] = {0};
+	int ret;
+	int i;
+
+	if (client == NULL) {
+		hwlog_err("%s: invalid data.\n", __func__);
+		return;
+	}
+	node = client->dev.of_node;
+
+	ret = of_property_read_u16_array(node, "cali_default_data",
+		(uint16_t *)data, CALI_DATA_NUM);
+	if (ret != 0) {
+		hwlog_err("%s: read dts fail, use default data.\n", __func__);
+		return;
+	}
+
+	for (i = 0; i < CALI_DATA_NUM; i++)
+		cali_default_data[i] = (int)data[i] * THRESHOLD_SCALE;
+	hwlog_info("%s: calibration data, %d, %d", __func__,
+		cali_default_data[0] / THRESHOLD_SCALE, (int)data[0]);
+}
+
 int ak09970_probe(struct i2c_client *client, const struct i2c_device_id *idp)
 {
 	int ret;
@@ -1513,6 +2059,8 @@ int ak09970_probe(struct i2c_client *client, const struct i2c_device_id *idp)
 		hwlog_err("%s: create_sysfs_interfaces fail\n", __func__);
 		goto ak09970_struct_init_fail;
 	}
+
+	get_default_calibration_data(client);
 
 	hwlog_info("%s: success\n", __func__);
 	return AK09970_RETCODE_SUCCESS;

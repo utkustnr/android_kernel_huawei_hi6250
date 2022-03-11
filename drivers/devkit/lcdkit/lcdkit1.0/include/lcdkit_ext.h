@@ -19,4 +19,5 @@ enum lcdkit_pm_type
 int lcdkit_register_notifier(struct notifier_block* nb);
 int lcdkit_unregister_notifier(struct notifier_block* nb);
 void lcdkit_notifier_call_chain(unsigned long event, void* data);
+int lcdkit_proximity_poweroff(void);
 #endif

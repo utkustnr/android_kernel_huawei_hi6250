@@ -1999,7 +1999,8 @@ END_FUNC:
 }
 #define FILE_PATH_MAX_LEN 100
 #define FILE_NAME_MAX_LEN 64
-static int himax_get_threshold_from_csvfile(int columns, int rows, char* target_name, struct get_csv_data *data)
+static int himax_get_threshold_from_csvfile(unsigned short columns,
+	unsigned short rows, char *target_name, struct get_csv_data *data)
 {
 	char file_path[FILE_PATH_MAX_LEN] = {0};
 	char file_name[FILE_NAME_MAX_LEN] = {0};
@@ -2020,7 +2021,7 @@ static int himax_get_threshold_from_csvfile(int columns, int rows, char* target_
 			g_himax_ts_data->tskit_himax_data->ts_platform_data->chip_data->module_name);
 
 	snprintf(file_path, sizeof(file_path) - 1, "/odm/etc/firmware/ts/%s", file_name);
-	TS_LOG_INFO("threshold file name:%s, rows_size=%d, columns_size=%d, target_name = %s\n",
+	TS_LOG_INFO("threshold file name:%s, rows_size=%u, columns_size=%u, target_name = %s\n",
 		file_path, rows, columns, target_name);
 
 	result =  ts_kit_parse_csvfile(file_path, target_name, data->csv_data, rows, columns);
@@ -2038,8 +2039,8 @@ static int himax_parse_threshold_csvfile_p2p(void)
 {
 	int retval = 0;
 	struct get_csv_data *rawdata_limit = NULL;
-	int rawdata_limit_row = getYChannel();
-	int rawdata_limit_col = getXChannel();
+	unsigned char rawdata_limit_row = getYChannel();
+	unsigned char rawdata_limit_col = getXChannel();
 
 	rawdata_limit = kzalloc(rawdata_limit_col * rawdata_limit_row * sizeof(int32_t) + sizeof(struct get_csv_data), GFP_KERNEL);
 	if (NULL == rawdata_limit){
@@ -2551,9 +2552,8 @@ static int himax_get_one_value(const char *buf, uint32_t *offset)
 		for(;;){
 			tmp_offset++;
 			m=tmp_offset + 1;
-			if (buf[m] == ASCII_COMMA) {
+			if ((m >= fw_entry->size) || (buf[m] == ASCII_COMMA))
 				break;
-			}
 		}
 	}
 	/* New line for multiple lines end*/

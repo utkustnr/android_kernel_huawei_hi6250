@@ -30,4 +30,5 @@ endif
 #$(error stop! $(mkfile_path))
 
 EXTRA_CFLAGS += -Idrivers/devkit/lcdkit/lcdkit1.0/include	\
-		-Idrivers/devkit/tpkit
+		-Idrivers/devkit/tpkit \
+		-Idrivers/i2c/busses

@@ -173,8 +173,14 @@ struct dw_i2c_dev {
 	struct mutex		lock;
 	void			*priv_data;
 	bool			secure_mode;
+	u32			i2c_bus_numb;
 #endif
 	u32			setpin;
+};
+
+struct i2c_work_around_ops {
+	void (*i2c_suspend_work_around)(u32 *numb);
+	void (*i2c_resume_work_around)(u32 *numb);
 };
 
 #define ACCESS_SWAP		0x00000001
@@ -196,6 +202,7 @@ extern void i2c_dw_clear_int(struct dw_i2c_dev *dev);
 extern void i2c_dw_disable_int(struct dw_i2c_dev *dev);
 extern u32 i2c_dw_read_comp_param(struct dw_i2c_dev *dev);
 extern int i2c_dw_probe(struct dw_i2c_dev *dev);
+int i2c_work_around_ops_register(struct i2c_work_around_ops *ops);
 
 #if IS_ENABLED(CONFIG_I2C_DESIGNWARE_BAYTRAIL)
 extern int i2c_dw_eval_lock_support(struct dw_i2c_dev *dev);

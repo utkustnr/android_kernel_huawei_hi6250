@@ -89,4 +89,3 @@ config DDR_HW_VOTE_15BITS
 
 source "drivers/devfreq/hisi/dsu_pctrl/Kconfig"
 source "drivers/devfreq/hisi/l3c_devfreq/Kconfig"
-source "drivers/devfreq/hisi/l3p_karma/Kconfig"
