@@ -49,18 +49,6 @@ dev_t ROOT_DEV;
 extern void engineer_mode_mount(void);
 #endif
 
-#ifdef CONFIG_ANDROID_SAR_RAMDISK
-static int __initdata android_bootmode;
-
-extern int mount_sar_ramdisk(char*);
-
-static int __init android_bootmode_setup(char *str) {
-	android_bootmode = simple_strtol(str,NULL,0);
-	return 1;
-}
-__setup("bootmode=", android_bootmode_setup);
-#endif
-
 extern dev_t begin_oae_dm(dev_t orginal_dev,
 			  char *saved_root_name,
 			  char *root_device_name);
