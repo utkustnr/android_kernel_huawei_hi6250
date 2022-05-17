@@ -31,7 +31,6 @@
 #include <linux/mmc/dsm_emmc.h>
 #endif
 
-#define MMC_OPS_TIMEOUT_MS	(10 * 60 * 1000) /* 10 minute timeout */
 #define MMC_REMOVABLE_OPS_TIMEOUT_MS	(5 * 1000) /* 5 second timeout */
 #define SD_OPS_TIMEOUT_MS	(30 * 1000) /* 30 second timeout */
 
@@ -607,8 +606,11 @@ int __mmc_switch(struct mmc_card *card, u8 set, u8 index, u8 value,
 
 
 	/* We have an unspecified cmd timeout, use the fallback value. */
-	if (!timeout_ms)
-		timeout_ms = MMC_OPS_TIMEOUT_MS;
+	if (!timeout_ms) {
+		pr_warn("%s: unspecified timeout for CMD6 - use generic\n",
+			mmc_hostname(host));
+		timeout_ms = card->ext_csd.generic_cmd6_time;
+	}
 
 	timeout = timeout_select(card);
 
