@@ -143,7 +143,7 @@ oal_void hwifi_panic_log_register(hwifi_panic_log* pst_log, oal_void* data)
 
     pst_log->data = data;
     list_add_tail(&pst_log->list, &wifi_panic_log_head);
-    //OAL_IO_PRINT("Log module %s added![%pF]\n", pst_log->name,(void*)_RET_IP_);
+    OAL_IO_PRINT("Log module %s added![%pF]\n", pst_log->name,(void*)_RET_IP_);
 }
 
 oal_void hwifi_panic_log_unregister(hwifi_panic_log* pst_log)
