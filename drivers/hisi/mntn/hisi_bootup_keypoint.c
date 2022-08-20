@@ -40,7 +40,7 @@ Return:         NA
 void set_boot_keypoint(u32 value)
 {
 	if (value < STAGE_KERNEL_BOOTANIM_COMPLETE || value > STAGE_END) {
-		BB_PRINT_ERR("value[%d] is invilad.\n", value);
+		//BB_PRINT_ERR("value[%d] is invilad.\n", value);
 		return;
 	}
 	if (STAGE_BOOTUP_END == value) {
