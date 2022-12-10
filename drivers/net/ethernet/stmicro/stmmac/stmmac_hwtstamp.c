@@ -56,7 +56,8 @@ static u32 stmmac_config_sub_second_increment(void __iomem *ioaddr,
 	if (!(value & PTP_TCR_TSCTRLSSR))
 		data = (data * 1000) / 465;
 
-	data &= PTP_SSIR_SSINC_MASK;
+	if (data > PTP_SSIR_SSINC_MAX)
+		data = PTP_SSIR_SSINC_MAX;
 
 	if (gmac4)
 		data = data << GMAC4_PTP_SSIR_SSINC_SHIFT;
