@@ -904,20 +904,23 @@ extern struct session_secure_info g_cur_session_secure_info;
 static int __generate_random_data(uint8_t *data, uint32_t size)
 {
 	uint32_t i;
-
+        
 	if (memset_s((void *)data, size, 0, size)) {
 		tloge("Clean the data buffer failed!\n");
 		return -EFAULT;
 	}
-
-	get_random_bytes_arch((void *)data, size);
+	
+        wait_for_random_bytes();
+	get_random_bytes((void *)data, sizeof(size));
 
 	for (i = 0; i < size; i++)
 		if (data[i] != 0)
 			break;
+		      
 
 	if (i >= size)
 		return -EFAULT;
+		
 
 	return 0;
 }
@@ -928,7 +931,7 @@ static int generate_challenge_word(uint8_t *challenge_word, uint32_t size)
 		tloge("Parameter is null pointer!\n");
 		return -EINVAL;
 	}
-
+        
 	return __generate_random_data(challenge_word, size);
 }
 
@@ -999,6 +1002,7 @@ static int get_session_secure_params(TC_NS_DEV_File *dev_file,
 	ret = generate_challenge_word(
 		(uint8_t *)&g_cur_session_secure_info.challenge_word,
 		sizeof(g_cur_session_secure_info.challenge_word));
+			
 	if (ret) {
 		tloge("Generate challenge word failed, ret = %d\n", ret);
 		return ret;
