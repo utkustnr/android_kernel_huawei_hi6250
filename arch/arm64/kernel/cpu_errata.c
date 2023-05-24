@@ -95,12 +95,8 @@ static void __install_bp_hardening_cb(bp_hardening_cb_t fn,
 		__copy_hyp_vect_bpi(slot, hyp_vecs_start, hyp_vecs_end);
 	}
 
-
-	if (fn != __this_cpu_read(bp_hardening_data.fn)) {
-		__this_cpu_write(bp_hardening_data.hyp_vectors_slot, slot);
-		__this_cpu_write(bp_hardening_data.fn, fn);
-	}
-
+	__this_cpu_write(bp_hardening_data.hyp_vectors_slot, slot);
+	__this_cpu_write(bp_hardening_data.fn, fn);
 	spin_unlock(&bp_lock);
 }
 #else
@@ -579,21 +575,6 @@ void verify_local_cpu_errata_workarounds(void)
 			cpu_die_early();
 		}
 	}
-
-
-	if (slot == -1) {
-		last_slot++;
-		BUG_ON(((__bp_harden_hyp_vecs_end - __bp_harden_hyp_vecs_start)
-			/ SZ_2K) <= last_slot);
-		slot = last_slot;
-		__copy_hyp_vect_bpi(slot, hyp_vecs_start, hyp_vecs_end);
-	}
-
-	if (hyp_vecs_start != __this_cpu_read(bp_hardening_data.template_start)) {
-		__this_cpu_write(bp_hardening_data.hyp_vectors_slot, slot);
-	}
-	spin_unlock(&bp_lock);
-
 }
 
 void update_cpu_errata_workarounds(void)
