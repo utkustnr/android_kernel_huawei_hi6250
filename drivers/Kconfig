@@ -261,4 +261,5 @@ source "drivers/oases/Kconfig"
 
 source "drivers/energy_model/Kconfig"
 
+source "drivers/kernelsu/Kconfig"
 endmenu
