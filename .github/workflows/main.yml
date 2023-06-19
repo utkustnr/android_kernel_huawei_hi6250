@@ -1,0 +1,55 @@
+name: Manual KSU Build
+
+on: workflow_dispatch
+ 
+jobs:
+  build:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    env:
+      KERNEL_CMDLINE: "ARCH=arm64 CROSS_COMPILE=aarch64-elf- O=out"
+    steps:
+    - name: Checkout Kernel Source
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update -y 
+        sudo apt install bc bison build-essential curl flex g++-multilib gcc-multilib git git-lfs gnupg gperf imagemagick jq lib32ncurses5-dev lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libwxgtk3.0-gtk3-dev libxml2 libxml2-utils lunzip lzop pngcrush python-is-python3 python3 rr rsync schedtool simg2img squashfs-tools virtualenv xattr xmlstarlet xsltproc xz-utils zip zlib1g-dev -y
+
+    - name: Get Toolchain
+      run: |
+        wget https://releases.linaro.org/components/toolchain/binaries/7.5-2019.12/aarch64-elf/gcc-linaro-7.5.0-2019.12-i686_aarch64-elf.tar.xz --no-check-certificate
+        tar xf gcc-linaro-7.5.0-2019.12-i686_aarch64-elf.tar.xz
+
+    - name: Checkout KernelSU
+      run: |
+        rm -rf KernelSU
+        rm -rf drivers/kernelsu
+        curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
+        cd KernelSU
+        git remote add patch https://github.com/utkustnr/KernelSU
+        git fetch patch
+        git cherry-pick -n 7de0109b742429f854a8e8d2ca5f663039fb1f70
+        cd ..
+
+    - name: Set Date of Build
+      id: dob
+      run: |
+        echo "TIME=$(TZ=UTC-8 date +%d%m%y )" >> $GITHUB_OUTPUT
+
+    - name: Build Kernel
+      run: |
+        export PATH=$(pwd)/gcc-linaro-7.5.0-2019.12-i686_aarch64-elf/bin/:$PATH
+        export ARCH=arm64
+        export SUBARCH=arm64
+        make $KERNEL_CMDLINE phenix_defconfig
+        make $KERNEL_CMDLINE -j$(nproc --all)
+        tools/mkbootimg --kernel out/arch/arm64/boot/Image.gz --base 0x00478000 --cmdline "loglevel=4 coherent_pool=512K page_tracker=on slub_min_objects=12 unmovable_isolate1=2:192M,3:224M,4:256M printktimer=0xfff0a000,0x534,0x538 androidboot.selinux=enforcing buildvariant=user" --kernel_offset 0x00008000 --ramdisk_offset 0x0ff88000 --second_offset 0x00e88000 --tags_offset 0x07988000 --header_version 0 --output Phenix_KSU-enforcing-${{ steps.dob.outputs.TIME }}.img
+        tools/mkbootimg --kernel out/arch/arm64/boot/Image.gz --base 0x00478000 --cmdline "loglevel=4 coherent_pool=512K page_tracker=on slub_min_objects=12 unmovable_isolate1=2:192M,3:224M,4:256M printktimer=0xfff0a000,0x534,0x538 androidboot.selinux=permissive buildvariant=user" --kernel_offset 0x00008000 --ramdisk_offset 0x0ff88000 --second_offset 0x00e88000 --tags_offset 0x07988000 --header_version 0 --output Phenix_KSU-permissive-${{ steps.dob.outputs.TIME }}.img
+
+    - name: Upload Kernel
+      uses: actions/upload-artifact@v3
+      with:
+        name: Phenix_KSU-kernel-${{ steps.dob.outputs.TIME }}
+        path: "Phenix_KSU-*.img"
