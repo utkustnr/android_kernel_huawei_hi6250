@@ -27,11 +27,6 @@ jobs:
         rm -rf KernelSU
         rm -rf drivers/kernelsu
         curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
-        cd KernelSU
-        git remote add patch https://github.com/utkustnr/KernelSU
-        git fetch patch
-        git cherry-pick -n 7de0109b742429f854a8e8d2ca5f663039fb1f70
-        cd ..
 
     - name: Set Date of Build
       id: dob
