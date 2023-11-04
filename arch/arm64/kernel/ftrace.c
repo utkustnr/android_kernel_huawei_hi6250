@@ -22,7 +22,9 @@
 
 #ifdef CONFIG_DEBUG_RODATA
 #include "../mm/mm.h"
+#define PAGE_KERNEL_ROX        __pgprot(_PAGE_DEFAULT | PTE_UXN | PTE_DIRTY | PTE_RDONLY)
 #endif
+
 
 int ftrace_arch_code_modify_prepare(void)
 {
@@ -39,7 +41,7 @@ int ftrace_arch_code_modify_post_process(void)
 #ifdef CONFIG_DEBUG_RODATA
 	create_mapping_late(__pa(_stext), (unsigned long)_stext,
 				__pa(_etext) - __pa(_stext),
-				PAGE_KERNEL_EXEC  | PTE_RDONLY);
+				PAGE_KERNEL_ROX);
 #endif
 	return 0;
 }
