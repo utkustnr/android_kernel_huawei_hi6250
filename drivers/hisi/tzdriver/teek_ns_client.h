@@ -9,7 +9,7 @@
 #include "teek_client_type.h"
 #include "tc_ns_client.h"
 
-/*#define TC_DEBUG*/
+#define TC_DEBUG
 
 #define TC_NS_CLIENT_IOC_MAGIC  't'
 #define TC_NS_CLIENT_DEV            "tc_ns_client"

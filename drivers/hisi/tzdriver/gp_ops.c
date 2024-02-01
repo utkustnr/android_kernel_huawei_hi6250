@@ -1052,6 +1052,7 @@ int tc_client_call(TC_NS_ClientContext *client_context,
 	bool is_token_work = false;
 	struct mb_cmd_pack *mb_pack = NULL;
 	bool operation_init = false;
+	char my_pkname[256];
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
 	kuid_t kuid;
@@ -1073,6 +1074,9 @@ int tc_client_call(TC_NS_ClientContext *client_context,
 
 	if (client_context->cmd_id == GLOBAL_CMD_ID_OPEN_SESSION && global == TC_CALL_GLOBAL)
 		CFC_FUNC_ENTRY(tc_client_call);
+
+	memset(my_pkname,0,256);
+	memcpy(my_pkname,dev_file->pkg_name,dev_file->pkg_name_len);
 
 	smc_cmd = kzalloc(sizeof(TC_NS_SMC_CMD), GFP_KERNEL);
 	if (smc_cmd == NULL) {
@@ -1167,7 +1171,7 @@ int tc_client_call(TC_NS_ClientContext *client_context,
 
 	client_context->session_id = smc_cmd->context_id;
        // if tee_ret error except TEEC_PENDING,but context_id is seted,need to reset to 0.
-	needreset = global && client_context->cmd_id == GLOBAL_CMD_ID_OPEN_SESSION && 
+	needreset = global && client_context->cmd_id == GLOBAL_CMD_ID_OPEN_SESSION &&
 		tee_ret !=0 && TEEC_PENDING != tee_ret;/*lint !e650 */
 	if (needreset) {
 		client_context->session_id = 0;/*lint !e63 */
