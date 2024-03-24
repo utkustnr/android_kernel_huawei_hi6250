@@ -1537,6 +1537,51 @@ static void remove_unused_session(TC_NS_Service *service,
 	put_session_struct(saved_session);
 }
 
+/*
+[   41.101959] [pid:430,cpu7,keymaster@3.0-s]TC_NS_OpenSession(430, keymaster@3.0-s): TC_NS_OpenSession try to hash for /vendor/bin/hw/android.hardware.keymaster@3.0-service
+[   41.101959] [pid:430,cpu7,keymaster@3.0-s]TC_NS_OpenSession(430, keymaster@3.0-s): 0xAA, 0x3B, 0x24, 0x94, 0xD7, 0xB8, 0x05, 0x42, 
+[   41.101959] [pid:430,cpu7,keymaster@3.0-s]TC_NS_OpenSession(430, keymaster@3.0-s): 0x34, 0x65, 0x7E, 0x10, 0x6A, 0xC8, 0x5B, 0x64, 
+[   41.101959] [pid:430,cpu7,keymaster@3.0-s]TC_NS_OpenSession(430, keymaster@3.0-s): 0xBD, 0xFE, 0x7F, 0x65, 0x77, 0xED, 0x26, 0x2F,  
+[   41.101959] [pid:430,cpu7,keymaster@3.0-s]TC_NS_OpenSession(430, keymaster@3.0-s): 0x15, 0x2A, 0x8A, 0x8C, 0x03, 0x1D, 0x81, 0x69, 
+
+[   29.162353] [pid:521,cpu7,android.hardwar]TC_NS_OpenSession(521, android.hardwar): TC_NS_OpenSession try to hash for /vendor/bin/hw/android.hardware.gatekeeper@1.0-service
+[   29.162353] [pid:521,cpu7,android.hardwar]TC_NS_OpenSession(521, android.hardwar): 0xAF, 0x49, 0x6D, 0x17, 0x5E, 0x66, 0xC0, 0x45, 
+[   29.162384] [pid:521,cpu7,android.hardwar]TC_NS_OpenSession(521, android.hardwar): 0xEE, 0xFC, 0xC0, 0xA9, 0x0B, 0x04, 0x2E, 0xB2, 
+[   29.162384] [pid:521,cpu7,android.hardwar]TC_NS_OpenSession(521, android.hardwar): 0x32, 0x18, 0xA4, 0x9F, 0x73, 0xA3, 0x67, 0x29,  
+[   29.162384] [pid:521,cpu7,android.hardwar]TC_NS_OpenSession(521, android.hardwar): 0x16, 0xAD, 0x47, 0x90, 0x3F, 0x50, 0xA1, 0xA9, 
+
+[   44.410980] [pid:1840,cpu2,HwBinder:541_1]TC_NS_OpenSession(1840, HwBinder:541_1): TC_NS_OpenSession try to hash for /vendor/bin/hw/vendor.huawei.hardware.hwsecurity-service
+[   44.411010] [pid:1840,cpu2,HwBinder:541_1]TC_NS_OpenSession(1840, HwBinder:541_1): 0xCB, 0xEF, 0xCD, 0xC2, 0xFE, 0x90, 0xDA, 0x83, 
+[   44.411010] [pid:1840,cpu2,HwBinder:541_1]TC_NS_OpenSession(1840, HwBinder:541_1): 0xF4, 0x1E, 0x11, 0x9B, 0xFE, 0x81, 0x9A, 0xBD, 
+[   44.411010] [pid:1840,cpu2,HwBinder:541_1]TC_NS_OpenSession(1840, HwBinder:541_1): 0x94, 0xE3, 0xE2, 0xFE, 0xD1, 0xB6, 0x95, 0x41,  
+[   44.411010] [pid:1840,cpu2,HwBinder:541_1]TC_NS_OpenSession(1840, HwBinder:541_1): 0x7A, 0x1D, 0x57, 0xB5, 0x84, 0x54, 0xA7, 0x21, 
+
+[   30.335174] [pid:652,cpu4,vendor.huawei.h]TC_NS_OpenSession(652, vendor.huawei.h): TC_NS_OpenSession try to hash for /vendor/bin/hw/vendor.huawei.hardware.biometrics.hwfacerecognize@1.1-service
+[   30.335174] [pid:652,cpu4,vendor.huawei.h]TC_NS_OpenSession(652, vendor.huawei.h): 0xA5, 0x0C, 0x3D, 0xA9, 0x63, 0x02, 0xEA, 0xC1, 
+[   30.335205] [pid:652,cpu4,vendor.huawei.h]TC_NS_OpenSession(652, vendor.huawei.h): 0x2E, 0x5A, 0xF2, 0x1B, 0xEF, 0x77, 0x9C, 0x11, 
+[   30.335205] [pid:652,cpu4,vendor.huawei.h]TC_NS_OpenSession(652, vendor.huawei.h): 0x33, 0xE7, 0x48, 0x8F, 0x3C, 0xB5, 0x5C, 0xF1,  
+[   30.335205] [pid:652,cpu4,vendor.huawei.h]TC_NS_OpenSession(652, vendor.huawei.h): 0x3E, 0x41, 0x00, 0x79, 0x40, 0x1F, 0x58, 0xEC, 
+
+[   31.201660] [pid:747,cpu5,vendor.huawei.h]TC_NS_OpenSession(747, vendor.huawei.h): TC_NS_OpenSession try to hash for /vendor/bin/hw/vendor.huawei.hardware.biometrics.fingerprint@2.1-service
+[   31.201660] [pid:747,cpu5,vendor.huawei.h]TC_NS_OpenSession(747, vendor.huawei.h): 0x2F, 0x63, 0xF0, 0x29, 0x92, 0x51, 0x86, 0xB2, 
+[   31.201660] [pid:747,cpu5,vendor.huawei.h]TC_NS_OpenSession(747, vendor.huawei.h): 0xDF, 0xB3, 0xA3, 0x14, 0x15, 0xC3, 0xAD, 0x30, 
+[   31.201690] [pid:747,cpu5,vendor.huawei.h]TC_NS_OpenSession(747, vendor.huawei.h): 0x7E, 0x52, 0x75, 0x5A, 0xBC, 0x43, 0x7B, 0xAE,  
+[   31.201690] [pid:747,cpu5,vendor.huawei.h]TC_NS_OpenSession(747, vendor.huawei.h): 0x42, 0x3E, 0x9C, 0x38, 0xAB, 0x45, 0x52, 0xCB, 
+
+[   52.412841] [pid:432,cpu6,libteec@2.0-ser]TC_NS_OpenSession(432, libteec@2.0-ser): TC_NS_OpenSession try to hash for system_server
+[   52.412841] [pid:432,cpu6,libteec@2.0-ser]TC_NS_OpenSession(432, libteec@2.0-ser): 0xFC, 0xC9, 0xD9, 0x43, 0x9D, 0x52, 0xDD, 0xEE, 
+[   52.412841] [pid:432,cpu6,libteec@2.0-ser]TC_NS_OpenSession(432, libteec@2.0-ser): 0xED, 0xB5, 0xC1, 0xC1, 0x72, 0x49, 0x5E, 0x8D, 
+[   52.412841] [pid:432,cpu6,libteec@2.0-ser]TC_NS_OpenSession(432, libteec@2.0-ser): 0x96, 0xA5, 0xE2, 0x97, 0xCF, 0x06, 0xDA, 0x84,  
+[   52.412872] [pid:432,cpu6,libteec@2.0-ser]TC_NS_OpenSession(432, libteec@2.0-ser): 0xED, 0x2A, 0x0C, 0x61, 0x10, 0x90, 0x33, 0x6B, 
+
+[  598.698242] [pid:432,cpu6,libteec@2.0-ser]TC_NS_OpenSession(432, libteec@2.0-ser): TC_NS_OpenSession try to hash for com.huawei.systemserver
+[  598.698242] [pid:432,cpu6,libteec@2.0-ser]TC_NS_OpenSession(432, libteec@2.0-ser): 0xFC, 0xC9, 0xD9, 0x43, 0x9D, 0x52, 0xDD, 0xEE, 
+[  598.698272] [pid:432,cpu6,libteec@2.0-ser]TC_NS_OpenSession(432, libteec@2.0-ser): 0xED, 0xB5, 0xC1, 0xC1, 0x72, 0x49, 0x5E, 0x8D, 
+[  598.698272] [pid:432,cpu6,libteec@2.0-ser]TC_NS_OpenSession(432, libteec@2.0-ser): 0x96, 0xA5, 0xE2, 0x97, 0xCF, 0x06, 0xDA, 0x84,  
+[  598.698272] [pid:432,cpu6,libteec@2.0-ser]TC_NS_OpenSession(432, libteec@2.0-ser): 0xED, 0x2A, 0x0C, 0x61, 0x10, 0x90, 0x33, 0x6B, 
+
+*/
+
 int TC_NS_OpenSession(TC_NS_DEV_File *dev_file, TC_NS_ClientContext *context)
 {
 	int ret = -EINVAL;
