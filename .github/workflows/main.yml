@@ -24,10 +24,15 @@ jobs:
 
     - name: Checkout KernelSU
       run: |
-        wget https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh
+        wget https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh
         bash setup.sh --cleanup
         rm -rf setup.sh
-        curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+        curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+        rm -rf KernelSU
+        git clone https://github.com/utkustnr/KernelSU.git
+        cd KernelSU
+        git reset --hard HEAD^1
+        cd ..
 
     - name: Set Date of Build
       id: dob
