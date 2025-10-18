@@ -24,10 +24,9 @@ jobs:
 
     - name: Checkout KernelSU
       run: |
-        wget https://raw.githubusercontent.com/backslashxx/KernelSU/refs/heads/magic/kernel/setup.sh
+        wget https://github.com/backslashxx/KernelSU/raw/refs/heads/master/kernel/setup.sh
         bash setup.sh --cleanup
-        rm -rf setup.sh
-        curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/refs/heads/magic/kernel/setup.sh" | bash -s magic
+        bash setup.sh
 
     - name: Set Date of Build
       id: dob
